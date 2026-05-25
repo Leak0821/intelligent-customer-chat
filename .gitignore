@@ -15,3 +15,7 @@ coverage/
 
 # Local SSH material for this repository only
 .local-ssh/
+
+# Project-local Codex plugin workspace
+.codex-home/
+.codex-local/
