@@ -34,6 +34,7 @@
 - [research/minimal-email-agent-loop.md](./research/minimal-email-agent-loop.md)：邮件 agent 第一条最小闭环链路研究
 - [research/first-stage-technical-decisions.md](./research/first-stage-technical-decisions.md)：第一阶段技术设计决策清单
 - [research/first-stage-sub-intent-seed-list.md](./research/first-stage-sub-intent-seed-list.md)：第一阶段首批子意图种子清单
+- [research/first-stage-runtime-stack-baseline.md](./research/first-stage-runtime-stack-baseline.md)：第一阶段运行时技术栈基线
 - [research/first-stage-implementation-skeleton.md](./research/first-stage-implementation-skeleton.md)：第一阶段 Java/Spring AI 实现骨架设计
 - [openspec/changes/README.md](./openspec/changes/README.md)：进行中的正式变更合同
 - [openspec/specs/README.md](./openspec/specs/README.md)：稳定规格沉淀位置
@@ -46,6 +47,7 @@
 - [openspec/changes/email-agent-minimal-loop/tasks.md](./openspec/changes/email-agent-minimal-loop/tasks.md)：当前已收敛任务与建议实现切片
 - [research/first-stage-implementation-skeleton.md](./research/first-stage-implementation-skeleton.md)：审查通过后进入编码前的实现骨架参考
 - [research/first-stage-slice-1-coding-plan.md](./research/first-stage-slice-1-coding-plan.md)：切片 1 的具体编码起步计划
+- [research/first-stage-runtime-stack-baseline.md](./research/first-stage-runtime-stack-baseline.md)：当前已锁定的运行时与基础设施组合
 
 ## 后续计划
 
