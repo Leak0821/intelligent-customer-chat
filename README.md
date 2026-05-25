@@ -47,3 +47,4 @@ source ./scripts/use-local-codex.sh
 
 仓库内保留 [CHANGELOG.md](./CHANGELOG.md) 作为人工变更记录，按日期记录每次主要修改点。
 后续每次较明显的调整，建议先更新记录，再提交代码。
+记录格式建议按“日期 / 分支 / 修改点 / 结果”维护。
