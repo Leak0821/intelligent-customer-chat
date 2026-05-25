@@ -13,3 +13,5 @@ dist/
 build/
 coverage/
 
+# Local SSH material for this repository only
+.local-ssh/
