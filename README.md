@@ -35,3 +35,10 @@ source ./scripts/use-local-codex.sh
 ```
 
 这只会影响当前 shell，会把 `CODEX_HOME` 指向本仓库内的 `.codex-home`。
+
+## 分支管理记录
+
+- 这类练习项目建议保留特性分支，方便回看每次修改
+- 分支命名建议使用 `feat/`、`fix/`、`chore/` 前缀
+- 当前仓库会按正常 Git flow 记录每次分支开发和合并过程
+- 如果某个分支已经合并但还想保留历史，可以先不删除远程分支
