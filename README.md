@@ -1,10 +1,13 @@
 # Intelligent Customer Chat
 
-This repository will hold the implementation of an intelligent customer service system.
+This repository is a test demo for an intelligent customer chat project.
+
+## Important
+
+This codebase is not intended for production use.
+The implementation and framework will be defined later.
 
 ## Current Status
 
 - Repository initialized for Git/GitHub tracking
 - No application stack selected yet
-- Basic project structure prepared for future development
-
