@@ -25,6 +25,8 @@
 
 - [AGENTS.md](./AGENTS.md)：仓库级 Agent 执行合同
 - [docs/agent-playbook.md](./docs/agent-playbook.md)：项目级最佳实践初稿
+- [docs/ai-workflow.md](./docs/ai-workflow.md)：`oh-my-codex + superpowers + OpenSpec + gstack` 工作流标准
+- [docs/engineering-standards.md](./docs/engineering-standards.md)：与技术栈无关的实现原则
 - [docs/repository-boundaries.md](./docs/repository-boundaries.md)：哪些内容可以入库，哪些只留本地
 - [research/README.md](./research/README.md)：探索材料放置位置
 - [openspec/changes/README.md](./openspec/changes/README.md)：进行中的正式变更合同

@@ -23,6 +23,8 @@
 - 新增 `research/` 与 `openspec/` 的目录说明文件
 - 更新 README，补充规范文档入口
 - 更新 `.gitignore`，忽略本地环境变量文件和本地参考 PDF
+- 补充 AI 工作流文档，明确 `oh-my-codex`、`superpowers`、OpenSpec、`gstack` 的职责和阶段门禁
+- 补充与技术栈无关的工程实现原则
 
 ### 结果
 

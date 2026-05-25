@@ -115,6 +115,8 @@ project-root/
 
 ## 6. 默认工作流
 
+详细工具工作流见 [docs/ai-workflow.md](./ai-workflow.md)。
+
 ### 阶段 1：需求进入
 
 先明确：
@@ -168,7 +170,7 @@ project-root/
 - 是否有明显回归
 - 是否留下可复盘证据
 
-如果后续涉及接口、RAG、工作流引擎或人工转接，再补分层测试和评测规范。
+如果后续涉及接口、RAG、工作流引擎或人工转接，再补分层测试和评测规范。编码阶段的上位约束见 [docs/engineering-standards.md](./engineering-standards.md)。
 
 ### 阶段 6：归档
 
