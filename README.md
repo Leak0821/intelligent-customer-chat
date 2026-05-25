@@ -25,3 +25,13 @@
 - 再确定技术栈
 - 再补充目录结构
 - 再逐步实现智能客服相关能力
+
+## 本地环境
+
+如果需要在当前项目内启用 Codex 本地环境，请在仓库根目录执行：
+
+```bash
+source ./scripts/use-local-codex.sh
+```
+
+这只会影响当前 shell，会把 `CODEX_HOME` 指向本仓库内的 `.codex-home`。
