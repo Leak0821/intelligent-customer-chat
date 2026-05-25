@@ -8,6 +8,11 @@
 # Logs
 *.log
 
+# Local env files
+.env
+.env.*
+!.env.example
+
 # Common build outputs
 dist/
 build/
@@ -19,3 +24,6 @@ coverage/
 # Project-local Codex plugin workspace
 .codex-home/
 .codex-local/
+
+# Local reference material
+跨境电商AI邮件智能客服*.pdf

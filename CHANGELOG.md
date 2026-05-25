@@ -8,6 +8,7 @@
 
 - `main`
 - `feat/codex-ai-plugins`
+- `init-agent-playbook`
 
 ### 修改点
 
@@ -17,11 +18,18 @@
 - 在项目内配置了 `oh-my-codex`、`superpowers` 和 `OpenSpec`
 - 添加了仅作用于当前仓库的本地启动脚本 `scripts/use-local-codex.sh`
 - 补充分支管理记录，说明特性分支保留策略
+- 初始化 `AGENTS.md`，约束 Agent 默认工作方式
+- 新增项目级最佳实践文档与仓库入库边界说明
+- 新增 `research/` 与 `openspec/` 的目录说明文件
+- 更新 README，补充规范文档入口
+- 更新 `.gitignore`，忽略本地环境变量文件和本地参考 PDF
 
 ### 结果
 
 - 已完成本地 AI 插件环境的第一版搭建
 - 已记录当前仓库的分支管理和变更记录方式
+- 已形成智能客服项目的文档先行骨架
+- 已明确当前仓库中哪些 AI 工具相关目录只保留本地
 
 ### 记录模板
 

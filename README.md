@@ -18,12 +18,22 @@
 
 - 已完成 Git 仓库初始化并关联 GitHub
 - 已建立基础的版本管理流程
+- 已初始化一版 AI 协作规范和文档骨架
 - 目前没有正式业务代码
+
+## 文档入口
+
+- [AGENTS.md](./AGENTS.md)：仓库级 Agent 执行合同
+- [docs/agent-playbook.md](./docs/agent-playbook.md)：项目级最佳实践初稿
+- [docs/repository-boundaries.md](./docs/repository-boundaries.md)：哪些内容可以入库，哪些只留本地
+- [research/README.md](./research/README.md)：探索材料放置位置
+- [openspec/changes/README.md](./openspec/changes/README.md)：进行中的正式变更合同
+- [openspec/specs/README.md](./openspec/specs/README.md)：稳定规格沉淀位置
 
 ## 后续计划
 
-- 再确定技术栈
-- 再补充目录结构
+- 继续确认智能客服的业务范围和第一条闭环链路
+- 再逐步确定技术栈和系统边界
 - 再逐步实现智能客服相关能力
 
 ## 本地环境
