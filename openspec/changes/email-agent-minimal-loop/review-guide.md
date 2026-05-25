@@ -47,6 +47,10 @@
 16. [research/first-stage-reply-state-model.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-reply-state-model.md)
 17. [research/first-stage-observability-replay.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-observability-replay.md)
 
+如果当前审查通过，进入编码前建议继续看：
+
+18. [research/first-stage-implementation-skeleton.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-implementation-skeleton.md)
+
 ## 4. 当前已确认的第一阶段基线
 
 当前已经固定的核心基线如下：
@@ -100,4 +104,4 @@
 
 - 进入一次正式设计审查
 - 根据审查意见做最后一轮收敛
-- 然后再进入实现骨架搭建
+- 然后按实现骨架设计进入编码

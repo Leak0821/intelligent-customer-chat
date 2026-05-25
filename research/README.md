@@ -32,3 +32,4 @@
 11. [first-stage-review-and-fallback.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-review-and-fallback.md)
 12. [first-stage-reply-state-model.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-reply-state-model.md)
 13. [first-stage-observability-replay.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-observability-replay.md)
+14. [first-stage-implementation-skeleton.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-implementation-skeleton.md)
