@@ -17,6 +17,7 @@ openspec/changes/<change-id>/
   spec.md
   tasks.md
   design.md   # 可选
+  review-guide.md   # 复杂变更可选
 ```
 
 规则：
@@ -24,3 +25,4 @@ openspec/changes/<change-id>/
 - 这里只存放已确认的决策
 - 探索材料留在 `research/`
 - 一旦开始实现，这里的激活变更就是唯一合同源
+- 对复杂变更，建议补一份审阅入口，把阅读顺序和审查重点写清楚
