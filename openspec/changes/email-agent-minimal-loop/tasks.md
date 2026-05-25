@@ -29,6 +29,10 @@
 - 建立 `Java + Spring Boot + 显式状态主链路` 主流程骨架
 - 打通邮件接入、清洗、状态推进、事件记录的最小空链路
 
+参考编码计划：
+
+- `research/first-stage-slice-1-coding-plan.md`
+
 ### 切片 2：意图归一化与路由
 
 - 实现意图重写 / 归一化结构化输出

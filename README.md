@@ -45,6 +45,7 @@
 - [openspec/changes/email-agent-minimal-loop/design.md](./openspec/changes/email-agent-minimal-loop/design.md)：第一阶段设计约束与技术收敛方向
 - [openspec/changes/email-agent-minimal-loop/tasks.md](./openspec/changes/email-agent-minimal-loop/tasks.md)：当前已收敛任务与建议实现切片
 - [research/first-stage-implementation-skeleton.md](./research/first-stage-implementation-skeleton.md)：审查通过后进入编码前的实现骨架参考
+- [research/first-stage-slice-1-coding-plan.md](./research/first-stage-slice-1-coding-plan.md)：切片 1 的具体编码起步计划
 
 ## 后续计划
 
