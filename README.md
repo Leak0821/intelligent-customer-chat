@@ -1,13 +1,27 @@
-# Intelligent Customer Chat
+# 智能客服项目
 
-This repository is a test demo for an intelligent customer chat project.
+这是一个用于练手的智能客服 Demo 仓库。
 
-## Important
+## 项目说明
 
-This codebase is not intended for production use.
-The implementation and framework will be defined later.
+- 当前仅用于学习、实验和版本管理
+- 暂不引入固定技术栈或框架
+- 目标是先把仓库结构、协作流程和迭代记录跑通
 
-## Current Status
+## 重要提醒
 
-- Repository initialized for Git/GitHub tracking
-- No application stack selected yet
+- 本项目不用于生产环境
+- 任何实现、接口和数据结构都可能随练习过程调整
+- 后续会根据实际需要逐步补充功能
+
+## 当前状态
+
+- 已完成 Git 仓库初始化并关联 GitHub
+- 已建立基础的版本管理流程
+- 目前没有正式业务代码
+
+## 后续计划
+
+- 再确定技术栈
+- 再补充目录结构
+- 再逐步实现智能客服相关能力
