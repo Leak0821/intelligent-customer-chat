@@ -1,0 +1,15 @@
+# OS files
+.DS_Store
+
+# Editor settings
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Common build outputs
+dist/
+build/
+coverage/
+
