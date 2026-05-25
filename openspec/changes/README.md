@@ -1,26 +1,26 @@
-# OpenSpec Changes
+# OpenSpec 变更区
 
-`openspec/changes/` stores in-flight change contracts.
+`openspec/changes/` 用于保存进行中的正式变更合同。
 
-Use this directory when:
+适用场景：
 
-- the change is medium or large
-- the requirement is uncertain
-- user-facing behavior may change
-- multiple implementation paths exist
+- 变更属于中任务或大任务
+- 需求仍存在不确定性
+- 用户可见行为可能变化
+- 存在多条实现路径
 
-Recommended structure:
+推荐结构：
 
 ```text
 openspec/changes/<change-id>/
   proposal.md
   spec.md
   tasks.md
-  design.md   # optional
+  design.md   # 可选
 ```
 
-Rules:
+规则：
 
-- only confirmed decisions belong here
-- exploratory notes stay in `research/`
-- once implementation starts, the active change here is the source of truth
+- 这里只存放已确认的决策
+- 探索材料留在 `research/`
+- 一旦开始实现，这里的激活变更就是唯一合同源

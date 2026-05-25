@@ -1,18 +1,18 @@
-# Research Notes
+# 研究区
 
-`research/` stores exploratory material before a decision becomes a formal specification.
+`research/` 用于保存正式规格形成前的探索材料。
 
-Typical content:
+典型内容包括：
 
-- requirement clarification
-- option comparisons
-- risk notes
-- domain questions
-- early data or workflow observations
+- 需求澄清
+- 方案对比
+- 风险记录
+- 领域问题
+- 初期数据或流程观察
 
-Rules:
+规则：
 
-- research can be incomplete
-- research is allowed to change direction
-- research is not the implementation contract
-- confirmed outcomes should be promoted into `openspec/changes/`
+- `research` 可以不完整
+- `research` 允许中途调整方向
+- `research` 不是实现合同
+- 已确认的结论应提升到 `openspec/changes/`

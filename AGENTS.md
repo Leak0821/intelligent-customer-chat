@@ -1,120 +1,120 @@
-# Intelligent Customer Chat Agent Contract
+# 智能客服项目 Agent 合同
 
-## Scope
+## 适用范围
 
-This repository is in the setup phase for an intelligent customer service project.
+当前仓库仍处于智能客服项目的初始化与规范建设阶段。
 
-- Code is not the priority yet.
-- Documentation, workflow, and change discipline come first.
-- The technical stack is intentionally undecided at this stage.
+- 代码实现还不是当前第一优先级。
+- 文档、流程和变更纪律优先。
+- 当前阶段暂不锁定技术栈。
 
-## Instruction Order
+## 指令优先级
 
-When guidance conflicts, use this order:
+当规则冲突时，按以下顺序处理：
 
-1. Explicit user instruction
-2. This file
-3. Active OpenSpec change under `openspec/changes/`
-4. Stable project rules in `docs/`
-5. Local assumptions
+1. 用户明确指令
+2. 本文件
+3. `openspec/changes/` 下当前激活的 OpenSpec 变更
+4. `docs/` 下稳定的项目规则
+5. 本地临时假设
 
-## Project Defaults
+## 项目默认约束
 
-- Reply in Chinese unless the user asks otherwise.
-- Clarify scope, success criteria, and non-goals before coding.
-- Prefer the smallest change that proves the idea.
-- Do not do incidental refactors.
-- Do not lock in frameworks, vendors, or architecture without an explicit decision.
+- 默认使用中文回复，除非用户明确要求其他语言。
+- 写代码前先澄清范围、成功标准和非目标。
+- 优先选择能证明想法成立的最小改动。
+- 不做顺手重构。
+- 未经明确确认，不提前锁定框架、供应商或架构。
 
-## Workflow Stack
+## 工作流工具栈
 
-This repository standardizes on:
+本仓库当前标准工作流为：
 
-- Codex CLI / Codex app as the execution environment
-- `oh-my-codex` as the workflow orchestration layer
-- `superpowers brainstorming` for requirement exploration
-- OpenSpec as the only implementation contract after scope is confirmed
-- `gstack` as second-opinion review for spec and diff
-- `superpowers implementation` for disciplined execution, including multi-agent execution when appropriate
+- Codex CLI / Codex app：执行环境
+- `oh-my-codex`：流程编排层
+- `superpowers brainstorming`：需求探索层
+- OpenSpec：需求合同层
+- `gstack`：规格与 diff 审查层
+- `superpowers implementation`：实现执行层，可在合适场景下使用多 agent
 
-Role rules:
+角色规则：
 
-- `oh-my-codex` organizes the flow, records status, and helps stage the work.
-- `superpowers brainstorming` explores and compares options, but does not define final scope.
-- OpenSpec defines the final behavior, acceptance criteria, and task boundaries.
-- `gstack` challenges assumptions and reviews artifacts, but does not silently widen scope.
-- `superpowers implementation` executes tasks from OpenSpec and does not redefine requirements.
+- `oh-my-codex` 负责组织流程、记录状态、控制阶段。
+- `superpowers brainstorming` 负责探索和比较方案，但不直接定义最终范围。
+- OpenSpec 负责定义最终行为、验收标准和任务边界。
+- `gstack` 负责挑战假设和审查产物，但不能默默扩大范围。
+- `superpowers implementation` 只按 OpenSpec 执行，不重新定义需求。
 
-## Task Levels
+## 任务分级
 
-Use the following default sizing unless the user explicitly requests otherwise.
+默认按以下方式划分任务，除非用户明确指定其他级别。
 
-### Small Task
+### 小任务
 
-Use for:
+适用场景：
 
-- small localized fixes
-- copy updates
-- minor config changes
-- simple script or test adjustments
+- 局部小修复
+- 文案修改
+- 小配置调整
+- 简单脚本或测试修补
 
-Rules:
+规则：
 
-- OpenSpec is optional.
-- Use `inspect -> edit -> targeted verification -> report evidence`.
-- Keep the change local and reversible.
+- OpenSpec 可选。
+- 按 `inspect -> edit -> targeted verification -> report evidence` 执行。
+- 改动要局部、可回退。
 
-### Medium Task
+### 中任务
 
-Use for:
+适用场景：
 
-- new behavior
-- workflow change
-- multi-file feature work
-- any change that needs acceptance criteria
+- 新行为
+- 流程变化
+- 多文件功能改动
+- 需要明确验收标准的任务
 
-Rules:
+规则：
 
-- create or update OpenSpec before implementation
-- `gstack` review is recommended when risk is non-trivial
+- 实现前需要创建或更新 OpenSpec。
+- 有一定风险时建议经过 `gstack` 审查。
 
-### Large Task
+### 大任务
 
-Use for:
+适用场景：
 
-- architecture changes
-- data model changes
-- public API changes
-- auth, permission, deployment, migration, or compatibility-sensitive work
+- 架构调整
+- 数据模型变化
+- 公共 API 变化
+- 鉴权、权限、部署、迁移或兼容性敏感改动
 
-Rules:
+规则：
 
-- require `proposal.md`, `spec.md`, `tasks.md`, and usually `design.md`
-- require `gstack` review before implementation
+- 需要 `proposal.md`、`spec.md`、`tasks.md`，通常还需要 `design.md`。
+- 实现前默认要经过 `gstack` 审查。
 
-## Uncertain Requirement Handling
+## 不确定需求处理
 
-Treat the task as uncertain when:
+出现以下情况时，应视为不确定需求：
 
-- the goal is vague
-- acceptance criteria are missing
-- multiple valid paths exist
-- product, UX, architecture, API, security, or data decisions are still open
+- 目标模糊
+- 验收标准缺失
+- 存在多条合理路径
+- 产品、体验、架构、API、安全或数据决策仍未收敛
 
-Rules:
+规则：
 
-- do not jump directly into implementation
-- use `superpowers brainstorming` first for medium and large uncertain work
-- convert only confirmed outcomes into OpenSpec
-- exploratory notes stay in `research/`
+- 不直接跳进实现。
+- 中大任务先用 `superpowers brainstorming` 做探索。
+- 只有确认结论才能进入 OpenSpec。
+- 探索笔记保存在 `research/`，不作为实现合同。
 
-If the user explicitly says not to brainstorm yet, skip that stage for now and focus on governance or documentation work only.
+如果用户明确说“本轮先不 brainstorm”，则当前回合只做治理、规范或文档工作，不提前写业务代码。
 
-## Stage Control
+## 阶段控制
 
-When the user limits the current round to a specific stage, do not cross into later stages.
+当用户将本轮限制在某个阶段时，不得跨到后续阶段。
 
-Allowed stages:
+允许阶段：
 
 1. `governance`
 2. `discovery`
@@ -125,106 +125,106 @@ Allowed stages:
 7. `review-diff`
 8. `archive`
 
-Stage rules:
+阶段规则：
 
-- `governance`: repository rules, workflow docs, templates, and boundaries only
-- `discovery`: research and exploration only, no business code changes
-- `openspec`: create or update OpenSpec only
-- `review-spec`: review spec artifacts only
-- `implement-task`: implement only the selected task from the active OpenSpec change
-- `test-fix`: verify and fix issues related to the current change only
-- `review-diff`: review the diff only
-- `archive`: promote stable behavior into `openspec/specs/`
+- `governance`：只做仓库规则、流程文档、模板和边界定义
+- `discovery`：只做研究和探索，不改业务代码
+- `openspec`：只创建或更新 OpenSpec
+- `review-spec`：只审查规格产物
+- `implement-task`：只实现当前 OpenSpec 中被选中的任务
+- `test-fix`：只验证并修复与当前变更相关的问题
+- `review-diff`：只审查当前 diff
+- `archive`：把稳定行为沉淀到 `openspec/specs/`
 
-## Multi-Agent Rules
+## 多 Agent 规则
 
-`superpowers implementation` may use multiple agents only when it improves throughput without creating ambiguous ownership.
+`superpowers implementation` 只有在能够提升效率且不造成责任不清时，才允许使用多 agent。
 
-Allowed:
+允许：
 
-- independent analysis tracks
-- parallel code reading
-- parallel validation or review passes
-- implementation split by clearly separated tasks
+- 独立分析并行
+- 并行代码阅读
+- 并行验证或审查
+- 按明确任务边界拆开的并行实现
 
-Not allowed:
+不允许：
 
-- multiple agents editing the same unresolved requirement
-- implementation before the active OpenSpec change is clear
-- letting parallel agents define conflicting scope
+- 多个 agent 同时修改同一块尚未收敛的需求
+- OpenSpec 未明确前就并行实现
+- 由并行 agent 各自定义冲突范围
 
-Merge rules:
+收敛规则：
 
-- OpenSpec remains the single source of truth
-- one task owner must reconcile agent outputs before completion
-- verification evidence must be reported against the merged result
+- OpenSpec 始终是唯一合同源。
+- 必须有一个任务负责人统一合并结果。
+- 最终只对合并后的结果做验证和交付。
 
-## Documentation Workflow
+## 文档工作流
 
-Default flow for medium, large, or uncertain work:
+中大任务或不确定任务，默认按以下流程推进：
 
-1. `oh-my-codex` frames the task and stage
-2. `superpowers brainstorming` explores uncertain work when needed
-3. confirmed decisions move into `research/` or directly into OpenSpec
-4. OpenSpec change is created in `openspec/changes/<change-id>/`
-5. `gstack` reviews the spec when risk warrants it
-6. `superpowers implementation` executes tasks one by one
-7. verification evidence is collected
-8. stable behavior is archived into `openspec/specs/`
+1. `oh-my-codex` 定义任务与阶段
+2. `superpowers brainstorming` 在需要时做探索
+3. 确认结论进入 `research/` 或直接进入 OpenSpec
+4. 在 `openspec/changes/<change-id>/` 下创建变更
+5. 风险较高时由 `gstack` 审查规格
+6. `superpowers implementation` 按任务逐步执行
+7. 收集验证证据
+8. 将稳定行为沉淀到 `openspec/specs/`
 
-Rules:
+规则：
 
-- `research/` is exploratory and is not implementation authority
-- `openspec/changes/` is the implementation contract once created
-- do not implement behavior that is not captured in the active OpenSpec change
-- for small localized edits, OpenSpec can be skipped if the user-facing behavior does not materially change
+- `research/` 是探索材料，不具备实现权威性
+- `openspec/changes/` 一旦建立，即为实现合同
+- 不得实现未写入当前 OpenSpec 的行为
+- 对于局部小改且不改变明显用户行为的任务，可跳过 OpenSpec
 
-## Engineering Defaults
+## 工程默认原则
 
-Apply these rules whenever code work starts:
+进入代码工作时，默认遵守：
 
-- think before coding
-- keep the solution minimal
-- make surgical changes only
-- define success criteria and verification evidence before implementation
-- do not hardcode secrets
-- do not hide unverified assumptions behind code changes
+- 先想清楚再写代码
+- 方案尽量简单
+- 只做外科手术式改动
+- 先定义成功标准和验证证据
+- 不硬编码密钥
+- 不把未验证假设偷偷写进代码
 
-## Required Evidence
+## 必需交付证据
 
-Before claiming a task is done, report:
+在声称任务完成前，必须报告：
 
-- changed files
-- commands run
-- verification results
-- known risks or skipped checks
+- 改动文件
+- 执行命令
+- 验证结果
+- 已知风险或跳过项
 
-## Repository Boundaries
+## 仓库边界
 
-Commit:
+可以提交：
 
-- durable Markdown documentation
-- reusable scripts
-- sanitized examples and templates
-- approved OpenSpec and research artifacts
+- 可持续维护的 Markdown 文档
+- 可复用脚本
+- 脱敏示例和模板
+- 已确认的 OpenSpec 与 research 产物
 
-Keep local only:
+只留本地：
 
-- secrets, tokens, private keys, cookies
+- 密钥、token、私钥、cookie
 - `.local-ssh/`
 - `.codex-home/`
 - `.codex-local/`
-- machine-specific configs with absolute paths
-- generated caches, cloned tool sources, and temporary artifacts
+- 含本机绝对路径的配置
+- 缓存、克隆工具源码、临时产物
 
-## Customer Service Domain Guardrails
+## 客服领域约束
 
-For any customer-facing behavior change, the spec should state:
+任何面向客户的行为变化，在规格里都应至少说明：
 
-- user or operator role
-- channel or entry point
-- trigger and inputs
-- knowledge source or grounding source
-- response boundaries and refusal rules
-- escalation or handoff conditions
-- logging, replay, or evaluation evidence
+- 用户或操作角色
+- 渠道或入口
+- 触发条件与输入
+- 知识来源或依据来源
+- 回复边界与拒答规则
+- 升级或转人工条件
+- 日志、回放或评估证据

@@ -1,15 +1,15 @@
-# OpenSpec Specs
+# OpenSpec 稳定规格区
 
-`openspec/specs/` stores the current stable behavior of the system.
+`openspec/specs/` 用于保存当前已经稳定生效的系统规格。
 
-Use this directory for:
+适合放在这里的内容：
 
-- accepted product behavior
-- durable workflow contracts
-- stable interface or domain rules
+- 已确认的产品行为
+- 长期有效的流程合同
+- 稳定的接口或领域规则
 
-Do not use this directory for:
+不应放在这里的内容：
 
-- brainstorming notes
-- temporary plans
-- task checklists for unfinished work
+- brainstorming 笔记
+- 临时计划
+- 未完成工作的任务清单

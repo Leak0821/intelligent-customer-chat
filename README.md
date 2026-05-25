@@ -30,6 +30,7 @@
 - [docs/project-scope.md](./docs/project-scope.md)：第一阶段业务边界与范围定义
 - [docs/repository-boundaries.md](./docs/repository-boundaries.md)：哪些内容可以入库，哪些只留本地
 - [research/README.md](./research/README.md)：探索材料放置位置
+- [research/minimal-email-agent-loop.md](./research/minimal-email-agent-loop.md)：邮件 agent 第一条最小闭环链路研究
 - [openspec/changes/README.md](./openspec/changes/README.md)：进行中的正式变更合同
 - [openspec/specs/README.md](./openspec/specs/README.md)：稳定规格沉淀位置
 
