@@ -84,7 +84,7 @@ class WorkflowRunServiceTest {
         assertThat(run.getStatus()).isEqualTo(WorkflowStatus.COMPLETED);
         assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
         assertThat(draft.getSendReadiness()).isEqualTo(SendReadiness.PENDING_REVIEW);
-        assertThat(draft.getBody()).contains("pre-sales reply direction");
+        assertThat(draft.getBody()).contains("first recommendation direction");
     }
 
     @Test
