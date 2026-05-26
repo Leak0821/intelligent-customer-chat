@@ -1,12 +1,12 @@
 # 智能客服项目
 
-这是一个用于练手的智能客服 Demo 仓库。
+这是一个面向邮件场景的智能客服 Agent 项目仓库。
 
 ## 项目说明
 
-- 当前仅用于学习、实验和版本管理
-- 暂不引入固定技术栈或框架
-- 目标是先把仓库结构、协作流程和迭代记录跑通
+- 当前以文档先行方式收敛第一阶段规范
+- 第一阶段实现基线已收敛为 `Java + Spring Boot + Spring AI`
+- 当前目标是先把“可审、可拆、可实现”的规范合同沉淀完整
 
 ## 重要提醒
 
@@ -18,13 +18,40 @@
 
 - 已完成 Git 仓库初始化并关联 GitHub
 - 已建立基础的版本管理流程
-- 目前没有正式业务代码
+- 已初始化一版 AI 协作规范和文档骨架
+- 目前仍未开始正式业务代码实现
+- 第一阶段 OpenSpec 与研究合同已基本收敛，下一步适合进入设计审查
+
+## 文档入口
+
+- [AGENTS.md](./AGENTS.md)：仓库级 Agent 执行合同
+- [docs/agent-playbook.md](./docs/agent-playbook.md)：项目级最佳实践初稿
+- [docs/ai-workflow.md](./docs/ai-workflow.md)：`oh-my-codex + superpowers + OpenSpec + gstack` 工作流标准
+- [docs/engineering-standards.md](./docs/engineering-standards.md)：与技术栈无关的实现原则
+- [docs/project-scope.md](./docs/project-scope.md)：第一阶段业务边界与范围定义
+- [docs/repository-boundaries.md](./docs/repository-boundaries.md)：哪些内容可以入库，哪些只留本地
+- [research/README.md](./research/README.md)：探索材料放置位置
+- [research/minimal-email-agent-loop.md](./research/minimal-email-agent-loop.md)：邮件 agent 第一条最小闭环链路研究
+- [research/first-stage-technical-decisions.md](./research/first-stage-technical-decisions.md)：第一阶段技术设计决策清单
+- [research/first-stage-sub-intent-seed-list.md](./research/first-stage-sub-intent-seed-list.md)：第一阶段首批子意图种子清单
+- [research/first-stage-implementation-skeleton.md](./research/first-stage-implementation-skeleton.md)：第一阶段 Java/Spring AI 实现骨架设计
+- [openspec/changes/README.md](./openspec/changes/README.md)：进行中的正式变更合同
+- [openspec/specs/README.md](./openspec/specs/README.md)：稳定规格沉淀位置
+
+## 当前建议审阅入口
+
+- [openspec/changes/email-agent-minimal-loop/review-guide.md](./openspec/changes/email-agent-minimal-loop/review-guide.md)：当前第一阶段规范的统一审阅入口
+- [openspec/changes/email-agent-minimal-loop/spec.md](./openspec/changes/email-agent-minimal-loop/spec.md)：第一阶段正式规格
+- [openspec/changes/email-agent-minimal-loop/design.md](./openspec/changes/email-agent-minimal-loop/design.md)：第一阶段设计约束与技术收敛方向
+- [openspec/changes/email-agent-minimal-loop/tasks.md](./openspec/changes/email-agent-minimal-loop/tasks.md)：当前已收敛任务与建议实现切片
+- [research/first-stage-implementation-skeleton.md](./research/first-stage-implementation-skeleton.md)：审查通过后进入编码前的实现骨架参考
+- [research/first-stage-slice-1-coding-plan.md](./research/first-stage-slice-1-coding-plan.md)：切片 1 的具体编码起步计划
 
 ## 后续计划
 
-- 再确定技术栈
-- 再补充目录结构
-- 再逐步实现智能客服相关能力
+- 先完成一次规范审查，确认当前第一阶段合同
+- 再按实现切片搭建主流程骨架
+- 再逐步补齐邮件接入、意图层、业务查询、RAG 与审核链路
 
 ## 本地环境
 
