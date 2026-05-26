@@ -45,6 +45,9 @@ final class IntentNormalizationHeuristics {
         if (containsAny(lowerCaseRequest, "tracking", "where is my order")) {
             subIntentCandidates.add("logistics_tracking");
         }
+        if (containsAny(lowerCaseRequest, "order status", "when will my order ship", "when will it ship", "processing order")) {
+            subIntentCandidates.add("order_status");
+        }
         if (containsAny(lowerCaseRequest, "refund", "return", "warranty")) {
             subIntentCandidates.add("after_sales_policy");
         }

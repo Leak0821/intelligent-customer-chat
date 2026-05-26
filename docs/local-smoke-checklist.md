@@ -186,3 +186,9 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 ```bash
 ./scripts/workflow-queues-smoke.sh
 ```
+
+如果要快速验证“追问 / 人工审核 / 阻断”三类兜底路径，可执行：
+
+```bash
+./scripts/fallback-paths-smoke.sh
+```

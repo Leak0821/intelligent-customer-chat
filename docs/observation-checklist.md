@@ -97,6 +97,9 @@
 
 1. `GET /api/workflows/evaluations/recent`
 2. `GET /api/workflows/{runId}/evaluation`
+3. `POST /api/workflows/demo/scenarios/after-sales-missing-id?mode=analysis`
+4. `POST /api/workflows/demo/scenarios/after-sales-manual-review?mode=analysis`
+5. `POST /api/workflows/demo/scenarios/system-blocked-demo?mode=replay`
 
 重点观察：
 
@@ -104,6 +107,7 @@
 - 是否有 `follow_up_needed`
 - 是否有 `retry_pending`
 - 是否有 `business_conflict`
+- blocked 样例的 `run.status` 是否为 `BLOCKED`
 
 ## 8. 快速判断一句话
 

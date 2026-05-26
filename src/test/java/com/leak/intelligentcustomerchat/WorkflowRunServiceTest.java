@@ -108,4 +108,44 @@ class WorkflowRunServiceTest {
         assertThat(replay.dispatches()).isEmpty();
         assertThat(replay.reviews()).isEmpty();
     }
+
+    @Test
+    void shouldGenerateHumanReviewDraftForHighRiskAfterSalesMail() {
+        InboundMail mail = new InboundMail(
+                "msg-human-review-1",
+                "thread-human-review-1",
+                "buyer@example.com",
+                "Need refund and compensation",
+                "My order number is ABCD1234 and I want a refund and compensation for the shipping delay.",
+                OffsetDateTime.now()
+        );
+
+        WorkflowRun run = mailIngestionService.process(mail);
+        ReplyDraft draft = workflowRunService.findDraft(run.getRunId()).orElseThrow();
+
+        assertThat(run.getStatus()).isEqualTo(WorkflowStatus.COMPLETED);
+        assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.HUMAN_REVIEW_REQUIRED);
+        assertThat(draft.getSendReadiness()).isEqualTo(SendReadiness.PENDING_REVIEW);
+        assertThat(draft.getBody()).contains("specialist is checking the case");
+    }
+
+    @Test
+    void shouldBlockWorkflowWhenDemoFaultScenarioIsTriggered() {
+        InboundMail mail = new InboundMail(
+                "demo-blocked-runtime-001",
+                "thread-blocked-1",
+                "customer@example.com",
+                "Demo blocked workflow scenario",
+                "This built-in scenario is used only to demonstrate the blocked workflow path.",
+                OffsetDateTime.now()
+        );
+
+        WorkflowRun run = mailIngestionService.process(mail);
+
+        assertThat(run.getStatus()).isEqualTo(WorkflowStatus.BLOCKED);
+        assertThat(run.getStage()).isEqualTo(WorkflowStage.BLOCKED);
+        assertThat(run.getStatusReason()).contains("demo blocked scenario triggered");
+        assertThat(workflowRunService.findDraft(run.getRunId())).isEmpty();
+        assertThat(workflowRunService.findReplay(run.getRunId())).isPresent();
+    }
 }

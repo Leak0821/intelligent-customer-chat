@@ -1,0 +1,7 @@
+{
+  "messageId": "demo-pre-sales-shipping-stock-001",
+  "threadId": "demo-thread-pre-sales-shipping-stock-001",
+  "from": "customer@example.com",
+  "subject": "Stock and shipping question",
+  "body": "Hi, I want to know whether this product is in stock and how long shipping to Germany usually takes."
+}

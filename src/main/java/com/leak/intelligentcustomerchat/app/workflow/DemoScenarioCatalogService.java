@@ -169,6 +169,41 @@ public class DemoScenarioCatalogService {
                             "客户咨询产品推荐方向，验证售前意图识别、知识召回和推荐草稿生成。"
                     ),
                     new DemoScenarioMetadata(
+                            "pre-sales-comparison",
+                            "售前对比样例",
+                            "PRE_SALES",
+                            "PRE_SALES_COMPARISON",
+                            "客户咨询两个产品方向的差异，验证对比说明与知识召回。"
+                    ),
+                    new DemoScenarioMetadata(
+                            "pre-sales-general-inquiry",
+                            "售前基础功能咨询样例",
+                            "PRE_SALES",
+                            "PRE_SALES_GENERAL_INQUIRY",
+                            "客户咨询基础功能与使用方式，验证售前 general inquiry 路由与回复。"
+                    ),
+                    new DemoScenarioMetadata(
+                            "pre-sales-shipping-stock",
+                            "售前库存发货样例",
+                            "PRE_SALES",
+                            "PRE_SALES_INVENTORY_OR_SHIPPING",
+                            "客户咨询库存和跨境发货时效，验证 inventory_or_shipping 子意图。"
+                    ),
+                    new DemoScenarioMetadata(
+                            "after-sales-order-status",
+                            "售后订单状态样例",
+                            "AFTER_SALES",
+                            "AFTER_SALES_ORDER_STATUS",
+                            "客户提供订单号并询问当前订单状态，验证 order_status 子意图和订单 facts。"
+                    ),
+                    new DemoScenarioMetadata(
+                            "after-sales-manual-review",
+                            "售后人工审核样例",
+                            "AFTER_SALES",
+                            "AFTER_SALES_MANUAL_REVIEW",
+                            "客户要求退款与赔付，验证高风险请求进入人工审核。"
+                    ),
+                    new DemoScenarioMetadata(
                             "after-sales-logistics",
                             "售后物流查询样例",
                             "AFTER_SALES",
@@ -188,6 +223,13 @@ public class DemoScenarioCatalogService {
                             "AFTER_SALES",
                             "AFTER_SALES_MISSING_IDENTIFIER",
                             "客户表达售后诉求但缺少订单号或物流号，验证补充追问链路。"
+                    ),
+                    new DemoScenarioMetadata(
+                            "system-blocked-demo",
+                            "系统阻断样例",
+                            "SYSTEM",
+                            "BLOCKED_DEMO",
+                            "仅用于本地演示系统级故障进入 BLOCKED 状态，不代表真实业务子意图。"
                     )
             );
         }

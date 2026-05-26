@@ -41,6 +41,7 @@ public class WorkflowStageExecutor {
     private final WorkflowRunRepository workflowRunRepository;
     private final WorkflowEventRecorder workflowEventRecorder;
     private final WorkflowProperties workflowProperties;
+    private final WorkflowDemoFaultService workflowDemoFaultService;
 
     public WorkflowStageExecutor(MailCleaner mailCleaner,
                                  IntentNormalizationService intentNormalizationService,
@@ -53,7 +54,8 @@ public class WorkflowStageExecutor {
                                  ReplyDraftRepository replyDraftRepository,
                                  WorkflowRunRepository workflowRunRepository,
                                  WorkflowEventRecorder workflowEventRecorder,
-                                 WorkflowProperties workflowProperties) {
+                                 WorkflowProperties workflowProperties,
+                                 WorkflowDemoFaultService workflowDemoFaultService) {
         this.mailCleaner = mailCleaner;
         this.intentNormalizationService = intentNormalizationService;
         this.intentRoutingService = intentRoutingService;
@@ -66,12 +68,14 @@ public class WorkflowStageExecutor {
         this.workflowRunRepository = workflowRunRepository;
         this.workflowEventRecorder = workflowEventRecorder;
         this.workflowProperties = workflowProperties;
+        this.workflowDemoFaultService = workflowDemoFaultService;
     }
 
     public WorkflowRun execute(WorkflowRun run, InboundMail inboundMail) {
         try {
             InboundMail cleanedMail = mailCleaner.clean(inboundMail);
             advance(run, WorkflowStage.MAIL_CLEANED, "mail cleaned, body length=" + cleanedMail.rawBody().length());
+            workflowDemoFaultService.failIfNeeded(cleanedMail);
 
             // 关键节点先用占位实现串起完整状态机，后续可以逐个替换成真实 AI、RAG 和业务查询能力。
             IntentNormalizationResult normalizationResult = intentNormalizationService.normalize(cleanedMail);
