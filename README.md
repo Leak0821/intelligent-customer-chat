@@ -111,6 +111,8 @@ mvn -Dspring-boot.run.profiles=local spring-boot:run
 - [docs/interview-demo-walkthrough.md](./docs/interview-demo-walkthrough.md)
 - [docs/current-delivery-status.md](./docs/current-delivery-status.md)
 - [docs/integration-run-record-template.md](./docs/integration-run-record-template.md)
+- [docs/sample-integration-run-record.md](./docs/sample-integration-run-record.md)
+- [docs/observation-checklist.md](./docs/observation-checklist.md)
 
 也可以直接跑脚本：
 
