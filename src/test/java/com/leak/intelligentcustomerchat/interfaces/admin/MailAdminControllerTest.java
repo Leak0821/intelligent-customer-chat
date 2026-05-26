@@ -7,6 +7,7 @@ import com.leak.intelligentcustomerchat.app.mail.MailReceiptStatsView;
 import com.leak.intelligentcustomerchat.domain.mail.MailPollingResult;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceipt;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceiptStatus;
+import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
@@ -84,5 +85,36 @@ class MailAdminControllerTest {
                 "Need help",
                 "body"
         ))).isEqualTo(receipt);
+    }
+
+    @Test
+    void shouldExposeReceiptDetailsAndProcessSpecificReceipt() {
+        MailIngestionService mailIngestionService = mock(MailIngestionService.class);
+        MailOpsOverviewService mailOpsOverviewService = mock(MailOpsOverviewService.class);
+        MailReceipt receipt = MailReceipt.restore(
+                "receipt-2",
+                "manual-ingestion",
+                "manual",
+                2L,
+                "msg-2",
+                "thread-2",
+                "buyer@example.com",
+                "Queued help",
+                "body",
+                OffsetDateTime.now(),
+                MailReceiptStatus.QUEUED,
+                null,
+                null,
+                OffsetDateTime.now(),
+                OffsetDateTime.now()
+        );
+        WorkflowRun run = WorkflowRun.start("msg-2", "thread-2");
+        when(mailIngestionService.findReceipt("msg-2")).thenReturn(receipt);
+        when(mailIngestionService.processReceiptByMessageId("msg-2")).thenReturn(run);
+
+        MailAdminController controller = new MailAdminController(mailIngestionService, mailOpsOverviewService);
+
+        assertThat(controller.getReceipt("msg-2")).isEqualTo(receipt);
+        assertThat(controller.processReceipt("msg-2")).isEqualTo(run);
     }
 }

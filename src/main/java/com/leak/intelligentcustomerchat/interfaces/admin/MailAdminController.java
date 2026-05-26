@@ -6,6 +6,7 @@ import com.leak.intelligentcustomerchat.app.mail.MailOpsOverviewView;
 import com.leak.intelligentcustomerchat.domain.mail.MailPollingResult;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceipt;
+import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -62,6 +63,16 @@ public class MailAdminController {
     @PostMapping("/receipts/{messageId}/requeue")
     public MailReceipt requeue(@PathVariable String messageId) {
         return mailIngestionService.requeueReceipt(messageId);
+    }
+
+    @GetMapping("/receipts/{messageId}")
+    public MailReceipt getReceipt(@PathVariable String messageId) {
+        return mailIngestionService.findReceipt(messageId);
+    }
+
+    @PostMapping("/receipts/{messageId}/process")
+    public WorkflowRun processReceipt(@PathVariable String messageId) {
+        return mailIngestionService.processReceiptByMessageId(messageId);
     }
 
     @GetMapping("/receipts")

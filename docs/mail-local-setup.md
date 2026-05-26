@@ -130,6 +130,10 @@ APP_MAIL_OUTBOUND_STARTTLS_ENABLED=true
   - 拉取并直接处理，适合本地快速验证
 - `POST /api/mail/receipts/{messageId}/requeue`
   - 对失败或已处理邮件重新入队
+- `GET /api/mail/receipts/{messageId}`
+  - 查看某一封邮件当前的收件状态
+- `POST /api/mail/receipts/{messageId}/process`
+  - 只处理指定 `messageId` 的那一封邮件，适合异步联调
 - `GET /api/mail/receipts`
   - 查看最近收件记录
 

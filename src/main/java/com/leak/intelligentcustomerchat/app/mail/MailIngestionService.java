@@ -116,9 +116,27 @@ public class MailIngestionService {
         );
     }
 
-    public MailReceipt requeueReceipt(String messageId) {
-        MailReceipt receipt = mailReceiptRepository.findByMessageId(messageId)
+    public MailReceipt findReceipt(String messageId) {
+        return mailReceiptRepository.findByMessageId(messageId)
                 .orElseThrow(() -> new NoSuchElementException("mail receipt not found for messageId=" + messageId));
+    }
+
+    public WorkflowRun processReceiptByMessageId(String messageId) {
+        MailReceipt receipt = findReceipt(messageId);
+        if (receipt.getStatus() == com.leak.intelligentcustomerchat.domain.mail.MailReceiptStatus.PROCESSED) {
+            if (receipt.getWorkflowRunId() == null || receipt.getWorkflowRunId().isBlank()) {
+                throw new IllegalStateException("mail receipt already processed but workflowRunId is missing, messageId=" + messageId);
+            }
+            return workflowRunService.findRun(receipt.getWorkflowRunId())
+                    .orElseThrow(() -> new NoSuchElementException("workflow run not found for runId=" + receipt.getWorkflowRunId()));
+        }
+        receipt.markQueued();
+        mailReceiptRepository.save(receipt);
+        return processReceipt(receipt);
+    }
+
+    public MailReceipt requeueReceipt(String messageId) {
+        MailReceipt receipt = findReceipt(messageId);
         receipt.markQueued();
         return mailReceiptRepository.save(receipt);
     }
