@@ -24,16 +24,21 @@ class DefaultIntentNormalizationServiceTest {
                 new StubLlmClient(Optional.empty()),
                 new ObjectMapper()
         );
-
-        IntentNormalizationResult result = service.normalize(mail(
+        IntentNormalizationDiagnostics diagnostics = service.diagnose(mail(
                 "Need tracking help",
                 "Where is my order? I still have not received it."
         ));
+
+        IntentNormalizationResult result = diagnostics.finalResult();
 
         assertThat(result.sceneCandidates()).containsExactly(CustomerScene.AFTER_SALES);
         assertThat(result.subIntentCandidates()).contains("logistics_tracking");
         assertThat(result.missingEntities()).contains("order_id_or_tracking_no");
         assertThat(result.disposition()).isEqualTo(ProcessingDisposition.FOLLOW_UP);
+        assertThat(diagnostics.normalizationSource()).isEqualTo("heuristic_fallback");
+        assertThat(diagnostics.llmAttempted()).isFalse();
+        assertThat(diagnostics.llmResponseAccepted()).isFalse();
+        assertThat(diagnostics.fallbackReason()).isEqualTo("llm_unavailable");
     }
 
     @Test
@@ -88,14 +93,37 @@ class DefaultIntentNormalizationServiceTest {
                 new ObjectMapper()
         );
 
-        IntentNormalizationResult result = service.normalize(mail(
+        IntentNormalizationDiagnostics diagnostics = service.diagnose(mail(
                 "Tracking question",
                 "Can you tell me where my order is now?"
         ));
+        IntentNormalizationResult result = diagnostics.finalResult();
 
         assertThat(result.requiredEntities()).contains("order_id_or_tracking_no");
         assertThat(result.missingEntities()).contains("order_id_or_tracking_no");
         assertThat(result.disposition()).isEqualTo(ProcessingDisposition.FOLLOW_UP);
+        assertThat(diagnostics.guardrailActions()).contains("enforce_order_id_for_after_sales");
+        assertThat(diagnostics.normalizationSource()).isEqualTo("llm_with_guardrails");
+    }
+
+    @Test
+    void shouldFallbackToHeuristicsWhenLlmResponseIsNotValidJson() {
+        DefaultIntentNormalizationService service = new DefaultIntentNormalizationService(
+                promptConfigService(),
+                new StubLlmClient(Optional.of("not-json")),
+                new ObjectMapper()
+        );
+
+        IntentNormalizationDiagnostics diagnostics = service.diagnose(mail(
+                "Tracking question",
+                "Can you tell me where my order is now?"
+        ));
+
+        assertThat(diagnostics.finalResult()).isEqualTo(diagnostics.heuristicBaseline());
+        assertThat(diagnostics.normalizationSource()).isEqualTo("heuristic_fallback");
+        assertThat(diagnostics.llmAttempted()).isTrue();
+        assertThat(diagnostics.llmResponseAccepted()).isFalse();
+        assertThat(diagnostics.fallbackReason()).isEqualTo("llm_response_invalid");
     }
 
     @Test

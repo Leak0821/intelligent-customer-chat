@@ -5,7 +5,9 @@ import com.leak.intelligentcustomerchat.app.config.IntentConfigService;
 import com.leak.intelligentcustomerchat.app.config.RetrievalConfigService;
 import com.leak.intelligentcustomerchat.app.context.ContextLoadingService;
 import com.leak.intelligentcustomerchat.app.intent.IntentHeuristicPreviewService;
+import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationDiagnostics;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationService;
+import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationTraceService;
 import com.leak.intelligentcustomerchat.app.intent.IntentRoutingService;
 import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrieveService;
 import com.leak.intelligentcustomerchat.app.mail.MailCleaner;
@@ -39,6 +41,7 @@ public class WorkflowAnalysisService {
     private final MailCleaner mailCleaner;
     private final IntentHeuristicPreviewService intentHeuristicPreviewService;
     private final IntentNormalizationService intentNormalizationService;
+    private final ObjectProvider<IntentNormalizationTraceService> intentNormalizationTraceServiceProvider;
     private final IntentRoutingService intentRoutingService;
     private final ContextLoadingService contextLoadingService;
     private final BusinessFactService businessFactService;
@@ -55,6 +58,7 @@ public class WorkflowAnalysisService {
     public WorkflowAnalysisService(MailCleaner mailCleaner,
                                    IntentHeuristicPreviewService intentHeuristicPreviewService,
                                    IntentNormalizationService intentNormalizationService,
+                                   ObjectProvider<IntentNormalizationTraceService> intentNormalizationTraceServiceProvider,
                                    IntentRoutingService intentRoutingService,
                                    ContextLoadingService contextLoadingService,
                                    BusinessFactService businessFactService,
@@ -70,6 +74,7 @@ public class WorkflowAnalysisService {
         this.mailCleaner = mailCleaner;
         this.intentHeuristicPreviewService = intentHeuristicPreviewService;
         this.intentNormalizationService = intentNormalizationService;
+        this.intentNormalizationTraceServiceProvider = intentNormalizationTraceServiceProvider;
         this.intentRoutingService = intentRoutingService;
         this.contextLoadingService = contextLoadingService;
         this.businessFactService = businessFactService;
@@ -86,8 +91,9 @@ public class WorkflowAnalysisService {
 
     public WorkflowAnalysisView analyze(InboundMail inboundMail) {
         InboundMail cleanedMail = mailCleaner.clean(inboundMail);
-        IntentNormalizationResult heuristicBaseline = intentHeuristicPreviewService.preview(cleanedMail);
-        IntentNormalizationResult normalizationResult = intentNormalizationService.normalize(cleanedMail);
+        IntentNormalizationDiagnostics normalizationDiagnostics = diagnoseIntent(cleanedMail);
+        IntentNormalizationResult heuristicBaseline = normalizationDiagnostics.heuristicBaseline();
+        IntentNormalizationResult normalizationResult = normalizationDiagnostics.finalResult();
         IntentRouteResult routeResult = intentRoutingService.route(normalizationResult);
         ContextSnapshot contextSnapshot = contextLoadingService.load(cleanedMail, routeResult);
         BusinessFactResult businessFactResult = businessFactService.loadFacts(cleanedMail, normalizationResult, routeResult, contextSnapshot);
@@ -115,7 +121,12 @@ public class WorkflowAnalysisService {
                 new WorkflowIntentDiagnosticsView(
                         heuristicBaseline,
                         intentConfigService.currentIntentCatalog(),
-                        !heuristicBaseline.equals(normalizationResult)
+                        !heuristicBaseline.equals(normalizationResult),
+                        normalizationDiagnostics.normalizationSource(),
+                        normalizationDiagnostics.llmAttempted(),
+                        normalizationDiagnostics.llmResponseAccepted(),
+                        normalizationDiagnostics.fallbackReason(),
+                        normalizationDiagnostics.guardrailActions()
                 ),
                 normalizationResult,
                 routeResult,
@@ -126,6 +137,24 @@ public class WorkflowAnalysisService {
                 knowledgeRetrieveResult,
                 draft,
                 reviewDecision
+        );
+    }
+
+    private IntentNormalizationDiagnostics diagnoseIntent(InboundMail cleanedMail) {
+        IntentNormalizationTraceService traceService = intentNormalizationTraceServiceProvider.getIfAvailable();
+        if (traceService != null) {
+            return traceService.diagnose(cleanedMail);
+        }
+        IntentNormalizationResult heuristicBaseline = intentHeuristicPreviewService.preview(cleanedMail);
+        IntentNormalizationResult finalResult = intentNormalizationService.normalize(cleanedMail);
+        return new IntentNormalizationDiagnostics(
+                heuristicBaseline,
+                finalResult,
+                "unknown",
+                false,
+                false,
+                "trace_service_unavailable",
+                List.of()
         );
     }
 

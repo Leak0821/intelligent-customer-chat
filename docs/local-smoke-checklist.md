@@ -91,6 +91,9 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
 
 - `intentDiagnostics.heuristicBaseline`
 - `intentDiagnostics.normalizationChangedByModel`
+- `intentDiagnostics.normalizationSource`
+- `intentDiagnostics.fallbackReason`
+- `intentDiagnostics.guardrailActions`
 - `contextDiagnostics.totalMessageCount`
 - `contextDiagnostics.latestPersistedSummary`
 - `knowledgeDiagnostics.retrievalQuery`

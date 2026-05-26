@@ -5,7 +5,9 @@ import com.leak.intelligentcustomerchat.app.config.IntentConfigService;
 import com.leak.intelligentcustomerchat.app.config.RetrievalConfigService;
 import com.leak.intelligentcustomerchat.app.context.ContextLoadingService;
 import com.leak.intelligentcustomerchat.app.intent.IntentHeuristicPreviewService;
+import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationDiagnostics;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationService;
+import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationTraceService;
 import com.leak.intelligentcustomerchat.app.intent.IntentRoutingService;
 import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrieveService;
 import com.leak.intelligentcustomerchat.app.mail.MailCleaner;
@@ -102,6 +104,15 @@ class WorkflowAnalysisServiceTest {
                 mail -> cleanedMail,
                 new IntentHeuristicPreviewService(),
                 mail -> normalizationResult,
+                new SingleObjectProvider<IntentNormalizationTraceService>(mail -> new IntentNormalizationDiagnostics(
+                        normalizationResult,
+                        normalizationResult,
+                        "llm_with_guardrails",
+                        true,
+                        true,
+                        null,
+                        List.of("enforce_order_id_for_after_sales")
+                )),
                 normalization -> routeResult,
                 (mail, route) -> contextSnapshot,
                 (mail, normalization, route, context) -> businessFactResult,
@@ -135,6 +146,10 @@ class WorkflowAnalysisServiceTest {
         assertThat(view.knowledgeRetrieveResult()).isEqualTo(knowledgeRetrieveResult);
         assertThat(view.draft()).isEqualTo(draft);
         assertThat(view.reviewDecision()).isEqualTo(reviewDecision);
+        assertThat(view.intentDiagnostics().normalizationSource()).isEqualTo("llm_with_guardrails");
+        assertThat(view.intentDiagnostics().llmAttempted()).isTrue();
+        assertThat(view.intentDiagnostics().llmResponseAccepted()).isTrue();
+        assertThat(view.intentDiagnostics().guardrailActions()).contains("enforce_order_id_for_after_sales");
         assertThat(view.intentDiagnostics().intentCatalog().afterSalesIntents()).contains("logistics_tracking");
         assertThat(view.intentDiagnostics().heuristicBaseline().sceneCandidates()).contains(CustomerScene.AFTER_SALES);
         assertThat(view.contextDiagnostics().totalMessageCount()).isEqualTo(4L);
