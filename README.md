@@ -109,6 +109,8 @@ mvn -Dspring-boot.run.profiles=local spring-boot:run
 - [docs/local-smoke-checklist.md](./docs/local-smoke-checklist.md)
 - [docs/mail-local-setup.md](./docs/mail-local-setup.md)
 - [docs/interview-demo-walkthrough.md](./docs/interview-demo-walkthrough.md)
+- [docs/current-delivery-status.md](./docs/current-delivery-status.md)
+- [docs/integration-run-record-template.md](./docs/integration-run-record-template.md)
 
 也可以直接跑脚本：
 
