@@ -1,0 +1,106 @@
+# 本地邮件接入说明
+
+这份说明只覆盖第一版本地联调，不代表最终生产配置。
+
+## 1. 先决定是否启用真实邮箱
+
+### 方案 A: 只跑 demo 闭环
+
+- 不启用真实 IMAP
+- 不启用真实 SMTP
+- 直接通过 `POST /api/workflows/demo` 跑邮件流程
+
+适合：
+
+- 先验证主链路
+- 先演示意图、知识、审核、派发和回放
+
+### 方案 B: 启用 IMAP 收信
+
+需要配置：
+
+- `APP_MAIL_ENABLED=true`
+- `APP_MAIL_SOURCE=imap`
+- `APP_MAIL_HOST`
+- `APP_MAIL_PORT`
+- `APP_MAIL_USERNAME`
+- `APP_MAIL_PASSWORD`
+- `APP_MAIL_FOLDER`
+
+可选：
+
+- `APP_MAIL_SSL_ENABLED=true`
+- `APP_MAIL_MARK_SEEN_AFTER_FETCH=false`
+- `APP_MAIL_POLLING_ENABLED=true`
+
+适合：
+
+- 真的想从收件箱拉邮件再推进后续流程
+
+### 方案 C: 启用 SMTP 发信
+
+需要配置：
+
+- `APP_MAIL_OUTBOUND_ENABLED=true`
+- `APP_MAIL_OUTBOUND_PROVIDER=smtp`
+- `APP_MAIL_OUTBOUND_HOST`
+- `APP_MAIL_OUTBOUND_PORT`
+- `APP_MAIL_OUTBOUND_FROM_ADDRESS`
+- `APP_MAIL_OUTBOUND_FROM_NAME`
+- `APP_MAIL_OUTBOUND_USERNAME`
+- `APP_MAIL_OUTBOUND_PASSWORD`
+
+适合：
+
+- 需要把最终回复真的发出去
+
+## 2. 建议的第一版组合
+
+第一版更建议：
+
+- 先用 demo 跑闭环
+- 先用 `noop` 发件器
+- 先把 IMAP 和 SMTP 当作后续联调开关
+
+原因：
+
+- 能先把审核、派发、回放跑起来
+- 不会一开始就被邮箱权限和收发副作用拖慢
+
+## 3. 如果后面要真接 IMAP
+
+建议先准备一组本地环境变量，不要直接写进主仓库配置。
+
+```bash
+APP_MAIL_ENABLED=true
+APP_MAIL_SOURCE=imap
+APP_MAIL_HOST=imap.example.com
+APP_MAIL_PORT=993
+APP_MAIL_USERNAME=...
+APP_MAIL_PASSWORD=...
+APP_MAIL_FOLDER=INBOX
+APP_MAIL_SSL_ENABLED=true
+APP_MAIL_POLLING_ENABLED=true
+```
+
+## 4. 如果后面要真发 SMTP
+
+```bash
+APP_MAIL_OUTBOUND_ENABLED=true
+APP_MAIL_OUTBOUND_PROVIDER=smtp
+APP_MAIL_OUTBOUND_FROM_ADDRESS=support@example.com
+APP_MAIL_OUTBOUND_FROM_NAME=intelligent-customer-chat
+APP_MAIL_OUTBOUND_HOST=smtp.example.com
+APP_MAIL_OUTBOUND_PORT=587
+APP_MAIL_OUTBOUND_USERNAME=...
+APP_MAIL_OUTBOUND_PASSWORD=...
+APP_MAIL_OUTBOUND_AUTH_ENABLED=true
+APP_MAIL_OUTBOUND_STARTTLS_ENABLED=true
+```
+
+## 5. 这版不建议马上做的事
+
+- 不建议先接多邮箱账号路由
+- 不建议先做复杂发件队列
+- 不建议先把收件、审稿、发件拆成很多微服务
+- 不建议在第一版就做高频实时推送

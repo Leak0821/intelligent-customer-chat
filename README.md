@@ -107,11 +107,18 @@ mvn -Dspring-boot.run.profiles=local spring-boot:run
 如果要做本地联调 smoke，先看这份清单：
 
 - [docs/local-smoke-checklist.md](./docs/local-smoke-checklist.md)
+- [docs/mail-local-setup.md](./docs/mail-local-setup.md)
 
 也可以直接跑脚本：
 
 ```bash
 ./scripts/local-smoke.sh after-sales
+```
+
+如果要验证发送闭环，再跑：
+
+```bash
+./scripts/send-lifecycle-smoke.sh
 ```
 
 如果要把运行时 prompt / intent / retrieval 配置切到本地 `Nacos`，仓库里已经带了脱敏样例配置和发布脚本：

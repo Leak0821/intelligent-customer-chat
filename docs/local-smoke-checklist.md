@@ -79,6 +79,17 @@ curl http://127.0.0.1:8080/api/workflows/<runId>/events
 curl http://127.0.0.1:8080/api/workflows/<runId>/draft
 ```
 
+4. 如果要验证发送闭环，再执行
+
+```bash
+curl -sS -X POST http://127.0.0.1:8080/api/workflows/<runId>/approve-send \
+  -H 'Content-Type: application/json' \
+  -d '{"reviewer":"smoke-bot","approvalNote":"approved by smoke checklist"}'
+curl -sS -X POST http://127.0.0.1:8080/api/workflows/<runId>/dispatch
+curl http://127.0.0.1:8080/api/workflows/<runId>/dispatches
+curl http://127.0.0.1:8080/api/workflows/<runId>/reviews
+```
+
 ### 3.2 售前样例
 
 1. 提交 demo 邮件
@@ -104,6 +115,7 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 - `analysis` 能返回 scene / subIntent / facts / knowledge / draft
 - `replay` 能看到事件、草稿、审核或派发信息
 - `knowledge` 和 `business` 接口能返回可读样本
+- 发送闭环可通过 `approve-send -> dispatch -> dispatches -> reviews` 跑通
 
 ## 5. 如果现场想快速排错
 
