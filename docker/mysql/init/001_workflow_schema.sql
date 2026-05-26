@@ -45,13 +45,18 @@ CREATE TABLE IF NOT EXISTS reply_dispatches (
     recipient VARCHAR(255) NOT NULL,
     subject VARCHAR(255) NOT NULL,
     body_snapshot TEXT NOT NULL,
+    attempt_count INT NOT NULL,
+    max_attempts INT NOT NULL,
     status VARCHAR(64) NOT NULL,
     provider_message_id VARCHAR(255) NULL,
     error_message VARCHAR(512) NULL,
+    last_attempt_at DATETIME(3) NULL,
+    next_retry_at DATETIME(3) NULL,
     created_at DATETIME(3) NOT NULL,
     updated_at DATETIME(3) NOT NULL,
     KEY idx_reply_dispatches_run_id_created_at (run_id, created_at),
-    KEY idx_reply_dispatches_draft_id_created_at (draft_id, created_at)
+    KEY idx_reply_dispatches_draft_id_created_at (draft_id, created_at),
+    KEY idx_reply_dispatches_status_next_retry_at (status, next_retry_at)
 );
 
 CREATE TABLE IF NOT EXISTS mail_receipts (

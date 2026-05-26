@@ -48,15 +48,20 @@ CREATE TABLE reply_dispatches (
     recipient VARCHAR(255) NOT NULL,
     subject VARCHAR(255) NOT NULL,
     body_snapshot CLOB NOT NULL,
+    attempt_count INT NOT NULL,
+    max_attempts INT NOT NULL,
     status VARCHAR(64) NOT NULL,
     provider_message_id VARCHAR(255),
     error_message VARCHAR(512),
+    last_attempt_at TIMESTAMP,
+    next_retry_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
 );
 
 CREATE INDEX idx_reply_dispatches_run_id_created_at ON reply_dispatches (run_id, created_at);
 CREATE INDEX idx_reply_dispatches_draft_id_created_at ON reply_dispatches (draft_id, created_at);
+CREATE INDEX idx_reply_dispatches_status_next_retry_at ON reply_dispatches (status, next_retry_at);
 
 CREATE TABLE mail_receipts (
     receipt_id VARCHAR(64) PRIMARY KEY,

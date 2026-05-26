@@ -1,6 +1,8 @@
 package com.leak.intelligentcustomerchat.interfaces.admin;
 
 import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
+import com.leak.intelligentcustomerchat.app.reply.DispatchRetryBatchResult;
+import com.leak.intelligentcustomerchat.app.reply.ReplyDispatchCompensationService;
 import com.leak.intelligentcustomerchat.app.reply.ReplySendLifecycleService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisView;
@@ -34,15 +36,18 @@ public class WorkflowDemoController {
     private final WorkflowRunService workflowRunService;
     private final WorkflowAnalysisService workflowAnalysisService;
     private final ReplySendLifecycleService replySendLifecycleService;
+    private final ReplyDispatchCompensationService replyDispatchCompensationService;
 
     public WorkflowDemoController(MailIngestionService mailIngestionService,
                                   WorkflowRunService workflowRunService,
                                   WorkflowAnalysisService workflowAnalysisService,
-                                  ReplySendLifecycleService replySendLifecycleService) {
+                                  ReplySendLifecycleService replySendLifecycleService,
+                                  ReplyDispatchCompensationService replyDispatchCompensationService) {
         this.mailIngestionService = mailIngestionService;
         this.workflowRunService = workflowRunService;
         this.workflowAnalysisService = workflowAnalysisService;
         this.replySendLifecycleService = replySendLifecycleService;
+        this.replyDispatchCompensationService = replyDispatchCompensationService;
     }
 
     @PostMapping("/demo")
@@ -108,6 +113,16 @@ public class WorkflowDemoController {
     @GetMapping("/{runId}/dispatches")
     public List<ReplyDispatch> listDispatches(@PathVariable String runId) {
         return replySendLifecycleService.findDispatches(runId);
+    }
+
+    @PostMapping("/{runId}/retry-dispatch")
+    public ReplyDispatch retryDispatch(@PathVariable String runId) {
+        return replyDispatchCompensationService.retry(runId);
+    }
+
+    @PostMapping("/dispatches/retry-due")
+    public DispatchRetryBatchResult retryDueDispatches() {
+        return replyDispatchCompensationService.retryDueDispatches();
     }
 
     public record DemoMailRequest(

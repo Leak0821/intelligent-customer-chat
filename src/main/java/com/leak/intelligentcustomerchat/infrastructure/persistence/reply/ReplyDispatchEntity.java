@@ -26,6 +26,12 @@ public class ReplyDispatchEntity {
     @TableField("body_snapshot")
     private String bodySnapshot;
 
+    @TableField("attempt_count")
+    private Integer attemptCount;
+
+    @TableField("max_attempts")
+    private Integer maxAttempts;
+
     @TableField("status")
     private String status;
 
@@ -34,6 +40,12 @@ public class ReplyDispatchEntity {
 
     @TableField("error_message")
     private String errorMessage;
+
+    @TableField("last_attempt_at")
+    private LocalDateTime lastAttemptAt;
+
+    @TableField("next_retry_at")
+    private LocalDateTime nextRetryAt;
 
     @TableField("created_at")
     private LocalDateTime createdAt;
@@ -89,6 +101,22 @@ public class ReplyDispatchEntity {
         this.bodySnapshot = bodySnapshot;
     }
 
+    public Integer getAttemptCount() {
+        return attemptCount;
+    }
+
+    public void setAttemptCount(Integer attemptCount) {
+        this.attemptCount = attemptCount;
+    }
+
+    public Integer getMaxAttempts() {
+        return maxAttempts;
+    }
+
+    public void setMaxAttempts(Integer maxAttempts) {
+        this.maxAttempts = maxAttempts;
+    }
+
     public String getStatus() {
         return status;
     }
@@ -111,6 +139,22 @@ public class ReplyDispatchEntity {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public LocalDateTime getLastAttemptAt() {
+        return lastAttemptAt;
+    }
+
+    public void setLastAttemptAt(LocalDateTime lastAttemptAt) {
+        this.lastAttemptAt = lastAttemptAt;
+    }
+
+    public LocalDateTime getNextRetryAt() {
+        return nextRetryAt;
+    }
+
+    public void setNextRetryAt(LocalDateTime nextRetryAt) {
+        this.nextRetryAt = nextRetryAt;
     }
 
     public LocalDateTime getCreatedAt() {

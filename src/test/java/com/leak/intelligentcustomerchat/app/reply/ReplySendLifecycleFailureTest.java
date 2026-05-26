@@ -55,11 +55,14 @@ class ReplySendLifecycleFailureTest {
         replySendLifecycleService.approveForSend(run.getRunId(), "approved in failure test");
         var dispatch = replySendLifecycleService.dispatch(run.getRunId());
 
-        assertThat(dispatch.getStatus()).isEqualTo(ReplyDispatchStatus.FAILED);
+        assertThat(dispatch.getStatus()).isEqualTo(ReplyDispatchStatus.RETRY_PENDING);
         assertThat(dispatch.getErrorMessage()).contains("smtp timeout");
+        assertThat(dispatch.getAttemptCount()).isEqualTo(1);
+        assertThat(dispatch.getNextRetryAt()).isNotNull();
 
         var persistedDraft = replyDraftRepository.findByRunId(run.getRunId()).orElseThrow();
         assertThat(persistedDraft.getSendReadiness()).isEqualTo(SendReadiness.READY_FOR_SEND);
+        assertThat(persistedDraft.getNextAction()).isEqualTo("await_dispatch_retry");
         assertThat(replyDispatchRepository.findByRunId(run.getRunId())).hasSize(1);
     }
 }

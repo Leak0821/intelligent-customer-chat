@@ -73,6 +73,15 @@ app:
       connection-timeout-millis: ${APP_MAIL_OUTBOUND_CONNECTION_TIMEOUT_MILLIS:5000}
       timeout-millis: ${APP_MAIL_OUTBOUND_TIMEOUT_MILLIS:5000}
       write-timeout-millis: ${APP_MAIL_OUTBOUND_WRITE_TIMEOUT_MILLIS:5000}
+    dispatch-retry:
+      enabled: ${APP_MAIL_DISPATCH_RETRY_ENABLED:true}
+      max-attempts: ${APP_MAIL_DISPATCH_RETRY_MAX_ATTEMPTS:3}
+      initial-delay-seconds: ${APP_MAIL_DISPATCH_RETRY_INITIAL_DELAY_SECONDS:60}
+      backoff-multiplier: ${APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER:2}
+      max-delay-seconds: ${APP_MAIL_DISPATCH_RETRY_MAX_DELAY_SECONDS:900}
+      batch-size: ${APP_MAIL_DISPATCH_RETRY_BATCH_SIZE:20}
+      local-scheduler-enabled: ${APP_MAIL_DISPATCH_RETRY_LOCAL_SCHEDULER_ENABLED:true}
+      local-fixed-delay-millis: ${APP_MAIL_DISPATCH_RETRY_LOCAL_FIXED_DELAY_MILLIS:60000}
   workflow:
     auto-complete-empty-chain: true
   context:

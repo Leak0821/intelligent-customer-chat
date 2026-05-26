@@ -51,6 +51,9 @@ class ReplySendLifecycleServiceTest {
         var dispatch = replySendLifecycleService.dispatch(run.getRunId());
         assertThat(dispatch.getStatus()).isEqualTo(ReplyDispatchStatus.SENT);
         assertThat(dispatch.getProviderMessageId()).startsWith("noop-");
+        assertThat(dispatch.getAttemptCount()).isEqualTo(1);
+        assertThat(dispatch.getMaxAttempts()).isEqualTo(3);
+        assertThat(dispatch.getNextRetryAt()).isNull();
 
         var persistedDraft = replyDraftRepository.findByRunId(run.getRunId()).orElseThrow();
         assertThat(persistedDraft.getSendReadiness()).isEqualTo(SendReadiness.HOLD);

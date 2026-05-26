@@ -21,9 +21,13 @@ final class ReplyDispatchEntityMapper {
         entity.setRecipient(dispatch.getRecipient());
         entity.setSubject(dispatch.getSubject());
         entity.setBodySnapshot(dispatch.getBodySnapshot());
+        entity.setAttemptCount(dispatch.getAttemptCount());
+        entity.setMaxAttempts(dispatch.getMaxAttempts());
         entity.setStatus(dispatch.getStatus().name());
         entity.setProviderMessageId(dispatch.getProviderMessageId());
         entity.setErrorMessage(dispatch.getErrorMessage());
+        entity.setLastAttemptAt(toLocalDateTime(dispatch.getLastAttemptAt()));
+        entity.setNextRetryAt(toLocalDateTime(dispatch.getNextRetryAt()));
         entity.setCreatedAt(toLocalDateTime(dispatch.getCreatedAt()));
         entity.setUpdatedAt(toLocalDateTime(dispatch.getUpdatedAt()));
         return entity;
@@ -37,19 +41,29 @@ final class ReplyDispatchEntityMapper {
                 entity.getRecipient(),
                 entity.getSubject(),
                 entity.getBodySnapshot(),
+                entity.getAttemptCount(),
+                entity.getMaxAttempts(),
                 ReplyDispatchStatus.valueOf(entity.getStatus()),
                 entity.getProviderMessageId(),
                 entity.getErrorMessage(),
+                toOffsetDateTime(entity.getLastAttemptAt()),
+                toOffsetDateTime(entity.getNextRetryAt()),
                 toOffsetDateTime(entity.getCreatedAt()),
                 toOffsetDateTime(entity.getUpdatedAt())
         );
     }
 
     private static LocalDateTime toLocalDateTime(OffsetDateTime value) {
+        if (value == null) {
+            return null;
+        }
         return value.withOffsetSameInstant(STORAGE_ZONE_OFFSET).toLocalDateTime();
     }
 
     private static OffsetDateTime toOffsetDateTime(LocalDateTime value) {
+        if (value == null) {
+            return null;
+        }
         return value.atOffset(STORAGE_ZONE_OFFSET);
     }
 }

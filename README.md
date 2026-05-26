@@ -110,9 +110,14 @@ APP_MAIL_OUTBOUND_PASSWORD=your-password
 APP_MAIL_OUTBOUND_AUTH_ENABLED=true
 APP_MAIL_OUTBOUND_STARTTLS_ENABLED=true
 APP_MAIL_OUTBOUND_SSL_ENABLED=false
+APP_MAIL_DISPATCH_RETRY_ENABLED=true
+APP_MAIL_DISPATCH_RETRY_MAX_ATTEMPTS=3
+APP_MAIL_DISPATCH_RETRY_INITIAL_DELAY_SECONDS=60
+APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 ```
 
 默认仍然是 `noop` 发件器，目的是先保留完整发送状态机，同时避免本地开发或演示时误发真实邮件。
+发送失败后默认会进入“待重试”状态，并通过本地定时器或 `XXL-JOB` 补偿入口继续推进；如果重试次数耗尽，则改为人工跟进状态。
 
 ## 本地演示接口
 
@@ -124,6 +129,8 @@ APP_MAIL_OUTBOUND_SSL_ENABLED=false
 - `POST /api/workflows/{runId}/approve-send`：把草稿从待审核推进到可发送
 - `POST /api/workflows/{runId}/dispatch`：通过 no-op 发件适配层模拟发送
 - `GET /api/workflows/{runId}/dispatches`：查看该链路的发送记录
+- `POST /api/workflows/{runId}/retry-dispatch`：手工触发一条待重试派发
+- `POST /api/workflows/dispatches/retry-due`：批量执行已到期的发送补偿任务
 
 ## 知识库管理接口
 
