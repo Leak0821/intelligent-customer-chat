@@ -1,0 +1,98 @@
+name: intelligent-customer-chat
+
+services:
+  mysql:
+    image: mysql:${MYSQL_VERSION:-8.0.36}
+    container_name: icc-mysql
+    restart: unless-stopped
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-intelligent_customer_chat}
+      MYSQL_USER: ${MYSQL_USER:-icc}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-icc123456}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root123456}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - agent-net
+
+  redis:
+    image: redis:${REDIS_VERSION:-7.2.13-alpine}
+    container_name: icc-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1000"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agent-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION:-8.12.0}
+    container_name: icc-es
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      xpack.license.self_generated.type: basic
+      bootstrap.memory_lock: "true"
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS:--Xms1g -Xmx1g}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - agent-net
+
+  nacos:
+    image: nacos/nacos-server:${NACOS_VERSION:-v2.4.3-slim}
+    container_name: icc-nacos
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      MODE: standalone
+      NACOS_AUTH_ENABLE: ${NACOS_AUTH_ENABLE:-false}
+      JVM_XMS: ${NACOS_JVM_XMS:-256m}
+      JVM_XMX: ${NACOS_JVM_XMX:-256m}
+      JVM_XMN: ${NACOS_JVM_XMN:-128m}
+    ports:
+      - "${NACOS_PORT:-8848}:8848"
+      - "${NACOS_GRPC_PORT:-9848}:9848"
+    volumes:
+      - nacos-logs:/home/nacos/logs
+    networks:
+      - agent-net
+
+volumes:
+  mysql-data:
+  redis-data:
+  es-data:
+  nacos-logs:
+
+networks:
+  agent-net:
+    driver: bridge
