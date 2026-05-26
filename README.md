@@ -76,8 +76,11 @@ source ./scripts/use-local-codex.sh
 如果要启动本地基础依赖，可在仓库根目录执行：
 
 ```bash
-docker compose up -d mysql redis elasticsearch nacos
+docker compose up -d mysql redis elasticsearch nacos xxl-job-admin
 ```
+
+如果只是先跑最小闭环，不需要马上启 `XXL-JOB`，也可以先不拉起 `xxl-job-admin`。
+第一版默认仍然可以走本地定时器或手工接口推进。
 
 如果想先用第一版的本地配置启动应用，可以加上 `local` profile：
 
@@ -86,6 +89,14 @@ mvn -Dspring-boot.run.profiles=local spring-boot:run
 ```
 
 或者直接在 IDE 里把 `spring.profiles.active` 设成 `local`。
+
+如果要验证 `XXL-JOB` 调度链路，建议额外注意这几件事：
+
+- `docker compose` 首次启动时会自动初始化 `xxl_job` 库和默认管理员
+- 默认管理后台地址是 `http://127.0.0.1:8088/xxl-job-admin`
+- 默认登录账号是 `admin / 123456`
+- 应用侧需要额外打开 `APP_XXL_ENABLED=true`
+- 执行器默认 `appName` 是 `intelligent-customer-chat-executor`
 
 仓库里还提供了一个最小的 Maven 缓存清理脚本，专门处理网络失败后残留的 `*.lastUpdated`：
 

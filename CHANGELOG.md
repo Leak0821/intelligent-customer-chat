@@ -78,6 +78,8 @@
 - 新增售前推荐、售后物流等子意图兜底回复测试，校正主链路断言到最新文案
 - 新增运行前体检服务和管理接口，启动时可提前发现 AI、邮件、Redis、Nacos、XXL-JOB 等配置缺口
 - 新增 `local` profile、本地启动说明、`.env.example` 和 Maven `.lastUpdated` 清理脚本，降低第一版联调摩擦
+- 为本地 `docker-compose` 补齐 `xxl-job-admin`，并新增适配当前项目的 `xxl_job` 初始化脚本
+- 补充 `XXL-JOB` 本地登录与启用说明，以及 MySQL 初始化脚本只会在首次建卷时执行的踩坑记录
 
 ### 结果
 

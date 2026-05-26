@@ -88,11 +88,34 @@ services:
     networks:
       - agent-net
 
+  xxl-job-admin:
+    image: xuxueli/xxl-job-admin:${XXL_JOB_ADMIN_VERSION:-3.3.0}
+    container_name: icc-xxl-job-admin
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PARAMS: >-
+        --spring.datasource.url=jdbc:mysql://mysql:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+        --spring.datasource.username=root
+        --spring.datasource.password=${MYSQL_ROOT_PASSWORD:-root123456}
+        --xxl.job.accessToken=${XXL_JOB_ACCESS_TOKEN:-}
+      JAVA_OPTS: ${XXL_JOB_JAVA_OPTS:--Xms256m -Xmx256m}
+      LOG_HOME: /data/applogs
+    ports:
+      - "${XXL_JOB_ADMIN_PORT:-8088}:8080"
+    volumes:
+      - xxl-job-logs:/data/applogs
+    networks:
+      - agent-net
+
 volumes:
   mysql-data:
   redis-data:
   es-data:
   nacos-logs:
+  xxl-job-logs:
 
 networks:
   agent-net:
