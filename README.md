@@ -22,6 +22,7 @@
 - 已完成第一阶段主流程工程骨架，包含邮件接入、意图归一、上下文加载、业务事实查询、知识检索、回复草稿、审核决策等最小闭环链路
 - 已接入 MySQL 持久化、Redis 上下文缓存、Elasticsearch 混合检索骨架、Nacos 运行时配置骨架、XXL-JOB 执行器骨架
 - 已补充会话摘要压缩、摘要落库、Spring AI 向量嵌入接入点，以及 Elasticsearch 知识索引初始化入口
+- 已将售后业务查询从纯硬编码桩数据升级为可维护的本地业务数据目录，支持订单、物流、售后策略的运行时查看与更新
 - 第一阶段 OpenSpec 与研究合同已进入“边实现边校正”阶段，后续重点转向真实业务适配和基础设施联调
 
 ## 文档入口
@@ -148,6 +149,21 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 - `POST /api/knowledge/index/seeds`：批量灌入内置知识样本
 - `POST /api/knowledge/index/sample`：手工灌入单篇知识文档
 - `GET /api/knowledge/search?q=...`：直接验证当前检索结果
+
+## 业务数据管理接口
+
+- `GET /api/business/orders`：查看当前本地订单目录
+- `POST /api/business/orders`：新增或更新一条订单记录
+- `GET /api/business/logistics`：查看当前本地物流目录
+- `POST /api/business/logistics`：新增或更新一条物流轨迹记录
+- `GET /api/business/policies`：查看当前本地售后策略目录
+- `POST /api/business/policies`：新增或更新一条售后策略记录
+
+当前这组接口的定位是“第一阶段可演示、可调试的本地业务事实源”：
+
+- 用于替代纯硬编码查询结果，先把售后链路跑通
+- 便于后续在不改应用编排层的前提下，替换成真实订单系统、物流系统、MCP 或 CLI 能力
+- 也便于面试演示时现场修改订单、物流、策略数据，观察工作流回放如何变化
 
 ## 分支管理记录
 

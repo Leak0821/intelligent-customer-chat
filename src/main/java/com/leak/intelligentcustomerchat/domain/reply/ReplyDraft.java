@@ -124,6 +124,22 @@ public final class ReplyDraft {
         return status;
     }
 
+    public boolean isDraftReady() {
+        return status == ReplyDraftStatus.DRAFT_READY;
+    }
+
+    public boolean isFollowUpNeeded() {
+        return status == ReplyDraftStatus.FOLLOW_UP_NEEDED;
+    }
+
+    public boolean isHumanReviewRequired() {
+        return status == ReplyDraftStatus.HUMAN_REVIEW_REQUIRED;
+    }
+
+    public boolean isBlocked() {
+        return status == ReplyDraftStatus.BLOCKED;
+    }
+
     public String getReviewNotes() {
         return reviewNotes;
     }

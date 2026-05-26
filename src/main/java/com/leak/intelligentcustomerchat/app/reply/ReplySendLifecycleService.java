@@ -47,7 +47,7 @@ public class ReplySendLifecycleService {
 
     public ReplyDraft approveForSend(String runId, String approvalNote) {
         ReplyDraft draft = requireDraft(runId);
-        if (draft.getStatus() == ReplyDraftStatus.BLOCKED || draft.getStatus() == ReplyDraftStatus.HUMAN_REVIEW_REQUIRED) {
+        if (draft.isBlocked() || draft.isHumanReviewRequired()) {
             throw new IllegalStateException("draft is not eligible for send approval, status=" + draft.getStatus());
         }
         // 第一阶段用显式放行代替真实人工审核台，先把“可发”和“已生成”分开。
