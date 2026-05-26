@@ -58,6 +58,12 @@ public class MailIngestionService {
         return processReceipt(receipt);
     }
 
+    public MailReceipt enqueueManual(InboundMail inboundMail) {
+        MailReceipt receipt = resolveOrCreateReceipt(inboundMail);
+        receipt.markQueued();
+        return mailReceiptRepository.save(receipt);
+    }
+
     public List<WorkflowRun> process(MailFetchResult fetchResult) {
         List<WorkflowRun> runs = new ArrayList<>();
         for (InboundMail mail : fetchResult.mails()) {
@@ -70,8 +76,7 @@ public class MailIngestionService {
         int queuedCount = 0;
         for (InboundMail mail : fetchResult.mails()) {
             MailReceipt receipt = resolveOrCreateReceipt(mail);
-            if (receipt.getStatus() == com.leak.intelligentcustomerchat.domain.mail.MailReceiptStatus.PROCESSED
-                    ) {
+            if (receipt.getStatus() == com.leak.intelligentcustomerchat.domain.mail.MailReceiptStatus.PROCESSED) {
                 continue;
             }
             receipt.markQueued();

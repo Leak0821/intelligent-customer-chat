@@ -155,3 +155,9 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 ```bash
 ./scripts/business-facts-smoke.sh
 ```
+
+如果要验证“邮件先入队，稍后再处理”的异步链路，可执行：
+
+```bash
+./scripts/async-mail-smoke.sh
+```

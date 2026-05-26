@@ -5,11 +5,15 @@ import com.leak.intelligentcustomerchat.app.mail.MailOpsOverviewService;
 import com.leak.intelligentcustomerchat.app.mail.MailOpsOverviewView;
 import com.leak.intelligentcustomerchat.app.mail.MailReceiptStatsView;
 import com.leak.intelligentcustomerchat.domain.mail.MailPollingResult;
+import com.leak.intelligentcustomerchat.domain.mail.MailReceipt;
+import com.leak.intelligentcustomerchat.domain.mail.MailReceiptStatus;
 import org.junit.jupiter.api.Test;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,5 +50,39 @@ class MailAdminControllerTest {
         MailAdminController controller = new MailAdminController(mailIngestionService, mailOpsOverviewService);
 
         assertThat(controller.pollAndProcess()).isEqualTo(result);
+    }
+
+    @Test
+    void shouldManuallyEnqueueMailThroughIngestionService() {
+        MailIngestionService mailIngestionService = mock(MailIngestionService.class);
+        MailOpsOverviewService mailOpsOverviewService = mock(MailOpsOverviewService.class);
+        MailReceipt receipt = MailReceipt.restore(
+                "receipt-1",
+                "manual-ingestion",
+                "manual",
+                1L,
+                "msg-1",
+                "thread-1",
+                "buyer@example.com",
+                "Need help",
+                "body",
+                OffsetDateTime.now(),
+                MailReceiptStatus.QUEUED,
+                null,
+                null,
+                OffsetDateTime.now(),
+                OffsetDateTime.now()
+        );
+        when(mailIngestionService.enqueueManual(any())).thenReturn(receipt);
+
+        MailAdminController controller = new MailAdminController(mailIngestionService, mailOpsOverviewService);
+
+        assertThat(controller.manualEnqueue(new MailAdminController.ManualMailRequest(
+                "msg-1",
+                "thread-1",
+                "buyer@example.com",
+                "Need help",
+                "body"
+        ))).isEqualTo(receipt);
     }
 }

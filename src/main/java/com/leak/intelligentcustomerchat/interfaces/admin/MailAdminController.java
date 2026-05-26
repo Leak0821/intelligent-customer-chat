@@ -4,15 +4,24 @@ import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
 import com.leak.intelligentcustomerchat.app.mail.MailOpsOverviewService;
 import com.leak.intelligentcustomerchat.app.mail.MailOpsOverviewView;
 import com.leak.intelligentcustomerchat.domain.mail.MailPollingResult;
+import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceipt;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping("/api/mail")
 public class MailAdminController {
@@ -28,6 +37,11 @@ public class MailAdminController {
     @GetMapping("/overview")
     public MailOpsOverviewView overview(@RequestParam(defaultValue = "10") int recentLimit) {
         return mailOpsOverviewService.overview(recentLimit);
+    }
+
+    @PostMapping("/manual-enqueue")
+    public MailReceipt manualEnqueue(@RequestBody ManualMailRequest request) {
+        return mailIngestionService.enqueueManual(buildInboundMail(request));
     }
 
     @PostMapping("/poll")
@@ -46,12 +60,32 @@ public class MailAdminController {
     }
 
     @PostMapping("/receipts/{messageId}/requeue")
-    public MailReceipt requeue(@org.springframework.web.bind.annotation.PathVariable String messageId) {
+    public MailReceipt requeue(@PathVariable String messageId) {
         return mailIngestionService.requeueReceipt(messageId);
     }
 
     @GetMapping("/receipts")
     public List<MailReceipt> listReceipts(@RequestParam(defaultValue = "20") int limit) {
         return mailIngestionService.listRecentReceipts(limit);
+    }
+
+    public record ManualMailRequest(
+            String messageId,
+            String threadId,
+            @Email String from,
+            @NotBlank String subject,
+            @NotBlank String body
+    ) {
+    }
+
+    private InboundMail buildInboundMail(ManualMailRequest request) {
+        return new InboundMail(
+                request.messageId() == null || request.messageId().isBlank() ? UUID.randomUUID().toString() : request.messageId(),
+                request.threadId() == null || request.threadId().isBlank() ? UUID.randomUUID().toString() : request.threadId(),
+                request.from(),
+                request.subject(),
+                request.body(),
+                OffsetDateTime.now()
+        );
     }
 }

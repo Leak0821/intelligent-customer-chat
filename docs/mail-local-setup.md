@@ -122,6 +122,8 @@ APP_MAIL_OUTBOUND_STARTTLS_ENABLED=true
   - 看最近收件处理状态统计
 - `POST /api/mail/poll`
   - 只拉取并入队，不立即执行后续流程
+- `POST /api/mail/manual-enqueue`
+  - 手工提交一封邮件到收件队列，适合本地演示“先入队、后处理”
 - `POST /api/mail/process-pending`
   - 处理已经入队的收件记录
 - `POST /api/mail/poll-and-process`
@@ -130,3 +132,9 @@ APP_MAIL_OUTBOUND_STARTTLS_ENABLED=true
   - 对失败或已处理邮件重新入队
 - `GET /api/mail/receipts`
   - 查看最近收件记录
+
+如果要直接演示异步链路，可执行：
+
+```bash
+./scripts/async-mail-smoke.sh
+```
