@@ -14,6 +14,21 @@ spring:
       mode: always
 
 app:
+  mail:
+    enabled: false
+    source: imap
+    poll-size: 20
+    host:
+    port: 993
+    username:
+    password:
+    folder: INBOX
+    ssl-enabled: true
+    mark-seen-after-fetch: false
+    polling-enabled: false
+    poll-interval-millis: 60000
+    connection-timeout-millis: 5000
+    read-timeout-millis: 5000
   context:
     memory:
       enabled: false

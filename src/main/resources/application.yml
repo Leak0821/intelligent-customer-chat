@@ -30,14 +30,20 @@ management:
 
 app:
   mail:
-    source: imap
-    poll-size: 20
-    host: ""
-    port: 993
-    username: ""
-    password: ""
-    folder: INBOX
-    ssl-enabled: true
+    enabled: ${APP_MAIL_ENABLED:false}
+    source: ${APP_MAIL_SOURCE:imap}
+    poll-size: ${APP_MAIL_POLL_SIZE:20}
+    host: ${APP_MAIL_HOST:}
+    port: ${APP_MAIL_PORT:993}
+    username: ${APP_MAIL_USERNAME:}
+    password: ${APP_MAIL_PASSWORD:}
+    folder: ${APP_MAIL_FOLDER:INBOX}
+    ssl-enabled: ${APP_MAIL_SSL_ENABLED:true}
+    mark-seen-after-fetch: ${APP_MAIL_MARK_SEEN_AFTER_FETCH:false}
+    polling-enabled: ${APP_MAIL_POLLING_ENABLED:false}
+    poll-interval-millis: ${APP_MAIL_POLL_INTERVAL_MILLIS:60000}
+    connection-timeout-millis: ${APP_MAIL_CONNECTION_TIMEOUT_MILLIS:5000}
+    read-timeout-millis: ${APP_MAIL_READ_TIMEOUT_MILLIS:5000}
   workflow:
     auto-complete-empty-chain: true
   context:

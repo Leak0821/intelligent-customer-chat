@@ -38,3 +38,24 @@ CREATE TABLE reply_drafts (
 );
 
 CREATE INDEX idx_reply_drafts_run_id_created_at ON reply_drafts (run_id, created_at);
+
+CREATE TABLE mail_receipts (
+    receipt_id VARCHAR(64) PRIMARY KEY,
+    source_key VARCHAR(255) NOT NULL,
+    folder_name VARCHAR(255) NOT NULL,
+    mail_uid BIGINT NOT NULL,
+    message_id VARCHAR(255) NOT NULL,
+    thread_id VARCHAR(255) NOT NULL,
+    sender VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    received_at TIMESTAMP NOT NULL,
+    status VARCHAR(64) NOT NULL,
+    workflow_run_id VARCHAR(64),
+    error_message VARCHAR(512),
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
+
+CREATE UNIQUE INDEX uk_mail_receipts_source_folder_uid ON mail_receipts (source_key, folder_name, mail_uid);
+CREATE INDEX idx_mail_receipts_message_id ON mail_receipts (message_id);
+CREATE INDEX idx_mail_receipts_created_at ON mail_receipts (created_at);

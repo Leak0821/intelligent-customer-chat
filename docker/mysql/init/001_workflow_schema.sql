@@ -35,3 +35,23 @@ CREATE TABLE IF NOT EXISTS reply_drafts (
     updated_at DATETIME(3) NOT NULL,
     KEY idx_reply_drafts_run_id_created_at (run_id, created_at)
 );
+
+CREATE TABLE IF NOT EXISTS mail_receipts (
+    receipt_id VARCHAR(64) PRIMARY KEY,
+    source_key VARCHAR(255) NOT NULL,
+    folder_name VARCHAR(255) NOT NULL,
+    mail_uid BIGINT NOT NULL,
+    message_id VARCHAR(255) NOT NULL,
+    thread_id VARCHAR(255) NOT NULL,
+    sender VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    received_at DATETIME(3) NOT NULL,
+    status VARCHAR(64) NOT NULL,
+    workflow_run_id VARCHAR(64) NULL,
+    error_message VARCHAR(512) NULL,
+    created_at DATETIME(3) NOT NULL,
+    updated_at DATETIME(3) NOT NULL,
+    UNIQUE KEY uk_mail_receipts_source_folder_uid (source_key, folder_name, mail_uid),
+    KEY idx_mail_receipts_message_id (message_id),
+    KEY idx_mail_receipts_created_at (created_at)
+);
