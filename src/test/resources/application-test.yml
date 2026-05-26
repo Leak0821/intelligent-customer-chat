@@ -1,0 +1,118 @@
+spring:
+  ai:
+    openai:
+      api-key: test-key
+      base-url: https://api.openai.com
+      chat:
+        base-url: https://api.openai.com
+        options:
+          model: gpt-4o-mini
+      embedding:
+        base-url: https://api.openai.com
+        options:
+          model: text-embedding-3-small
+  datasource:
+    url: jdbc:h2:mem:intelligent_customer_chat;MODE=MYSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+  sql:
+    init:
+      mode: always
+
+app:
+  ai:
+    chat:
+      enabled: false
+      max-input-length: 6000
+      temperature: 0.2
+  mail:
+    enabled: false
+    source: imap
+    poll-size: 20
+    host:
+    port: 993
+    username:
+    password:
+    folder: INBOX
+    ssl-enabled: true
+    mark-seen-after-fetch: false
+    polling-enabled: false
+    poll-interval-millis: 60000
+    connection-timeout-millis: 5000
+    read-timeout-millis: 5000
+    outbound:
+      enabled: false
+      provider: noop
+      from-address: support@example.com
+      from-name: intelligent-customer-chat
+      host:
+      port: 587
+      username:
+      password:
+      auth-enabled: true
+      start-tls-enabled: true
+      ssl-enabled: false
+      connection-timeout-millis: 5000
+      timeout-millis: 5000
+      write-timeout-millis: 5000
+    dispatch-retry:
+      enabled: true
+      max-attempts: 3
+      initial-delay-seconds: 60
+      backoff-multiplier: 2
+      max-delay-seconds: 900
+      batch-size: 20
+      local-scheduler-enabled: false
+      local-fixed-delay-millis: 60000
+  context:
+    memory:
+      enabled: false
+      compression-enabled: true
+      llm-summary-enabled: false
+      recent-round-limit: 5
+      summary-threshold: 10
+      redis-key-prefix: icc:test:memory
+  knowledge:
+    embedding:
+      enabled: false
+      max-input-length: 4000
+    elasticsearch:
+      enabled: false
+      uris: http://127.0.0.1:9200
+      index-name: knowledge_chunks
+      title-field: title
+      content-field: content
+      vector-field: content_vector
+      parent-id-field: parent_id
+      doc-type-field: doc_type
+      top-k: 10
+      num-candidates: 50
+      embedding-dimensions: 16
+      rrf-k: 60
+  runtime-config:
+    nacos:
+      enabled: false
+      server-addr: 127.0.0.1:8848
+      namespace:
+      group: DEFAULT_GROUP
+      prompt-data-id: agent-prompts.json
+      intent-data-id: agent-intents.json
+      retrieval-data-id: agent-retrieval.json
+      timeout-millis: 3000
+  scheduler:
+    xxl:
+      enabled: false
+      admin-addresses: http://127.0.0.1:8088/xxl-job-admin
+      access-token:
+      executor-app-name: intelligent-customer-chat-executor
+      executor-address:
+      executor-ip:
+      executor-port: 9999
+      log-path: /tmp/xxl-job/jobhandler
+      log-retention-days: 30

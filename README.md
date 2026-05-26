@@ -19,8 +19,11 @@
 - 已完成 Git 仓库初始化并关联 GitHub
 - 已建立基础的版本管理流程
 - 已初始化一版 AI 协作规范和文档骨架
-- 目前仍未开始正式业务代码实现
-- 第一阶段 OpenSpec 与研究合同已基本收敛，下一步适合进入设计审查
+- 已完成第一阶段主流程工程骨架，包含邮件接入、意图归一、上下文加载、业务事实查询、知识检索、回复草稿、审核决策等最小闭环链路
+- 已接入 MySQL 持久化、Redis 上下文缓存、Elasticsearch 混合检索骨架、Nacos 运行时配置骨架、XXL-JOB 执行器骨架
+- 已补充会话摘要压缩、摘要落库、Spring AI 向量嵌入接入点，以及 Elasticsearch 知识索引初始化入口
+- 已将售后业务查询从纯硬编码桩数据升级为可维护的本地业务数据目录，支持订单、物流、售后策略的运行时查看与更新
+- 第一阶段 OpenSpec 与研究合同已进入“边实现边校正”阶段，后续重点转向真实业务适配和基础设施联调
 
 ## 文档入口
 
@@ -34,7 +37,10 @@
 - [research/minimal-email-agent-loop.md](./research/minimal-email-agent-loop.md)：邮件 agent 第一条最小闭环链路研究
 - [research/first-stage-technical-decisions.md](./research/first-stage-technical-decisions.md)：第一阶段技术设计决策清单
 - [research/first-stage-sub-intent-seed-list.md](./research/first-stage-sub-intent-seed-list.md)：第一阶段首批子意图种子清单
+- [research/first-stage-runtime-stack-baseline.md](./research/first-stage-runtime-stack-baseline.md)：第一阶段运行时技术栈基线
 - [research/first-stage-implementation-skeleton.md](./research/first-stage-implementation-skeleton.md)：第一阶段 Java/Spring AI 实现骨架设计
+- [research/first-stage-docker-compose-plan.md](./research/first-stage-docker-compose-plan.md)：第一阶段本地 Docker 基础设施方案
+- [research/first-stage-pom-baseline.md](./research/first-stage-pom-baseline.md)：第一阶段 `pom.xml` 依赖基线建议
 - [openspec/changes/README.md](./openspec/changes/README.md)：进行中的正式变更合同
 - [openspec/specs/README.md](./openspec/specs/README.md)：稳定规格沉淀位置
 
@@ -46,12 +52,15 @@
 - [openspec/changes/email-agent-minimal-loop/tasks.md](./openspec/changes/email-agent-minimal-loop/tasks.md)：当前已收敛任务与建议实现切片
 - [research/first-stage-implementation-skeleton.md](./research/first-stage-implementation-skeleton.md)：审查通过后进入编码前的实现骨架参考
 - [research/first-stage-slice-1-coding-plan.md](./research/first-stage-slice-1-coding-plan.md)：切片 1 的具体编码起步计划
+- [research/first-stage-runtime-stack-baseline.md](./research/first-stage-runtime-stack-baseline.md)：当前已锁定的运行时与基础设施组合
+- [research/first-stage-docker-compose-plan.md](./research/first-stage-docker-compose-plan.md)：本地 MySQL / Redis / ES / Nacos / XXL-JOB 的 Docker 规划
+- [research/first-stage-pom-baseline.md](./research/first-stage-pom-baseline.md)：开始写工程骨架前的依赖清单参考
 
 ## 后续计划
 
-- 先完成一次规范审查，确认当前第一阶段合同
-- 再按实现切片搭建主流程骨架
-- 再逐步补齐邮件接入、意图层、业务查询、RAG 与审核链路
+- 继续把第一阶段骨架替换为真实能力，包括模型调用、订单/物流查询、知识库灌库与邮件发送
+- 打通 Docker 本地依赖与运行时配置联调，完成可重复启动的开发环境
+- 逐步补齐人工审核策略、观测告警、重试补偿与回放机制
 
 ## 本地环境
 
@@ -62,6 +71,109 @@ source ./scripts/use-local-codex.sh
 ```
 
 这只会影响当前 shell，会把 `CODEX_HOME` 指向本仓库内的 `.codex-home`。
+
+如果要启动本地基础依赖，可在仓库根目录执行：
+
+```bash
+docker compose up -d mysql redis elasticsearch nacos
+```
+
+当前默认使用本仓库内的 `.mvn/settings.xml` 与 `.m2/repository`，执行测试可直接使用：
+
+```bash
+mvn test
+```
+
+如果要接入 OpenAI 兼容模型网关，可优先配置以下环境变量：
+
+```bash
+OPENAI_API_KEY=...
+SPRING_AI_OPENAI_BASE_URL=https://api.openai.com
+SPRING_AI_OPENAI_CHAT_MODEL=gpt-4o-mini
+SPRING_AI_OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+APP_AI_CHAT_ENABLED=true
+APP_KNOWLEDGE_EMBEDDING_ENABLED=true
+```
+
+如果是 `DeepSeek`、`Qwen` 或其他 OpenAI 兼容网关，可直接替换 `base-url` 和模型名。
+
+如果要把回复链路切换到真实 SMTP 发信，可额外配置：
+
+```bash
+APP_MAIL_OUTBOUND_ENABLED=true
+APP_MAIL_OUTBOUND_PROVIDER=smtp
+APP_MAIL_OUTBOUND_FROM_ADDRESS=support@example.com
+APP_MAIL_OUTBOUND_FROM_NAME=intelligent-customer-chat
+APP_MAIL_OUTBOUND_HOST=smtp.example.com
+APP_MAIL_OUTBOUND_PORT=587
+APP_MAIL_OUTBOUND_USERNAME=mailer@example.com
+APP_MAIL_OUTBOUND_PASSWORD=your-password
+APP_MAIL_OUTBOUND_AUTH_ENABLED=true
+APP_MAIL_OUTBOUND_STARTTLS_ENABLED=true
+APP_MAIL_OUTBOUND_SSL_ENABLED=false
+APP_MAIL_DISPATCH_RETRY_ENABLED=true
+APP_MAIL_DISPATCH_RETRY_MAX_ATTEMPTS=3
+APP_MAIL_DISPATCH_RETRY_INITIAL_DELAY_SECONDS=60
+APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
+```
+
+默认仍然是 `noop` 发件器，目的是先保留完整发送状态机，同时避免本地开发或演示时误发真实邮件。
+发送失败后默认会进入“待重试”状态，并通过本地定时器或 `XXL-JOB` 补偿入口继续推进；如果重试次数耗尽，则改为人工跟进状态。
+
+## 本地演示接口
+
+- `POST /api/workflows/demo`：提交一封测试邮件，返回 `WorkflowRun`
+- `POST /api/workflows/demo/analysis`：提交一封测试邮件，直接返回清洗、意图、路由、业务事实、知识检索、草稿、审核结论
+- `POST /api/workflows/demo/replay`：提交一封测试邮件，直接返回完整回放
+- `GET /api/workflows/{runId}/replay`：按 `runId` 查看完整链路
+- `GET /api/workflows/by-message/{messageId}/replay`：按 `messageId` 查看最新链路
+- `GET /api/workflows/{runId}/evaluation`：按 `runId` 查看最小评估样本视图
+- `GET /api/workflows/evaluations/recent`：查看最近一批工作流评估样本
+- `POST /api/workflows/{runId}/approve-send`：把草稿从待审核推进到可发送
+- `POST /api/workflows/{runId}/reject-send`：驳回当前草稿发送，回到人工审核状态
+- `POST /api/workflows/{runId}/revise-draft`：人工修订草稿，并可选择是否再次送审
+- `POST /api/workflows/{runId}/dispatch`：通过 no-op 发件适配层模拟发送
+- `GET /api/workflows/{runId}/dispatches`：查看该链路的发送记录
+- `GET /api/workflows/{runId}/reviews`：查看该链路的人工审核记录
+- `POST /api/workflows/{runId}/retry-dispatch`：手工触发一条待重试派发
+- `POST /api/workflows/dispatches/retry-due`：批量执行已到期的发送补偿任务
+
+当前回放视图除了事件、草稿、派发记录外，也会带上人工审核记录，便于说明：
+
+- 谁批准了发送
+- 谁驳回了发送
+- 草稿被修订到了第几版、最后由谁改动
+- 最近一次发送是人工批准触发、人工重试还是调度补偿触发
+
+新增的评估样本视图会进一步把回放压缩成一份更适合复盘和面试讲解的摘要，重点回答：
+
+- 这封邮件被识别成了什么场景和子意图
+- 是否触发了业务事实查询与知识检索
+- 当前草稿停在什么发送前状态
+- 最近一次审核、驳回或发送异常是什么
+- 当前有哪些风险标记，例如人工审核、追问、重试中、业务冲突
+
+## 知识库管理接口
+
+- `GET /api/knowledge/seeds`：查看内置知识样本摘要
+- `POST /api/knowledge/index/seeds`：批量灌入内置知识样本
+- `POST /api/knowledge/index/sample`：手工灌入单篇知识文档
+- `GET /api/knowledge/search?q=...`：直接验证当前检索结果
+
+## 业务数据管理接口
+
+- `GET /api/business/orders`：查看当前本地订单目录
+- `POST /api/business/orders`：新增或更新一条订单记录
+- `GET /api/business/logistics`：查看当前本地物流目录
+- `POST /api/business/logistics`：新增或更新一条物流轨迹记录
+- `GET /api/business/policies`：查看当前本地售后策略目录
+- `POST /api/business/policies`：新增或更新一条售后策略记录
+
+当前这组接口的定位是“第一阶段可演示、可调试的本地业务事实源”：
+
+- 用于替代纯硬编码查询结果，先把售后链路跑通
+- 便于后续在不改应用编排层的前提下，替换成真实订单系统、物流系统、MCP 或 CLI 能力
+- 也便于面试演示时现场修改订单、物流、策略数据，观察工作流回放如何变化
 
 ## 分支管理记录
 

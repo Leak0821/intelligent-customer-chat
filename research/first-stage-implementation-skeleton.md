@@ -20,6 +20,15 @@
 - 单模块起步
 - 清晰包分层
 
+当前运行时前提：
+
+- `JDK 17`
+- `Maven`
+- `Spring Boot 3.4.x`
+- `Spring AI 1.1.7`
+- `MyBatis + MyBatis-Plus`
+- `MySQL / Redis / Elasticsearch / Nacos / XXL-JOB` 通过 Docker 基础设施配套
+
 而不是一开始就拆：
 
 - 多服务
@@ -76,6 +85,21 @@ interfaces/
 - `infrastructure/`：IMAP、Spring AI、外部系统、存储等具体实现
 - `interfaces/`：定时任务触发、后续后台接口、人工审核入口等
 
+建议补充的基础设施子目录：
+
+```text
+infrastructure/
+  mail/
+  ai/
+  business/
+  knowledge/
+  persistence/
+  cache/
+  config/
+  scheduler/
+  observability/
+```
+
 ## 4. 第一阶段核心应用服务
 
 建议优先定义以下应用服务：
@@ -120,12 +144,16 @@ interfaces/
 - `OrderQueryGateway`
 - `LogisticsQueryGateway`
 - `AfterSalesPolicyGateway`
+- `ConversationMemoryStore`
+- `ProfileStore`
 
 ### 5.4 知识与回复
 
 - `KnowledgeRetriever`
 - `ReplyPlanner`
 - `ReplyDraftRepository`
+- `HybridSearchService`
+- `ChunkIndexWriter`
 
 ### 5.5 审核与观测
 
@@ -133,10 +161,18 @@ interfaces/
 - `WorkflowEventRecorder`
 - `WorkflowReplayReader`
 
+### 5.6 配置与运行时基础
+
+- `PromptConfigService`
+- `IntentConfigService`
+- `RetrievalConfigService`
+- `ContextCompressionService`
+
 原则：
 
 - 主流程依赖接口，不依赖具体 `Spring AI`、IMAP 或外部系统实现类
 - 具体 provider 或 adapter 只放在 `infrastructure/`
+- `Redis`、`Nacos`、`Elasticsearch`、`XXL-JOB` 也都应通过基础设施实现层接入
 
 ## 6. 第一阶段关键领域对象
 
@@ -152,6 +188,9 @@ interfaces/
 - `ReplyDraft`
 - `ReviewDecision`
 - `WorkflowEvent`
+- `ConversationSummary`
+- `RetrievalQuery`
+- `RetrievalResult`
 
 这些对象的作用：
 
@@ -189,6 +228,8 @@ interfaces/
 - `workflow_events`
 - `reply_drafts`
 - `mail_threads`
+- `conversation_summaries`
+- `user_profiles`
 
 其中最关键的是：
 
@@ -206,6 +247,13 @@ interfaces/
 - `ReplyPlanner` 使用 `Spring AI` 基于 facts 和 knowledge 组织草稿
 
 但业务层仍应只依赖内部接口，不直接把 `ChatClient`、provider 参数、prompt 细节扩散到各层。
+
+与其他基础设施的结合方向：
+
+- `Redis`：用于最近会话上下文、压缩摘要和幂等辅助键
+- `Nacos`：用于 prompt、意图配置、检索参数和审核阈值
+- `Elasticsearch`：用于 `BM25 + kNN + RRF` 混合检索
+- `XXL-JOB`：用于拉邮、重试、索引更新和压缩任务
 
 ## 10. 第一阶段不建议现在就做的骨架动作
 
@@ -228,8 +276,9 @@ interfaces/
 3. 再建主流程骨架
 4. 再补 IMAP adapter
 5. 再补意图归一化和路由
-6. 再补业务查询和 RAG
-7. 最后补审核、状态落库、回放
+6. 再补 Redis 上下文与 Nacos 配置层
+7. 再补业务查询和 RAG
+8. 最后补审核、状态落库、回放
 
 ## 12. 当前建议结论
 

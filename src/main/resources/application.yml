@@ -1,0 +1,132 @@
+spring:
+  application:
+    name: intelligent-customer-chat
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:${MYSQL_PORT:3306}/intelligent_customer_chat?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${SPRING_DATASOURCE_USERNAME:${MYSQL_USER:icc}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${MYSQL_PASSWORD:icc123456}}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_REDIS_PORT:6379}
+      database: ${SPRING_REDIS_DATABASE:0}
+      timeout: 3s
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:dummy-key-for-slice-1}
+      base-url: ${SPRING_AI_OPENAI_BASE_URL:https://api.openai.com}
+      chat:
+        base-url: ${SPRING_AI_OPENAI_CHAT_BASE_URL:${SPRING_AI_OPENAI_BASE_URL:https://api.openai.com}}
+        options:
+          model: ${SPRING_AI_OPENAI_CHAT_MODEL:gpt-4o-mini}
+      embedding:
+        base-url: ${SPRING_AI_OPENAI_EMBEDDING_BASE_URL:${SPRING_AI_OPENAI_BASE_URL:https://api.openai.com}}
+        options:
+          model: ${SPRING_AI_OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  ai:
+    chat:
+      enabled: ${APP_AI_CHAT_ENABLED:false}
+      max-input-length: ${APP_AI_CHAT_MAX_INPUT_LENGTH:6000}
+      temperature: ${APP_AI_CHAT_TEMPERATURE:0.2}
+  mail:
+    enabled: ${APP_MAIL_ENABLED:false}
+    source: ${APP_MAIL_SOURCE:imap}
+    poll-size: ${APP_MAIL_POLL_SIZE:20}
+    host: ${APP_MAIL_HOST:}
+    port: ${APP_MAIL_PORT:993}
+    username: ${APP_MAIL_USERNAME:}
+    password: ${APP_MAIL_PASSWORD:}
+    folder: ${APP_MAIL_FOLDER:INBOX}
+    ssl-enabled: ${APP_MAIL_SSL_ENABLED:true}
+    mark-seen-after-fetch: ${APP_MAIL_MARK_SEEN_AFTER_FETCH:false}
+    polling-enabled: ${APP_MAIL_POLLING_ENABLED:false}
+    poll-interval-millis: ${APP_MAIL_POLL_INTERVAL_MILLIS:60000}
+    connection-timeout-millis: ${APP_MAIL_CONNECTION_TIMEOUT_MILLIS:5000}
+    read-timeout-millis: ${APP_MAIL_READ_TIMEOUT_MILLIS:5000}
+    outbound:
+      enabled: ${APP_MAIL_OUTBOUND_ENABLED:false}
+      provider: ${APP_MAIL_OUTBOUND_PROVIDER:noop}
+      from-address: ${APP_MAIL_OUTBOUND_FROM_ADDRESS:support@example.com}
+      from-name: ${APP_MAIL_OUTBOUND_FROM_NAME:intelligent-customer-chat}
+      host: ${APP_MAIL_OUTBOUND_HOST:}
+      port: ${APP_MAIL_OUTBOUND_PORT:587}
+      username: ${APP_MAIL_OUTBOUND_USERNAME:}
+      password: ${APP_MAIL_OUTBOUND_PASSWORD:}
+      auth-enabled: ${APP_MAIL_OUTBOUND_AUTH_ENABLED:true}
+      start-tls-enabled: ${APP_MAIL_OUTBOUND_STARTTLS_ENABLED:true}
+      ssl-enabled: ${APP_MAIL_OUTBOUND_SSL_ENABLED:false}
+      connection-timeout-millis: ${APP_MAIL_OUTBOUND_CONNECTION_TIMEOUT_MILLIS:5000}
+      timeout-millis: ${APP_MAIL_OUTBOUND_TIMEOUT_MILLIS:5000}
+      write-timeout-millis: ${APP_MAIL_OUTBOUND_WRITE_TIMEOUT_MILLIS:5000}
+    dispatch-retry:
+      enabled: ${APP_MAIL_DISPATCH_RETRY_ENABLED:true}
+      max-attempts: ${APP_MAIL_DISPATCH_RETRY_MAX_ATTEMPTS:3}
+      initial-delay-seconds: ${APP_MAIL_DISPATCH_RETRY_INITIAL_DELAY_SECONDS:60}
+      backoff-multiplier: ${APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER:2}
+      max-delay-seconds: ${APP_MAIL_DISPATCH_RETRY_MAX_DELAY_SECONDS:900}
+      batch-size: ${APP_MAIL_DISPATCH_RETRY_BATCH_SIZE:20}
+      local-scheduler-enabled: ${APP_MAIL_DISPATCH_RETRY_LOCAL_SCHEDULER_ENABLED:true}
+      local-fixed-delay-millis: ${APP_MAIL_DISPATCH_RETRY_LOCAL_FIXED_DELAY_MILLIS:60000}
+  workflow:
+    auto-complete-empty-chain: true
+  context:
+    memory:
+      enabled: ${APP_CONTEXT_MEMORY_ENABLED:false}
+      compression-enabled: ${APP_CONTEXT_MEMORY_COMPRESSION_ENABLED:true}
+      llm-summary-enabled: ${APP_CONTEXT_MEMORY_LLM_SUMMARY_ENABLED:false}
+      recent-round-limit: ${APP_CONTEXT_RECENT_ROUND_LIMIT:5}
+      summary-threshold: ${APP_CONTEXT_SUMMARY_THRESHOLD:10}
+      redis-key-prefix: ${APP_CONTEXT_REDIS_KEY_PREFIX:icc:memory}
+  knowledge:
+    embedding:
+      enabled: ${APP_KNOWLEDGE_EMBEDDING_ENABLED:false}
+      max-input-length: ${APP_KNOWLEDGE_EMBEDDING_MAX_INPUT_LENGTH:4000}
+    elasticsearch:
+      enabled: ${APP_ELASTICSEARCH_ENABLED:false}
+      uris: ${APP_ELASTICSEARCH_URIS:http://127.0.0.1:9200}
+      index-name: ${APP_ELASTICSEARCH_INDEX_NAME:knowledge_chunks}
+      title-field: ${APP_ELASTICSEARCH_TITLE_FIELD:title}
+      content-field: ${APP_ELASTICSEARCH_CONTENT_FIELD:content}
+      vector-field: ${APP_ELASTICSEARCH_VECTOR_FIELD:content_vector}
+      parent-id-field: ${APP_ELASTICSEARCH_PARENT_ID_FIELD:parent_id}
+      doc-type-field: ${APP_ELASTICSEARCH_DOC_TYPE_FIELD:doc_type}
+      top-k: ${APP_ELASTICSEARCH_TOP_K:10}
+      num-candidates: ${APP_ELASTICSEARCH_NUM_CANDIDATES:50}
+      embedding-dimensions: ${APP_ELASTICSEARCH_EMBEDDING_DIMENSIONS:16}
+      rrf-k: ${APP_ELASTICSEARCH_RRF_K:60}
+  runtime-config:
+    nacos:
+      enabled: ${APP_NACOS_CONFIG_ENABLED:false}
+      server-addr: ${APP_NACOS_SERVER_ADDR:127.0.0.1:8848}
+      namespace: ${APP_NACOS_NAMESPACE:}
+      group: ${APP_NACOS_GROUP:DEFAULT_GROUP}
+      prompt-data-id: ${APP_NACOS_PROMPT_DATA_ID:agent-prompts.json}
+      intent-data-id: ${APP_NACOS_INTENT_DATA_ID:agent-intents.json}
+      retrieval-data-id: ${APP_NACOS_RETRIEVAL_DATA_ID:agent-retrieval.json}
+      timeout-millis: ${APP_NACOS_TIMEOUT_MILLIS:3000}
+  scheduler:
+    xxl:
+      enabled: ${APP_XXL_ENABLED:false}
+      admin-addresses: ${APP_XXL_ADMIN_ADDRESSES:http://127.0.0.1:8088/xxl-job-admin}
+      access-token: ${APP_XXL_ACCESS_TOKEN:}
+      executor-app-name: ${APP_XXL_EXECUTOR_APP_NAME:intelligent-customer-chat-executor}
+      executor-address: ${APP_XXL_EXECUTOR_ADDRESS:}
+      executor-ip: ${APP_XXL_EXECUTOR_IP:}
+      executor-port: ${APP_XXL_EXECUTOR_PORT:9999}
+      log-path: ${APP_XXL_LOG_PATH:/tmp/xxl-job/jobhandler}
+      log-retention-days: ${APP_XXL_LOG_RETENTION_DAYS:30}

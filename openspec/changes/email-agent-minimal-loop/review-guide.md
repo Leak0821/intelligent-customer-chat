@@ -35,30 +35,34 @@
 然后按主题补读研究合同：
 
 6. [research/first-stage-technical-decisions.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-technical-decisions.md)
-7. [research/first-stage-sub-intent-seed-list.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-sub-intent-seed-list.md)
-8. [research/first-stage-intent-normalization-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-intent-normalization-contract.md)
-9. [research/first-stage-context-loading-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-context-loading-contract.md)
-10. [research/first-stage-business-data-access-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-business-data-access-contract.md)
-11. [research/first-stage-rag-boundary.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-rag-boundary.md)
-12. [research/first-stage-pre-sales-branch.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-pre-sales-branch.md)
-13. [research/first-stage-after-sales-branch.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-after-sales-branch.md)
-14. [research/first-stage-business-data-rag-coordination.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-business-data-rag-coordination.md)
-15. [research/first-stage-review-and-fallback.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-review-and-fallback.md)
-16. [research/first-stage-reply-state-model.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-reply-state-model.md)
-17. [research/first-stage-observability-replay.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-observability-replay.md)
+7. [research/first-stage-runtime-stack-baseline.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-runtime-stack-baseline.md)
+8. [research/first-stage-sub-intent-seed-list.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-sub-intent-seed-list.md)
+9. [research/first-stage-intent-normalization-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-intent-normalization-contract.md)
+10. [research/first-stage-context-loading-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-context-loading-contract.md)
+11. [research/first-stage-business-data-access-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-business-data-access-contract.md)
+12. [research/first-stage-rag-boundary.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-rag-boundary.md)
+13. [research/first-stage-pre-sales-branch.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-pre-sales-branch.md)
+14. [research/first-stage-after-sales-branch.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-after-sales-branch.md)
+15. [research/first-stage-business-data-rag-coordination.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-business-data-rag-coordination.md)
+16. [research/first-stage-review-and-fallback.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-review-and-fallback.md)
+17. [research/first-stage-reply-state-model.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-reply-state-model.md)
+18. [research/first-stage-observability-replay.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-observability-replay.md)
 
 如果当前审查通过，进入编码前建议继续看：
 
-18. [research/first-stage-implementation-skeleton.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-implementation-skeleton.md)
+19. [research/first-stage-implementation-skeleton.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-implementation-skeleton.md)
+20. [research/first-stage-slice-1-coding-plan.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-slice-1-coding-plan.md)
 
 ## 4. 当前已确认的第一阶段基线
 
 当前已经固定的核心基线如下：
 
 - 邮件入口：`IMAP`
+- 运行时基线：`JDK 17 + Maven + Spring Boot 3.4.x`
 - 主流程：`Java + Spring Boot + 显式状态主链路`
-- AI 抽象：`Spring AI`
+- AI 抽象：`Spring AI 1.1.7`
 - 阿里模型生态：后续按需通过 `Spring AI Alibaba` 补 provider 接入
+- 基础设施：`MySQL 8.0.x + Redis 7.x + Elasticsearch 8.18.x + Nacos + XXL-JOB + Docker Compose`
 - 主场景：售前、售后
 - 首批子意图：售前 4 个、售后 4 个
 - 输出状态：直接草稿、先追问、转人工

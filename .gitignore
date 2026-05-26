@@ -17,6 +17,8 @@
 dist/
 build/
 coverage/
+target/
+.m2/
 
 # Local SSH material for this repository only
 .local-ssh/
