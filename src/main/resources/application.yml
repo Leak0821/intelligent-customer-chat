@@ -29,6 +29,11 @@ management:
         include: health,info
 
 app:
+  ai:
+    chat:
+      enabled: ${APP_AI_CHAT_ENABLED:false}
+      max-input-length: ${APP_AI_CHAT_MAX_INPUT_LENGTH:6000}
+      temperature: ${APP_AI_CHAT_TEMPERATURE:0.2}
   mail:
     enabled: ${APP_MAIL_ENABLED:false}
     source: ${APP_MAIL_SOURCE:imap}

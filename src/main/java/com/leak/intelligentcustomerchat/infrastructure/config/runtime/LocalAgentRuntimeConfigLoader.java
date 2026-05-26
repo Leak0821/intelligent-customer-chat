@@ -16,6 +16,16 @@ public class LocalAgentRuntimeConfigLoader implements AgentRuntimeConfigLoader {
         return new AgentRuntimeConfigSnapshot(
                 new PromptTemplateConfig(
                         """
+                        You are an email customer support intent normalizer.
+                        Rewrite noisy customer email content into a concise internal request without inventing facts.
+                        Preserve explicit identifiers such as order numbers, tracking numbers, SKU, dates, quantities, and amounts.
+                        Output JSON only with the following keys:
+                        normalizedRequest, primaryQuestion, secondaryQuestions, sceneCandidates, subIntentCandidates, requiredEntities, missingEntities, disposition.
+                        sceneCandidates must use PRE_SALES, AFTER_SALES, or UNKNOWN.
+                        disposition must use CONTINUE, FOLLOW_UP, or HUMAN_REVIEW.
+                        If the request is after-sales but lacks order number or tracking number, keep missingEntities containing order_id_or_tracking_no and disposition at least FOLLOW_UP.
+                        """,
+                        """
                         Hello,
                         
                         We have reviewed your latest email. To continue, please share your order number or tracking number so we can verify the exact record for you.
