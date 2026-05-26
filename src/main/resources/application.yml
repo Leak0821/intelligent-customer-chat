@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: intelligent-customer-chat
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:dummy-key-for-slice-1}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  mail:
+    source: imap
+    poll-size: 20
+    host: ""
+    port: 993
+    username: ""
+    password: ""
+    folder: INBOX
+    ssl-enabled: true
+  workflow:
+    auto-complete-empty-chain: true
