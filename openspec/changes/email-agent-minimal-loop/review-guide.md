@@ -31,27 +31,33 @@
 3. [openspec/changes/email-agent-minimal-loop/spec.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/openspec/changes/email-agent-minimal-loop/spec.md)
 4. [openspec/changes/email-agent-minimal-loop/design.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/openspec/changes/email-agent-minimal-loop/design.md)
 5. [openspec/changes/email-agent-minimal-loop/tasks.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/openspec/changes/email-agent-minimal-loop/tasks.md)
+6. [openspec/changes/email-agent-minimal-loop/execution-playbook.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/openspec/changes/email-agent-minimal-loop/execution-playbook.md)
 
 然后按主题补读研究合同：
 
-6. [research/first-stage-technical-decisions.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-technical-decisions.md)
-7. [research/first-stage-runtime-stack-baseline.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-runtime-stack-baseline.md)
-8. [research/first-stage-sub-intent-seed-list.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-sub-intent-seed-list.md)
-9. [research/first-stage-intent-normalization-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-intent-normalization-contract.md)
-10. [research/first-stage-context-loading-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-context-loading-contract.md)
-11. [research/first-stage-business-data-access-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-business-data-access-contract.md)
-12. [research/first-stage-rag-boundary.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-rag-boundary.md)
-13. [research/first-stage-pre-sales-branch.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-pre-sales-branch.md)
-14. [research/first-stage-after-sales-branch.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-after-sales-branch.md)
-15. [research/first-stage-business-data-rag-coordination.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-business-data-rag-coordination.md)
-16. [research/first-stage-review-and-fallback.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-review-and-fallback.md)
-17. [research/first-stage-reply-state-model.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-reply-state-model.md)
-18. [research/first-stage-observability-replay.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-observability-replay.md)
+7. [research/first-stage-technical-decisions.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-technical-decisions.md)
+8. [research/first-stage-runtime-stack-baseline.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-runtime-stack-baseline.md)
+9. [research/first-stage-sub-intent-seed-list.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-sub-intent-seed-list.md)
+10. [research/first-stage-intent-normalization-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-intent-normalization-contract.md)
+11. [research/first-stage-context-loading-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-context-loading-contract.md)
+12. [research/first-stage-business-data-access-contract.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-business-data-access-contract.md)
+13. [research/first-stage-rag-boundary.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-rag-boundary.md)
+14. [research/first-stage-pre-sales-branch.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-pre-sales-branch.md)
+15. [research/first-stage-after-sales-branch.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-after-sales-branch.md)
+16. [research/first-stage-business-data-rag-coordination.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-business-data-rag-coordination.md)
+17. [research/first-stage-review-and-fallback.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-review-and-fallback.md)
+18. [research/first-stage-reply-state-model.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-reply-state-model.md)
+19. [research/first-stage-observability-replay.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-observability-replay.md)
 
 如果当前审查通过，进入编码前建议继续看：
 
-19. [research/first-stage-implementation-skeleton.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-implementation-skeleton.md)
-20. [research/first-stage-slice-1-coding-plan.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-slice-1-coding-plan.md)
+20. [research/first-stage-implementation-skeleton.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-implementation-skeleton.md)
+21. [research/first-stage-slice-1-coding-plan.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/research/first-stage-slice-1-coding-plan.md)
+
+补充说明：
+
+- 如果已经进入实现阶段，`execution-playbook.md` 应与 `tasks.md` 一起阅读
+- 评审不只看“文档是否完整”，还要看“执行边界是否足够强，能否防止实现时继续偏航”
 
 ## 4. 当前已确认的第一阶段基线
 

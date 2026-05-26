@@ -20,6 +20,11 @@
 - [x] 定义第一阶段输出状态分类：直接回复 / 先追问 / 转人工
 - [x] 定义第一阶段日志、回放与评估最小要求
 - [x] 在后续 OpenSpec 或实现计划中，把当前闭环拆成可执行任务
+- [x] 为当前变更补充实现期执行守则，防止后续任务偏航
+
+执行入口：
+
+- 当前变更的实现期强约束见 [execution-playbook.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/openspec/changes/email-agent-minimal-loop/execution-playbook.md)
 
 ## 当前阶段执行看板
 
@@ -30,6 +35,12 @@
 当前阶段的唯一主目标是：
 
 - 把“邮件智能客服的 AI 处理主链路”做成可诊断、可演示、可复盘的最小闭环
+
+补充约束：
+
+- 后续每轮实现只允许围绕一个主任务推进
+- 如果任务不能直接改善 AI 主链路，默认不进入当前轮次
+- 具体执行纪律统一按 [execution-playbook.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/openspec/changes/email-agent-minimal-loop/execution-playbook.md) 执行
 
 这里的“AI 处理主链路”特指：
 

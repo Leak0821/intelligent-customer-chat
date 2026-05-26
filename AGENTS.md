@@ -136,6 +136,11 @@
 - `review-diff`：只审查当前 diff
 - `archive`：把稳定行为沉淀到 `openspec/specs/`
 
+补充规则：
+
+- 一旦某个变更已经进入实现阶段，优先遵守该变更目录下的执行守则类文档，例如 `execution-playbook.md`
+- 仓库级规则负责通用约束，当前激活变更的执行守则负责“这一轮到底做什么、不做什么”
+
 ## 多 Agent 规则
 
 `superpowers implementation` 只有在能够提升效率且不造成责任不清时，才允许使用多 agent。
