@@ -4,7 +4,9 @@ import java.util.List;
 
 public record MailPollingResult(
         int fetchedCount,
+        int queuedCount,
         int processedCount,
+        int failedCount,
         List<String> runIds,
         List<String> errors
 ) {

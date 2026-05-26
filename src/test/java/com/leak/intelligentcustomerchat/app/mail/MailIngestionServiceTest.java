@@ -4,6 +4,7 @@ import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceipt;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceiptRepository;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceiptStatus;
+import com.leak.intelligentcustomerchat.domain.mail.MailPollingResult;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,5 +50,30 @@ class MailIngestionServiceTest {
         MailReceipt persisted = mailReceiptRepository.findByMessageId(mail.messageId()).orElseThrow();
         assertThat(run.getRunId()).isEqualTo(persisted.getWorkflowRunId());
         assertThat(persisted.getStatus()).isEqualTo(MailReceiptStatus.PROCESSED);
+    }
+
+    @Test
+    void shouldQueueThenProcessReceiptAsSeparateSteps() {
+        InboundMail mail = new InboundMail(
+                "msg-receipt-2",
+                "thread-receipt-2",
+                "buyer@example.com",
+                "Need logistics update",
+                "Please help check my order status.",
+                OffsetDateTime.now()
+        );
+
+        MailPollingResult enqueueResult = mailIngestionService.enqueue(new com.leak.intelligentcustomerchat.domain.mail.MailFetchResult(List.of(mail), List.of()));
+        MailReceipt queued = mailReceiptRepository.findByMessageId(mail.messageId()).orElseThrow();
+
+        assertThat(enqueueResult.queuedCount()).isEqualTo(1);
+        assertThat(queued.getStatus()).isEqualTo(MailReceiptStatus.QUEUED);
+
+        MailPollingResult processingResult = mailIngestionService.processPendingReceipts(10);
+        MailReceipt processed = mailReceiptRepository.findByMessageId(mail.messageId()).orElseThrow();
+
+        assertThat(processingResult.processedCount()).isEqualTo(1);
+        assertThat(processed.getStatus()).isEqualTo(MailReceiptStatus.PROCESSED);
+        assertThat(processed.getWorkflowRunId()).isNotBlank();
     }
 }

@@ -24,8 +24,8 @@ public class XxlMailJobHandler {
     @XxlJob("mailPollingJobHandler")
     public void pollInbox() {
         MailPollingResult result = mailIngestionService.fetchAndProcess();
-        XxlJobHelper.log("mail polling finished, fetched=%s, processed=%s, errors=%s",
-                result.fetchedCount(), result.processedCount(), result.errors().size());
+        XxlJobHelper.log("mail polling finished, fetched=%s, queued=%s, processed=%s, failed=%s, errors=%s",
+                result.fetchedCount(), result.queuedCount(), result.processedCount(), result.failedCount(), result.errors().size());
     }
 
     @XxlJob("replyDispatchRetryJobHandler")

@@ -7,6 +7,7 @@
 - 当前以文档先行方式收敛第一阶段规范
 - 第一阶段实现基线已收敛为 `Java + Spring Boot + Spring AI`
 - 当前目标是先把“可审、可拆、可实现”的规范合同沉淀完整
+- 第一版默认按“中小公司先跑通主链路”的思路实现，不过早引入过重的实时编排和复杂调度体系
 
 ## 重要提醒
 
@@ -120,6 +121,22 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 默认仍然是 `noop` 发件器，目的是先保留完整发送状态机，同时避免本地开发或演示时误发真实邮件。
 发送失败后默认会进入“待重试”状态，并通过本地定时器或 `XXL-JOB` 补偿入口继续推进；如果重试次数耗尽，则改为人工跟进状态。
 
+## 邮件处理策略
+
+第一版邮件链路默认不要求实时处理。
+
+当前实现更偏向中小公司常见做法：
+
+- 先把邮件收下来，落一条 `mail_receipt`
+- 可以先入队，再由后续任务批量推进工作流
+- 也保留一个 `poll-and-process` 组合入口，方便本地快速验证
+
+这样做的原因很简单：
+
+- 第一版更重视闭环跑通和可复盘，而不是追求毫秒级实时
+- 如果后面业务测试发现流程需要调整，轻量任务化方案比重工作流平台更容易改
+- 等真实接起来之后，再决定是否要拆成更细的异步任务和调度链
+
 ## 本地演示接口
 
 - `POST /api/workflows/demo`：提交一封测试邮件，返回 `WorkflowRun`
@@ -137,6 +154,10 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 - `GET /api/workflows/{runId}/reviews`：查看该链路的人工审核记录
 - `POST /api/workflows/{runId}/retry-dispatch`：手工触发一条待重试派发
 - `POST /api/workflows/dispatches/retry-due`：批量执行已到期的发送补偿任务
+- `POST /api/mail/poll`：拉取邮箱新邮件并入队
+- `POST /api/mail/process-pending`：批量处理待执行邮件
+- `POST /api/mail/poll-and-process`：一键完成“拉取 + 处理”，便于本地快速验证
+- `POST /api/mail/receipts/{messageId}/requeue`：把失败或待调整的邮件重新放回待处理队列
 
 当前回放视图除了事件、草稿、派发记录外，也会带上人工审核记录，便于说明：
 

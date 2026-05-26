@@ -22,7 +22,22 @@ public class MailAdminController {
 
     @PostMapping("/poll")
     public MailPollingResult pollInbox() {
+        return mailIngestionService.fetchAndEnqueue();
+    }
+
+    @PostMapping("/process-pending")
+    public MailPollingResult processPending(@RequestParam(defaultValue = "20") int limit) {
+        return mailIngestionService.processPendingReceipts(limit);
+    }
+
+    @PostMapping("/poll-and-process")
+    public MailPollingResult pollAndProcess() {
         return mailIngestionService.fetchAndProcess();
+    }
+
+    @PostMapping("/receipts/{messageId}/requeue")
+    public MailReceipt requeue(@org.springframework.web.bind.annotation.PathVariable String messageId) {
+        return mailIngestionService.requeueReceipt(messageId);
     }
 
     @GetMapping("/receipts")

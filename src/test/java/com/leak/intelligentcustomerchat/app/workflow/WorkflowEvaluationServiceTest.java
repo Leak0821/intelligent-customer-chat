@@ -240,6 +240,11 @@ class WorkflowEvaluationServiceTest {
         }
 
         @Override
+        public List<MailReceipt> findPendingForProcessing(int limit) {
+            return receiptsByMessageId.values().stream().limit(limit).toList();
+        }
+
+        @Override
         public List<MailReceipt> findRecent(int limit) {
             return receiptsByMessageId.values().stream().limit(limit).toList();
         }

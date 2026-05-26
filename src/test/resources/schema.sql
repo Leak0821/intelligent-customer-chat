@@ -90,6 +90,7 @@ CREATE TABLE mail_receipts (
     thread_id VARCHAR(255) NOT NULL,
     sender VARCHAR(255) NOT NULL,
     subject VARCHAR(255) NOT NULL,
+    raw_body CLOB NOT NULL,
     received_at TIMESTAMP NOT NULL,
     status VARCHAR(64) NOT NULL,
     workflow_run_id VARCHAR(64),
@@ -101,6 +102,7 @@ CREATE TABLE mail_receipts (
 CREATE UNIQUE INDEX uk_mail_receipts_source_folder_uid ON mail_receipts (source_key, folder_name, mail_uid);
 CREATE INDEX idx_mail_receipts_message_id ON mail_receipts (message_id);
 CREATE INDEX idx_mail_receipts_created_at ON mail_receipts (created_at);
+CREATE INDEX idx_mail_receipts_status_created_at ON mail_receipts (status, created_at);
 
 CREATE TABLE conversation_summaries (
     summary_id VARCHAR(64) PRIMARY KEY,
