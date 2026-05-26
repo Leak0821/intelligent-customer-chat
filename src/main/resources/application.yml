@@ -60,3 +60,24 @@ app:
       title-field: ${APP_ELASTICSEARCH_TITLE_FIELD:title}
       content-field: ${APP_ELASTICSEARCH_CONTENT_FIELD:content}
       top-k: ${APP_ELASTICSEARCH_TOP_K:10}
+  runtime-config:
+    nacos:
+      enabled: ${APP_NACOS_CONFIG_ENABLED:false}
+      server-addr: ${APP_NACOS_SERVER_ADDR:127.0.0.1:8848}
+      namespace: ${APP_NACOS_NAMESPACE:}
+      group: ${APP_NACOS_GROUP:DEFAULT_GROUP}
+      prompt-data-id: ${APP_NACOS_PROMPT_DATA_ID:agent-prompts.json}
+      intent-data-id: ${APP_NACOS_INTENT_DATA_ID:agent-intents.json}
+      retrieval-data-id: ${APP_NACOS_RETRIEVAL_DATA_ID:agent-retrieval.json}
+      timeout-millis: ${APP_NACOS_TIMEOUT_MILLIS:3000}
+  scheduler:
+    xxl:
+      enabled: ${APP_XXL_ENABLED:false}
+      admin-addresses: ${APP_XXL_ADMIN_ADDRESSES:http://127.0.0.1:8088/xxl-job-admin}
+      access-token: ${APP_XXL_ACCESS_TOKEN:}
+      executor-app-name: ${APP_XXL_EXECUTOR_APP_NAME:intelligent-customer-chat-executor}
+      executor-address: ${APP_XXL_EXECUTOR_ADDRESS:}
+      executor-ip: ${APP_XXL_EXECUTOR_IP:}
+      executor-port: ${APP_XXL_EXECUTOR_PORT:9999}
+      log-path: ${APP_XXL_LOG_PATH:/tmp/xxl-job/jobhandler}
+      log-retention-days: ${APP_XXL_LOG_RETENTION_DAYS:30}

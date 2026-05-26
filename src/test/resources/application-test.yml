@@ -43,3 +43,24 @@ app:
       title-field: title
       content-field: content
       top-k: 10
+  runtime-config:
+    nacos:
+      enabled: false
+      server-addr: 127.0.0.1:8848
+      namespace:
+      group: DEFAULT_GROUP
+      prompt-data-id: agent-prompts.json
+      intent-data-id: agent-intents.json
+      retrieval-data-id: agent-retrieval.json
+      timeout-millis: 3000
+  scheduler:
+    xxl:
+      enabled: false
+      admin-addresses: http://127.0.0.1:8088/xxl-job-admin
+      access-token:
+      executor-app-name: intelligent-customer-chat-executor
+      executor-address:
+      executor-ip:
+      executor-port: 9999
+      log-path: /tmp/xxl-job/jobhandler
+      log-retention-days: 30

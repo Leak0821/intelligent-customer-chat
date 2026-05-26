@@ -5,12 +5,14 @@ import com.leak.intelligentcustomerchat.config.MailProperties;
 import com.leak.intelligentcustomerchat.domain.mail.MailPollingResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnProperty(prefix = "app.mail", name = {"enabled", "polling-enabled"}, havingValue = "true")
+@ConditionalOnExpression(
+        "'${app.mail.enabled:false}' == 'true' && '${app.mail.polling-enabled:false}' == 'true' && '${app.scheduler.xxl.enabled:false}' == 'false'"
+)
 public class LocalMailPollingScheduler {
     private static final Logger log = LoggerFactory.getLogger(LocalMailPollingScheduler.class);
 

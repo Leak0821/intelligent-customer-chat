@@ -1,5 +1,6 @@
 package com.leak.intelligentcustomerchat.app.knowledge;
 
+import com.leak.intelligentcustomerchat.app.config.RetrievalConfigService;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactResult;
 import com.leak.intelligentcustomerchat.domain.intent.IntentNormalizationResult;
 import com.leak.intelligentcustomerchat.domain.intent.IntentRouteResult;
@@ -11,9 +12,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class DefaultKnowledgeRetrieveService implements KnowledgeRetrieveService {
     private final KnowledgeRetriever knowledgeRetriever;
+    private final RetrievalConfigService retrievalConfigService;
 
-    public DefaultKnowledgeRetrieveService(KnowledgeRetriever knowledgeRetriever) {
+    public DefaultKnowledgeRetrieveService(KnowledgeRetriever knowledgeRetriever,
+                                           RetrievalConfigService retrievalConfigService) {
         this.knowledgeRetriever = knowledgeRetriever;
+        this.retrievalConfigService = retrievalConfigService;
     }
 
     @Override
@@ -25,7 +29,7 @@ public class DefaultKnowledgeRetrieveService implements KnowledgeRetrieveService
                 routeResult.scene().name(),
                 routeResult.subIntent(),
                 businessFactResult.resolvedEntities(),
-                10
+                retrievalConfigService.currentRetrievalSettings().topK()
         );
         return knowledgeRetriever.retrieve(query);
     }

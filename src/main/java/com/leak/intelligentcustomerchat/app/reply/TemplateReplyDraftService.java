@@ -1,5 +1,6 @@
 package com.leak.intelligentcustomerchat.app.reply;
 
+import com.leak.intelligentcustomerchat.app.config.PromptConfigService;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactResult;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactStatus;
 import com.leak.intelligentcustomerchat.domain.context.ContextSnapshot;
@@ -19,6 +20,11 @@ import java.util.stream.Collectors;
 
 @Service
 public class TemplateReplyDraftService implements ReplyDraftService {
+    private final PromptConfigService promptConfigService;
+
+    public TemplateReplyDraftService(PromptConfigService promptConfigService) {
+        this.promptConfigService = promptConfigService;
+    }
 
     @Override
     public ReplyDraft draft(WorkflowRun run,
@@ -52,34 +58,15 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                              KnowledgeRetrieveResult knowledgeRetrieveResult,
                              ContextSnapshot contextSnapshot,
                              ReplyDraftStatus status) {
+        String followUpTemplate = promptConfigService.currentPromptConfig().followUpTemplate();
+        String humanReviewTemplate = promptConfigService.currentPromptConfig().humanReviewTemplate();
+        String directReplySuffix = promptConfigService.currentPromptConfig().directReplySuffix();
         if (status == ReplyDraftStatus.FOLLOW_UP_NEEDED) {
-            return """
-                    Hello,
-                    
-                    We have reviewed your latest email. To continue, please share your order number or tracking number so we can verify the exact record for you.
-                    
-                    Current understanding:
-                    - Main request: %s
-                    - Routed scene: %s
-                    
-                    Once we receive the missing information, we will continue with the next step.
-                    """
-                    .formatted(normalizationResult.primaryQuestion(), routeResult.scene());
+            return renderTemplate(followUpTemplate, normalizationResult.primaryQuestion(), routeResult.scene().name());
         }
 
         if (status == ReplyDraftStatus.HUMAN_REVIEW_REQUIRED) {
-            return """
-                    Hello,
-                    
-                    We have reviewed your latest request and a specialist is checking the case to avoid giving you an incorrect commitment.
-                    
-                    Current understanding:
-                    - Main request: %s
-                    - Routed scene: %s
-                    
-                    We will follow up again after manual review.
-                    """
-                    .formatted(normalizationResult.primaryQuestion(), routeResult.scene());
+            return renderTemplate(humanReviewTemplate, normalizationResult.primaryQuestion(), routeResult.scene().name());
         }
 
         String routeLine = routeResult.scene() == CustomerScene.PRE_SALES
@@ -97,7 +84,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 - Knowledge snippets: %s
                 - Context summary: %s
                 
-                This draft is still running on the first production skeleton and will be refined with live tools, live facts, and RAG evidence in the next slices.
+                %s
                 """
                 .formatted(
                         routeLine,
@@ -106,8 +93,15 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                         routeResult.subIntent(),
                         businessFactResult.facts(),
                         renderKnowledgeSnippets(knowledgeRetrieveResult),
-                        contextSnapshot.threadSummary()
+                        contextSnapshot.threadSummary(),
+                        directReplySuffix
                 );
+    }
+
+    private String renderTemplate(String template, String primaryQuestion, String scene) {
+        return template
+                .replace("{{primaryQuestion}}", primaryQuestion)
+                .replace("{{scene}}", scene);
     }
 
     private String renderKnowledgeSnippets(KnowledgeRetrieveResult knowledgeRetrieveResult) {
