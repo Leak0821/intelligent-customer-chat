@@ -65,6 +65,7 @@ smoke_pre_sales() {
 require_curl
 call GET "/api/runtime-config/preflight"
 call GET "/api/runtime-config"
+call GET "/api/mail/overview"
 call GET "/api/business/orders"
 call GET "/api/business/logistics"
 call GET "/api/business/policies"

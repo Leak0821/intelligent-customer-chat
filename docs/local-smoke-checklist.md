@@ -50,6 +50,12 @@ curl http://127.0.0.1:8080/api/business/policies
 curl http://127.0.0.1:8080/api/knowledge/seeds
 ```
 
+5. 如果要看邮件接入控制面
+
+```bash
+curl http://127.0.0.1:8080/api/mail/overview
+```
+
 ## 3. 最小闭环验证
 
 ### 3.1 售后样例
@@ -120,6 +126,15 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 ## 5. 如果现场想快速排错
 
 - 先看 `preflight`
+- 再看 `mail/overview`
 - 再看 `runtime-config`
 - 再看 `business` 和 `knowledge`
 - 最后看 `workflow/demo`
+
+## 6. 附加脚本
+
+如果要快速验证邮件接入控制面，可执行：
+
+```bash
+./scripts/mail-ops-smoke.sh
+```
