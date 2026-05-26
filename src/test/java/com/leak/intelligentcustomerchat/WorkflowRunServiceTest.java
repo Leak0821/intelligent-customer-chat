@@ -106,5 +106,6 @@ class WorkflowRunServiceTest {
         assertThat(replay.events().get(0).createdAt()).isBeforeOrEqualTo(replay.events().get(replay.events().size() - 1).createdAt());
         assertThat(replay.latestDraft()).isNotNull();
         assertThat(replay.dispatches()).isEmpty();
+        assertThat(replay.reviews()).isEmpty();
     }
 }

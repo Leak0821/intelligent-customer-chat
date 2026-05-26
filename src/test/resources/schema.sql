@@ -51,6 +51,9 @@ CREATE TABLE reply_dispatches (
     attempt_count INT NOT NULL,
     max_attempts INT NOT NULL,
     status VARCHAR(64) NOT NULL,
+    latest_trigger_source VARCHAR(64) NOT NULL,
+    latest_triggered_by VARCHAR(128) NOT NULL,
+    latest_trigger_reason VARCHAR(512) NOT NULL,
     provider_message_id VARCHAR(255),
     error_message VARCHAR(512),
     last_attempt_at TIMESTAMP,
@@ -62,6 +65,19 @@ CREATE TABLE reply_dispatches (
 CREATE INDEX idx_reply_dispatches_run_id_created_at ON reply_dispatches (run_id, created_at);
 CREATE INDEX idx_reply_dispatches_draft_id_created_at ON reply_dispatches (draft_id, created_at);
 CREATE INDEX idx_reply_dispatches_status_next_retry_at ON reply_dispatches (status, next_retry_at);
+
+CREATE TABLE review_records (
+    review_id VARCHAR(64) PRIMARY KEY,
+    run_id VARCHAR(64) NOT NULL,
+    draft_id VARCHAR(64) NOT NULL,
+    action VARCHAR(64) NOT NULL,
+    reviewer VARCHAR(128) NOT NULL,
+    review_note VARCHAR(512) NOT NULL,
+    created_at TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_review_records_run_id_created_at ON review_records (run_id, created_at);
+CREATE INDEX idx_review_records_draft_id_created_at ON review_records (draft_id, created_at);
 
 CREATE TABLE mail_receipts (
     receipt_id VARCHAR(64) PRIMARY KEY,

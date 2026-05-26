@@ -2,6 +2,7 @@ package com.leak.intelligentcustomerchat.app.reply;
 
 import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
+import com.leak.intelligentcustomerchat.domain.reply.DispatchTriggerSource;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchStatus;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftRepository;
@@ -61,10 +62,12 @@ class ReplyDispatchCompensationServiceTest {
         var firstDispatch = replySendLifecycleService.dispatch(run.getRunId());
         assertThat(firstDispatch.getStatus()).isEqualTo(ReplyDispatchStatus.RETRY_PENDING);
 
-        var retried = replyDispatchCompensationService.retry(run.getRunId());
+        var retried = replyDispatchCompensationService.retry(run.getRunId(), "qa-reviewer", "manual retry in test");
         assertThat(retried.getStatus()).isEqualTo(ReplyDispatchStatus.SENT);
         assertThat(retried.getAttemptCount()).isEqualTo(2);
         assertThat(retried.getProviderMessageId()).isEqualTo("smtp-message-2");
+        assertThat(retried.getLatestTriggerSource()).isEqualTo(DispatchTriggerSource.MANUAL_RETRY);
+        assertThat(retried.getLatestTriggeredBy()).isEqualTo("qa-reviewer");
 
         var persistedDraft = replyDraftRepository.findByRunId(run.getRunId()).orElseThrow();
         assertThat(persistedDraft.getSendReadiness()).isEqualTo(SendReadiness.HOLD);
@@ -87,12 +90,13 @@ class ReplyDispatchCompensationServiceTest {
 
         replySendLifecycleService.approveForSend(run.getRunId(), "approved in retry exhaustion test");
         replySendLifecycleService.dispatch(run.getRunId());
-        replyDispatchCompensationService.retry(run.getRunId());
-        var finalDispatch = replyDispatchCompensationService.retry(run.getRunId());
+        replyDispatchCompensationService.retry(run.getRunId(), "qa-reviewer", "manual retry in test");
+        var finalDispatch = replyDispatchCompensationService.retry(run.getRunId(), "qa-reviewer", "manual retry in test");
 
         assertThat(finalDispatch.getStatus()).isEqualTo(ReplyDispatchStatus.FAILED_FINAL);
         assertThat(finalDispatch.getAttemptCount()).isEqualTo(3);
         assertThat(finalDispatch.getNextRetryAt()).isNull();
+        assertThat(finalDispatch.getLatestTriggerSource()).isEqualTo(DispatchTriggerSource.MANUAL_RETRY);
 
         var persistedDraft = replyDraftRepository.findByRunId(run.getRunId()).orElseThrow();
         assertThat(persistedDraft.getSendReadiness()).isEqualTo(SendReadiness.HOLD);

@@ -4,6 +4,7 @@ import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
 import com.leak.intelligentcustomerchat.app.reply.DispatchRetryBatchResult;
 import com.leak.intelligentcustomerchat.app.reply.ReplyDispatchCompensationService;
 import com.leak.intelligentcustomerchat.app.reply.ReplySendLifecycleService;
+import com.leak.intelligentcustomerchat.app.review.ReplyReviewLifecycleService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowReplayView;
@@ -11,6 +12,7 @@ import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatch;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
+import com.leak.intelligentcustomerchat.domain.review.ReviewRecord;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEvent;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import jakarta.validation.constraints.Email;
@@ -37,17 +39,20 @@ public class WorkflowDemoController {
     private final WorkflowAnalysisService workflowAnalysisService;
     private final ReplySendLifecycleService replySendLifecycleService;
     private final ReplyDispatchCompensationService replyDispatchCompensationService;
+    private final ReplyReviewLifecycleService replyReviewLifecycleService;
 
     public WorkflowDemoController(MailIngestionService mailIngestionService,
                                   WorkflowRunService workflowRunService,
                                   WorkflowAnalysisService workflowAnalysisService,
                                   ReplySendLifecycleService replySendLifecycleService,
-                                  ReplyDispatchCompensationService replyDispatchCompensationService) {
+                                  ReplyDispatchCompensationService replyDispatchCompensationService,
+                                  ReplyReviewLifecycleService replyReviewLifecycleService) {
         this.mailIngestionService = mailIngestionService;
         this.workflowRunService = workflowRunService;
         this.workflowAnalysisService = workflowAnalysisService;
         this.replySendLifecycleService = replySendLifecycleService;
         this.replyDispatchCompensationService = replyDispatchCompensationService;
+        this.replyReviewLifecycleService = replyReviewLifecycleService;
     }
 
     @PostMapping("/demo")
@@ -99,10 +104,24 @@ public class WorkflowDemoController {
 
     @PostMapping("/{runId}/approve-send")
     public ReplyDraft approveSend(@PathVariable String runId, @RequestBody(required = false) SendApprovalRequest request) {
+        String reviewer = request == null || request.reviewer() == null || request.reviewer().isBlank()
+                ? "demo-admin"
+                : request.reviewer();
         String approvalNote = request == null || request.approvalNote() == null || request.approvalNote().isBlank()
                 ? "approved for send from demo admin endpoint"
                 : request.approvalNote();
-        return replySendLifecycleService.approveForSend(runId, approvalNote);
+        return replyReviewLifecycleService.approveForSend(runId, reviewer, approvalNote);
+    }
+
+    @PostMapping("/{runId}/reject-send")
+    public ReplyDraft rejectSend(@PathVariable String runId, @RequestBody(required = false) SendRejectRequest request) {
+        String reviewer = request == null || request.reviewer() == null || request.reviewer().isBlank()
+                ? "demo-admin"
+                : request.reviewer();
+        String rejectNote = request == null || request.rejectNote() == null || request.rejectNote().isBlank()
+                ? "rejected for send from demo admin endpoint"
+                : request.rejectNote();
+        return replyReviewLifecycleService.rejectSend(runId, reviewer, rejectNote);
     }
 
     @PostMapping("/{runId}/dispatch")
@@ -115,9 +134,20 @@ public class WorkflowDemoController {
         return replySendLifecycleService.findDispatches(runId);
     }
 
+    @GetMapping("/{runId}/reviews")
+    public List<ReviewRecord> listReviews(@PathVariable String runId) {
+        return replyReviewLifecycleService.findReviews(runId);
+    }
+
     @PostMapping("/{runId}/retry-dispatch")
-    public ReplyDispatch retryDispatch(@PathVariable String runId) {
-        return replyDispatchCompensationService.retry(runId);
+    public ReplyDispatch retryDispatch(@PathVariable String runId, @RequestBody(required = false) RetryDispatchRequest request) {
+        String reviewer = request == null || request.reviewer() == null || request.reviewer().isBlank()
+                ? "demo-admin"
+                : request.reviewer();
+        String retryReason = request == null || request.retryReason() == null || request.retryReason().isBlank()
+                ? "manual retry from demo admin endpoint"
+                : request.retryReason();
+        return replyDispatchCompensationService.retry(runId, reviewer, retryReason);
     }
 
     @PostMapping("/dispatches/retry-due")
@@ -135,7 +165,20 @@ public class WorkflowDemoController {
     }
 
     public record SendApprovalRequest(
+            String reviewer,
             String approvalNote
+    ) {
+    }
+
+    public record SendRejectRequest(
+            String reviewer,
+            String rejectNote
+    ) {
+    }
+
+    public record RetryDispatchRequest(
+            String reviewer,
+            String retryReason
     ) {
     }
 

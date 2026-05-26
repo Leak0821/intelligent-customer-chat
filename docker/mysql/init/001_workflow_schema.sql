@@ -48,6 +48,9 @@ CREATE TABLE IF NOT EXISTS reply_dispatches (
     attempt_count INT NOT NULL,
     max_attempts INT NOT NULL,
     status VARCHAR(64) NOT NULL,
+    latest_trigger_source VARCHAR(64) NOT NULL,
+    latest_triggered_by VARCHAR(128) NOT NULL,
+    latest_trigger_reason VARCHAR(512) NOT NULL,
     provider_message_id VARCHAR(255) NULL,
     error_message VARCHAR(512) NULL,
     last_attempt_at DATETIME(3) NULL,
@@ -57,6 +60,18 @@ CREATE TABLE IF NOT EXISTS reply_dispatches (
     KEY idx_reply_dispatches_run_id_created_at (run_id, created_at),
     KEY idx_reply_dispatches_draft_id_created_at (draft_id, created_at),
     KEY idx_reply_dispatches_status_next_retry_at (status, next_retry_at)
+);
+
+CREATE TABLE IF NOT EXISTS review_records (
+    review_id VARCHAR(64) PRIMARY KEY,
+    run_id VARCHAR(64) NOT NULL,
+    draft_id VARCHAR(64) NOT NULL,
+    action VARCHAR(64) NOT NULL,
+    reviewer VARCHAR(128) NOT NULL,
+    review_note VARCHAR(512) NOT NULL,
+    created_at DATETIME(3) NOT NULL,
+    KEY idx_review_records_run_id_created_at (run_id, created_at),
+    KEY idx_review_records_draft_id_created_at (draft_id, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS mail_receipts (

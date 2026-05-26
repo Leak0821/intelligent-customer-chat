@@ -14,6 +14,9 @@ public final class ReplyDispatch {
     private int attemptCount;
     private int maxAttempts;
     private ReplyDispatchStatus status;
+    private DispatchTriggerSource latestTriggerSource;
+    private String latestTriggeredBy;
+    private String latestTriggerReason;
     private String providerMessageId;
     private String errorMessage;
     private OffsetDateTime lastAttemptAt;
@@ -30,6 +33,9 @@ public final class ReplyDispatch {
                           int attemptCount,
                           int maxAttempts,
                           ReplyDispatchStatus status,
+                          DispatchTriggerSource latestTriggerSource,
+                          String latestTriggeredBy,
+                          String latestTriggerReason,
                           String providerMessageId,
                           String errorMessage,
                           OffsetDateTime lastAttemptAt,
@@ -45,6 +51,9 @@ public final class ReplyDispatch {
         this.attemptCount = validateAttemptCount(attemptCount);
         this.maxAttempts = validateMaxAttempts(maxAttempts);
         this.status = Objects.requireNonNull(status, "status must not be null");
+        this.latestTriggerSource = Objects.requireNonNull(latestTriggerSource, "latestTriggerSource must not be null");
+        this.latestTriggeredBy = normalizeActor(latestTriggeredBy);
+        this.latestTriggerReason = normalizeReason(latestTriggerReason);
         this.providerMessageId = providerMessageId;
         this.errorMessage = errorMessage;
         this.lastAttemptAt = lastAttemptAt;
@@ -58,7 +67,10 @@ public final class ReplyDispatch {
                                        String recipient,
                                        String subject,
                                        String bodySnapshot,
-                                       int maxAttempts) {
+                                       int maxAttempts,
+                                       DispatchTriggerSource triggerSource,
+                                       String triggeredBy,
+                                       String triggerReason) {
         OffsetDateTime now = OffsetDateTime.now();
         return new ReplyDispatch(
                 UUID.randomUUID().toString(),
@@ -70,6 +82,9 @@ public final class ReplyDispatch {
                 0,
                 maxAttempts,
                 ReplyDispatchStatus.PENDING,
+                triggerSource,
+                triggeredBy,
+                triggerReason,
                 null,
                 null,
                 null,
@@ -105,6 +120,13 @@ public final class ReplyDispatch {
         this.nextRetryAt = nextRetryAt;
     }
 
+    public void markTrigger(DispatchTriggerSource triggerSource, String triggeredBy, String triggerReason) {
+        this.latestTriggerSource = Objects.requireNonNull(triggerSource, "triggerSource must not be null");
+        this.latestTriggeredBy = normalizeActor(triggeredBy);
+        this.latestTriggerReason = normalizeReason(triggerReason);
+        this.updatedAt = OffsetDateTime.now();
+    }
+
     public static ReplyDispatch restore(String dispatchId,
                                         String runId,
                                         String draftId,
@@ -114,6 +136,9 @@ public final class ReplyDispatch {
                                         int attemptCount,
                                         int maxAttempts,
                                         ReplyDispatchStatus status,
+                                        DispatchTriggerSource latestTriggerSource,
+                                        String latestTriggeredBy,
+                                        String latestTriggerReason,
                                         String providerMessageId,
                                         String errorMessage,
                                         OffsetDateTime lastAttemptAt,
@@ -130,6 +155,9 @@ public final class ReplyDispatch {
                 attemptCount,
                 maxAttempts,
                 status,
+                latestTriggerSource,
+                latestTriggeredBy,
+                latestTriggerReason,
                 providerMessageId,
                 errorMessage,
                 lastAttemptAt,
@@ -173,6 +201,18 @@ public final class ReplyDispatch {
 
     public ReplyDispatchStatus getStatus() {
         return status;
+    }
+
+    public DispatchTriggerSource getLatestTriggerSource() {
+        return latestTriggerSource;
+    }
+
+    public String getLatestTriggeredBy() {
+        return latestTriggeredBy;
+    }
+
+    public String getLatestTriggerReason() {
+        return latestTriggerReason;
     }
 
     public String getProviderMessageId() {
@@ -227,5 +267,19 @@ public final class ReplyDispatch {
             throw new IllegalArgumentException("maxAttempts must be >= 1");
         }
         return maxAttempts;
+    }
+
+    private static String normalizeActor(String actor) {
+        if (actor == null || actor.isBlank()) {
+            return "system";
+        }
+        return actor.trim();
+    }
+
+    private static String normalizeReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            return "no trigger reason";
+        }
+        return reason.trim();
     }
 }

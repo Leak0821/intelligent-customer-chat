@@ -1,5 +1,6 @@
 package com.leak.intelligentcustomerchat.app.reply;
 
+import com.leak.intelligentcustomerchat.domain.reply.DispatchTriggerSource;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatch;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchStatus;
@@ -23,7 +24,7 @@ public class ReplyDispatchCompensationService {
         this.dispatchRetryPolicy = dispatchRetryPolicy;
     }
 
-    public ReplyDispatch retry(String runId) {
+    public ReplyDispatch retry(String runId, String reviewer, String retryReason) {
         ReplyDispatch dispatch = replyDispatchRepository.findLatestByRunId(runId)
                 .orElseThrow(() -> new NoSuchElementException("dispatch not found for runId=" + runId));
         if (dispatch.isSent()) {
@@ -32,7 +33,7 @@ public class ReplyDispatchCompensationService {
         if (!dispatch.isRetryPending()) {
             throw new IllegalStateException("dispatch is not waiting for retry, status=" + dispatch.getStatus());
         }
-        return replySendLifecycleService.retryDispatch(runId);
+        return replySendLifecycleService.retryDispatch(runId, DispatchTriggerSource.MANUAL_RETRY, reviewer, retryReason);
     }
 
     public DispatchRetryBatchResult retryDueDispatches() {
@@ -44,7 +45,12 @@ public class ReplyDispatchCompensationService {
         int retryPendingCount = 0;
         int failedFinalCount = 0;
         for (ReplyDispatch dispatch : dueDispatches) {
-            ReplyDispatch retried = replySendLifecycleService.retryDispatch(dispatch.getRunId());
+            ReplyDispatch retried = replySendLifecycleService.retryDispatch(
+                    dispatch.getRunId(),
+                    DispatchTriggerSource.SCHEDULED_RETRY,
+                    "system",
+                    "scheduled retry compensation"
+            );
             if (retried.isSent()) {
                 sentCount += 1;
             } else if (retried.isRetryPending()) {

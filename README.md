@@ -127,10 +127,18 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 - `GET /api/workflows/{runId}/replay`：按 `runId` 查看完整链路
 - `GET /api/workflows/by-message/{messageId}/replay`：按 `messageId` 查看最新链路
 - `POST /api/workflows/{runId}/approve-send`：把草稿从待审核推进到可发送
+- `POST /api/workflows/{runId}/reject-send`：驳回当前草稿发送，回到人工审核状态
 - `POST /api/workflows/{runId}/dispatch`：通过 no-op 发件适配层模拟发送
 - `GET /api/workflows/{runId}/dispatches`：查看该链路的发送记录
+- `GET /api/workflows/{runId}/reviews`：查看该链路的人工审核记录
 - `POST /api/workflows/{runId}/retry-dispatch`：手工触发一条待重试派发
 - `POST /api/workflows/dispatches/retry-due`：批量执行已到期的发送补偿任务
+
+当前回放视图除了事件、草稿、派发记录外，也会带上人工审核记录，便于说明：
+
+- 谁批准了发送
+- 谁驳回了发送
+- 最近一次发送是人工批准触发、人工重试还是调度补偿触发
 
 ## 知识库管理接口
 

@@ -2,6 +2,7 @@ package com.leak.intelligentcustomerchat.app.reply;
 
 import com.leak.intelligentcustomerchat.domain.mail.MailReceipt;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceiptRepository;
+import com.leak.intelligentcustomerchat.domain.reply.DispatchTriggerSource;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatch;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchStatus;
@@ -9,6 +10,7 @@ import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftStatus;
 import com.leak.intelligentcustomerchat.domain.reply.SendReadiness;
+import com.leak.intelligentcustomerchat.domain.review.ReviewRecordRepository;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRunRepository;
 import org.springframework.stereotype.Service;
@@ -25,19 +27,22 @@ public class ReplySendLifecycleService {
     private final MailReceiptRepository mailReceiptRepository;
     private final OutboundMailSender outboundMailSender;
     private final DispatchRetryPolicy dispatchRetryPolicy;
+    private final ReviewRecordRepository reviewRecordRepository;
 
     public ReplySendLifecycleService(WorkflowRunRepository workflowRunRepository,
                                      ReplyDraftRepository replyDraftRepository,
                                      ReplyDispatchRepository replyDispatchRepository,
                                      MailReceiptRepository mailReceiptRepository,
                                      OutboundMailSender outboundMailSender,
-                                     DispatchRetryPolicy dispatchRetryPolicy) {
+                                     DispatchRetryPolicy dispatchRetryPolicy,
+                                     ReviewRecordRepository reviewRecordRepository) {
         this.workflowRunRepository = workflowRunRepository;
         this.replyDraftRepository = replyDraftRepository;
         this.replyDispatchRepository = replyDispatchRepository;
         this.mailReceiptRepository = mailReceiptRepository;
         this.outboundMailSender = outboundMailSender;
         this.dispatchRetryPolicy = dispatchRetryPolicy;
+        this.reviewRecordRepository = reviewRecordRepository;
     }
 
     public ReplyDraft approveForSend(String runId, String approvalNote) {
@@ -52,14 +57,17 @@ public class ReplySendLifecycleService {
     }
 
     public ReplyDispatch dispatch(String runId) {
-        return dispatchInternal(runId, false);
+        ReviewAuditContext auditContext = reviewRecordRepository.findLatestApprovalByRunId(runId)
+                .map(record -> new ReviewAuditContext(DispatchTriggerSource.MANUAL_APPROVAL, record.getReviewer(), record.getReviewNote()))
+                .orElseGet(() -> new ReviewAuditContext(DispatchTriggerSource.MANUAL_APPROVAL, "system", "manual approval record not found"));
+        return dispatchInternal(runId, false, auditContext);
     }
 
-    public ReplyDispatch retryDispatch(String runId) {
-        return dispatchInternal(runId, true);
+    public ReplyDispatch retryDispatch(String runId, DispatchTriggerSource triggerSource, String triggeredBy, String triggerReason) {
+        return dispatchInternal(runId, true, new ReviewAuditContext(triggerSource, triggeredBy, triggerReason));
     }
 
-    private ReplyDispatch dispatchInternal(String runId, boolean retryMode) {
+    private ReplyDispatch dispatchInternal(String runId, boolean retryMode, ReviewAuditContext auditContext) {
         WorkflowRun run = workflowRunRepository.findByRunId(runId)
                 .orElseThrow(() -> new NoSuchElementException("workflow run not found for runId=" + runId));
         ReplyDraft draft = requireDraft(runId);
@@ -74,8 +82,19 @@ public class ReplySendLifecycleService {
                     if (retryMode) {
                         throw new NoSuchElementException("dispatch not found for retry, runId=" + runId);
                     }
-                    return ReplyDispatch.create(runId, draft.getDraftId(), receipt.getSender(), draft.getSubject(), draft.getBody(), dispatchRetryPolicy.maxAttempts());
+                    return ReplyDispatch.create(
+                            runId,
+                            draft.getDraftId(),
+                            receipt.getSender(),
+                            draft.getSubject(),
+                            draft.getBody(),
+                            dispatchRetryPolicy.maxAttempts(),
+                            auditContext.triggerSource(),
+                            auditContext.triggeredBy(),
+                            auditContext.triggerReason()
+                    );
                 });
+        dispatch.markTrigger(auditContext.triggerSource(), auditContext.triggeredBy(), auditContext.triggerReason());
         OutboundMailSendResult sendResult = outboundMailSender.send(
                 new OutboundMailRequest(receipt.getSender(), draft.getSubject(), draft.getBody())
         );
@@ -124,5 +143,12 @@ public class ReplySendLifecycleService {
         }
         dispatch.markAttemptResult(true, sendResult.providerMessageId(), null, sendResult.attemptedAt(), null);
         return dispatch;
+    }
+
+    private record ReviewAuditContext(
+            DispatchTriggerSource triggerSource,
+            String triggeredBy,
+            String triggerReason
+    ) {
     }
 }

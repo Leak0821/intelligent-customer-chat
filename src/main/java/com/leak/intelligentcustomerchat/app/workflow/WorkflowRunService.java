@@ -4,6 +4,7 @@ import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftRepository;
+import com.leak.intelligentcustomerchat.domain.review.ReviewRecordRepository;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEvent;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEventRepository;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
@@ -19,6 +20,7 @@ public class WorkflowRunService {
     private final WorkflowEventRepository workflowEventRepository;
     private final ReplyDraftRepository replyDraftRepository;
     private final ReplyDispatchRepository replyDispatchRepository;
+    private final ReviewRecordRepository reviewRecordRepository;
     private final WorkflowEventRecorder workflowEventRecorder;
     private final WorkflowStageExecutor workflowStageExecutor;
 
@@ -26,12 +28,14 @@ public class WorkflowRunService {
                               WorkflowEventRepository workflowEventRepository,
                               ReplyDraftRepository replyDraftRepository,
                               ReplyDispatchRepository replyDispatchRepository,
+                              ReviewRecordRepository reviewRecordRepository,
                               WorkflowEventRecorder workflowEventRecorder,
                               WorkflowStageExecutor workflowStageExecutor) {
         this.workflowRunRepository = workflowRunRepository;
         this.workflowEventRepository = workflowEventRepository;
         this.replyDraftRepository = replyDraftRepository;
         this.replyDispatchRepository = replyDispatchRepository;
+        this.reviewRecordRepository = reviewRecordRepository;
         this.workflowEventRecorder = workflowEventRecorder;
         this.workflowStageExecutor = workflowStageExecutor;
     }
@@ -74,7 +78,8 @@ public class WorkflowRunService {
                 run,
                 workflowEventRepository.findByRunId(run.getRunId()),
                 replyDraftRepository.findByRunId(run.getRunId()).orElse(null),
-                replyDispatchRepository.findByRunId(run.getRunId())
+                replyDispatchRepository.findByRunId(run.getRunId()),
+                reviewRecordRepository.findByRunId(run.getRunId())
         );
     }
 }

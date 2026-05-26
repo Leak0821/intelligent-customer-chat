@@ -35,6 +35,15 @@ public class ReplyDispatchEntity {
     @TableField("status")
     private String status;
 
+    @TableField("latest_trigger_source")
+    private String latestTriggerSource;
+
+    @TableField("latest_triggered_by")
+    private String latestTriggeredBy;
+
+    @TableField("latest_trigger_reason")
+    private String latestTriggerReason;
+
     @TableField("provider_message_id")
     private String providerMessageId;
 
@@ -123,6 +132,30 @@ public class ReplyDispatchEntity {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getLatestTriggerSource() {
+        return latestTriggerSource;
+    }
+
+    public void setLatestTriggerSource(String latestTriggerSource) {
+        this.latestTriggerSource = latestTriggerSource;
+    }
+
+    public String getLatestTriggeredBy() {
+        return latestTriggeredBy;
+    }
+
+    public void setLatestTriggeredBy(String latestTriggeredBy) {
+        this.latestTriggeredBy = latestTriggeredBy;
+    }
+
+    public String getLatestTriggerReason() {
+        return latestTriggerReason;
+    }
+
+    public void setLatestTriggerReason(String latestTriggerReason) {
+        this.latestTriggerReason = latestTriggerReason;
     }
 
     public String getProviderMessageId() {

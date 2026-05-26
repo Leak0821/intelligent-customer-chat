@@ -1,5 +1,6 @@
 package com.leak.intelligentcustomerchat.infrastructure.persistence.reply;
 
+import com.leak.intelligentcustomerchat.domain.reply.DispatchTriggerSource;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatch;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchStatus;
 
@@ -24,6 +25,9 @@ final class ReplyDispatchEntityMapper {
         entity.setAttemptCount(dispatch.getAttemptCount());
         entity.setMaxAttempts(dispatch.getMaxAttempts());
         entity.setStatus(dispatch.getStatus().name());
+        entity.setLatestTriggerSource(dispatch.getLatestTriggerSource().name());
+        entity.setLatestTriggeredBy(dispatch.getLatestTriggeredBy());
+        entity.setLatestTriggerReason(dispatch.getLatestTriggerReason());
         entity.setProviderMessageId(dispatch.getProviderMessageId());
         entity.setErrorMessage(dispatch.getErrorMessage());
         entity.setLastAttemptAt(toLocalDateTime(dispatch.getLastAttemptAt()));
@@ -44,6 +48,9 @@ final class ReplyDispatchEntityMapper {
                 entity.getAttemptCount(),
                 entity.getMaxAttempts(),
                 ReplyDispatchStatus.valueOf(entity.getStatus()),
+                DispatchTriggerSource.valueOf(entity.getLatestTriggerSource()),
+                entity.getLatestTriggeredBy(),
+                entity.getLatestTriggerReason(),
                 entity.getProviderMessageId(),
                 entity.getErrorMessage(),
                 toOffsetDateTime(entity.getLastAttemptAt()),
