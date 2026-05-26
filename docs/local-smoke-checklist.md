@@ -87,6 +87,16 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
   -d '{"messageId":"smoke-after-sales-001","threadId":"smoke-thread-001","from":"customer@example.com","subject":"Need help with tracking","body":"Hi, my order ABCD1234 tracking number is ZXCV9876. Could you check the latest logistics status?"}'
 ```
 
+分析结果里建议重点确认：
+
+- `intentDiagnostics.heuristicBaseline`
+- `intentDiagnostics.normalizationChangedByModel`
+- `contextDiagnostics.totalMessageCount`
+- `contextDiagnostics.latestPersistedSummary`
+- `knowledgeDiagnostics.retrievalQuery`
+- `knowledgeDiagnostics.bm25Snippets`
+- `knowledgeDiagnostics.vectorSnippets`
+
 3. 如果需要完整回放，继续查看
 
 ```bash

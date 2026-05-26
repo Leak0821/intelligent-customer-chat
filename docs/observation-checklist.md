@@ -44,6 +44,9 @@
 
 - scene 是否符合预期
 - subIntent 是否符合预期
+- heuristicBaseline 和 normalizationResult 是否有差异
+- contextDiagnostics 里是否能看到消息计数、压缩阈值和持久化摘要
+- knowledgeDiagnostics 里是否能看到 retrievalQuery，以及 bm25 / vector 两路召回
 - 是否触发了 business facts
 - 是否触发了 knowledge
 - draft 状态和 send readiness 是否合理
