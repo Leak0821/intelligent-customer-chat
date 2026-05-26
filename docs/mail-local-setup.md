@@ -15,6 +15,13 @@
 - 先验证主链路
 - 先演示意图、知识、审核、派发和回放
 
+可直接使用：
+
+```bash
+curl http://127.0.0.1:8080/api/mail/overview
+curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/pre-sales-recommendation?mode=replay"
+```
+
 ### 方案 B: 启用 IMAP 收信
 
 需要配置：
@@ -104,3 +111,22 @@ APP_MAIL_OUTBOUND_STARTTLS_ENABLED=true
 - 不建议先做复杂发件队列
 - 不建议先把收件、审稿、发件拆成很多微服务
 - 不建议在第一版就做高频实时推送
+
+## 6. 当前联调控制面
+
+为了方便第一版联调，当前管理口已经提供：
+
+- `GET /api/mail/overview`
+  - 看当前是否启用邮件接入
+  - 看当前轮询模式是 `manual-trigger` / `local-scheduler` / `xxl-job`
+  - 看最近收件处理状态统计
+- `POST /api/mail/poll`
+  - 只拉取并入队，不立即执行后续流程
+- `POST /api/mail/process-pending`
+  - 处理已经入队的收件记录
+- `POST /api/mail/poll-and-process`
+  - 拉取并直接处理，适合本地快速验证
+- `POST /api/mail/receipts/{messageId}/requeue`
+  - 对失败或已处理邮件重新入队
+- `GET /api/mail/receipts`
+  - 查看最近收件记录

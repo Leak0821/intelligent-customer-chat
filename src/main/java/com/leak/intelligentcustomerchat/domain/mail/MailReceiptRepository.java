@@ -15,4 +15,8 @@ public interface MailReceiptRepository {
     List<MailReceipt> findPendingForProcessing(int limit);
 
     List<MailReceipt> findRecent(int limit);
+
+    long countAll();
+
+    long countByStatus(MailReceiptStatus status);
 }

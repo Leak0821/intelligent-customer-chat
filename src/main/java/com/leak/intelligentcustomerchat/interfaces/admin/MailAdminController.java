@@ -1,6 +1,8 @@
 package com.leak.intelligentcustomerchat.interfaces.admin;
 
 import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
+import com.leak.intelligentcustomerchat.app.mail.MailOpsOverviewService;
+import com.leak.intelligentcustomerchat.app.mail.MailOpsOverviewView;
 import com.leak.intelligentcustomerchat.domain.mail.MailPollingResult;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceipt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,9 +17,17 @@ import java.util.List;
 @RequestMapping("/api/mail")
 public class MailAdminController {
     private final MailIngestionService mailIngestionService;
+    private final MailOpsOverviewService mailOpsOverviewService;
 
-    public MailAdminController(MailIngestionService mailIngestionService) {
+    public MailAdminController(MailIngestionService mailIngestionService,
+                               MailOpsOverviewService mailOpsOverviewService) {
         this.mailIngestionService = mailIngestionService;
+        this.mailOpsOverviewService = mailOpsOverviewService;
+    }
+
+    @GetMapping("/overview")
+    public MailOpsOverviewView overview(@RequestParam(defaultValue = "10") int recentLimit) {
+        return mailOpsOverviewService.overview(recentLimit);
     }
 
     @PostMapping("/poll")

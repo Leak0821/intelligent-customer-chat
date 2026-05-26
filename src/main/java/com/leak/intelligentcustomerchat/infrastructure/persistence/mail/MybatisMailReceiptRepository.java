@@ -78,4 +78,16 @@ public class MybatisMailReceiptRepository implements MailReceiptRepository {
                 .map(MailReceiptEntityMapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public long countAll() {
+        return mailReceiptMapper.selectCount(new LambdaQueryWrapper<>());
+    }
+
+    @Override
+    public long countByStatus(MailReceiptStatus status) {
+        LambdaQueryWrapper<MailReceiptEntity> query = new LambdaQueryWrapper<MailReceiptEntity>()
+                .eq(MailReceiptEntity::getStatus, status.name());
+        return mailReceiptMapper.selectCount(query);
+    }
 }
