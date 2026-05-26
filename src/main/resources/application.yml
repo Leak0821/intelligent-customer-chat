@@ -54,6 +54,9 @@ app:
       redis-key-prefix: ${APP_CONTEXT_REDIS_KEY_PREFIX:icc:memory}
   knowledge:
     elasticsearch:
+      enabled: ${APP_ELASTICSEARCH_ENABLED:false}
       uris: ${APP_ELASTICSEARCH_URIS:http://127.0.0.1:9200}
       index-name: ${APP_ELASTICSEARCH_INDEX_NAME:knowledge_chunks}
+      title-field: ${APP_ELASTICSEARCH_TITLE_FIELD:title}
+      content-field: ${APP_ELASTICSEARCH_CONTENT_FIELD:content}
       top-k: ${APP_ELASTICSEARCH_TOP_K:10}

@@ -83,7 +83,7 @@ public class WorkflowStageExecutor {
             advance(run, WorkflowStage.CONTEXT_LOADED,
                     "strongSignals=%s, optionalSignals=%s".formatted(contextSnapshot.strongSignals().size(), contextSnapshot.optionalSignals().size()));
 
-            BusinessFactResult businessFactResult = businessFactService.loadFacts(normalizationResult, routeResult, contextSnapshot);
+            BusinessFactResult businessFactResult = businessFactService.loadFacts(cleanedMail, normalizationResult, routeResult, contextSnapshot);
             advance(run, WorkflowStage.BUSINESS_FACTS_READY,
                     "factStatus=%s, facts=%s".formatted(businessFactResult.status(), businessFactResult.facts().size()));
 

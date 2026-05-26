@@ -3,14 +3,16 @@ package com.leak.intelligentcustomerchat.domain.knowledge;
 import java.util.List;
 
 public record KnowledgeRetrieveResult(
-        List<String> snippets,
+        String source,
+        List<KnowledgeSnippet> snippets,
         int recallCount
 ) {
     public KnowledgeRetrieveResult {
+        source = source == null ? "none" : source;
         snippets = List.copyOf(snippets);
     }
 
     public static KnowledgeRetrieveResult empty() {
-        return new KnowledgeRetrieveResult(List.of(), 0);
+        return new KnowledgeRetrieveResult("none", List.of(), 0);
     }
 }

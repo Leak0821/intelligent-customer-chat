@@ -8,11 +8,14 @@ import com.leak.intelligentcustomerchat.domain.intent.IntentNormalizationResult;
 import com.leak.intelligentcustomerchat.domain.intent.IntentRouteResult;
 import com.leak.intelligentcustomerchat.domain.intent.ProcessingDisposition;
 import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeRetrieveResult;
+import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeSnippet;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftStatus;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import org.springframework.stereotype.Service;
+
+import java.util.stream.Collectors;
 
 @Service
 public class TemplateReplyDraftService implements ReplyDraftService {
@@ -102,8 +105,17 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                         routeResult.scene(),
                         routeResult.subIntent(),
                         businessFactResult.facts(),
-                        knowledgeRetrieveResult.snippets(),
+                        renderKnowledgeSnippets(knowledgeRetrieveResult),
                         contextSnapshot.threadSummary()
                 );
+    }
+
+    private String renderKnowledgeSnippets(KnowledgeRetrieveResult knowledgeRetrieveResult) {
+        if (knowledgeRetrieveResult.snippets().isEmpty()) {
+            return "[]";
+        }
+        return knowledgeRetrieveResult.snippets().stream()
+                .map(KnowledgeSnippet::content)
+                .collect(Collectors.joining(" | ", "[", "]"));
     }
 }

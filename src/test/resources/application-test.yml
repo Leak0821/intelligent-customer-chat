@@ -37,6 +37,9 @@ app:
       redis-key-prefix: icc:test:memory
   knowledge:
     elasticsearch:
+      enabled: false
       uris: http://127.0.0.1:9200
       index-name: knowledge_chunks
+      title-field: title
+      content-field: content
       top-k: 10
