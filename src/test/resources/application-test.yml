@@ -46,6 +46,10 @@ app:
     poll-interval-millis: 60000
     connection-timeout-millis: 5000
     read-timeout-millis: 5000
+    outbound:
+      enabled: false
+      from-address: support@example.com
+      from-name: intelligent-customer-chat
   context:
     memory:
       enabled: false

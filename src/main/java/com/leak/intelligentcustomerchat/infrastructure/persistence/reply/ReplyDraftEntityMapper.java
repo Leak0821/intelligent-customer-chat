@@ -2,6 +2,7 @@ package com.leak.intelligentcustomerchat.infrastructure.persistence.reply;
 
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftStatus;
+import com.leak.intelligentcustomerchat.domain.reply.SendReadiness;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -21,6 +22,8 @@ final class ReplyDraftEntityMapper {
         entity.setBody(draft.getBody());
         entity.setStatus(draft.getStatus().name());
         entity.setReviewNotes(draft.getReviewNotes());
+        entity.setSendReadiness(draft.getSendReadiness().name());
+        entity.setNextAction(draft.getNextAction());
         entity.setCreatedAt(toLocalDateTime(draft.getCreatedAt()));
         entity.setUpdatedAt(toLocalDateTime(draft.getUpdatedAt()));
         return entity;
@@ -34,6 +37,8 @@ final class ReplyDraftEntityMapper {
                 entity.getBody(),
                 ReplyDraftStatus.valueOf(entity.getStatus()),
                 entity.getReviewNotes(),
+                SendReadiness.valueOf(entity.getSendReadiness()),
+                entity.getNextAction(),
                 toOffsetDateTime(entity.getCreatedAt()),
                 toOffsetDateTime(entity.getUpdatedAt())
         );

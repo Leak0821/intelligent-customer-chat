@@ -31,9 +31,27 @@ CREATE TABLE IF NOT EXISTS reply_drafts (
     body TEXT NOT NULL,
     status VARCHAR(64) NOT NULL,
     review_notes VARCHAR(512) NOT NULL,
+    send_readiness VARCHAR(64) NOT NULL,
+    next_action VARCHAR(128) NOT NULL,
     created_at DATETIME(3) NOT NULL,
     updated_at DATETIME(3) NOT NULL,
     KEY idx_reply_drafts_run_id_created_at (run_id, created_at)
+);
+
+CREATE TABLE IF NOT EXISTS reply_dispatches (
+    dispatch_id VARCHAR(64) PRIMARY KEY,
+    run_id VARCHAR(64) NOT NULL,
+    draft_id VARCHAR(64) NOT NULL,
+    recipient VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    body_snapshot TEXT NOT NULL,
+    status VARCHAR(64) NOT NULL,
+    provider_message_id VARCHAR(255) NULL,
+    error_message VARCHAR(512) NULL,
+    created_at DATETIME(3) NOT NULL,
+    updated_at DATETIME(3) NOT NULL,
+    KEY idx_reply_dispatches_run_id_created_at (run_id, created_at),
+    KEY idx_reply_dispatches_draft_id_created_at (draft_id, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS mail_receipts (

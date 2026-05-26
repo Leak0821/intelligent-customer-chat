@@ -103,6 +103,9 @@ APP_KNOWLEDGE_EMBEDDING_ENABLED=true
 - `POST /api/workflows/demo/replay`：提交一封测试邮件，直接返回完整回放
 - `GET /api/workflows/{runId}/replay`：按 `runId` 查看完整链路
 - `GET /api/workflows/by-message/{messageId}/replay`：按 `messageId` 查看最新链路
+- `POST /api/workflows/{runId}/approve-send`：把草稿从待审核推进到可发送
+- `POST /api/workflows/{runId}/dispatch`：通过 no-op 发件适配层模拟发送
+- `GET /api/workflows/{runId}/dispatches`：查看该链路的发送记录
 
 ## 知识库管理接口
 

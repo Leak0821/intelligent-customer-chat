@@ -58,6 +58,10 @@ app:
     poll-interval-millis: ${APP_MAIL_POLL_INTERVAL_MILLIS:60000}
     connection-timeout-millis: ${APP_MAIL_CONNECTION_TIMEOUT_MILLIS:5000}
     read-timeout-millis: ${APP_MAIL_READ_TIMEOUT_MILLIS:5000}
+    outbound:
+      enabled: ${APP_MAIL_OUTBOUND_ENABLED:false}
+      from-address: ${APP_MAIL_OUTBOUND_FROM_ADDRESS:support@example.com}
+      from-name: ${APP_MAIL_OUTBOUND_FROM_NAME:intelligent-customer-chat}
   workflow:
     auto-complete-empty-chain: true
   context:

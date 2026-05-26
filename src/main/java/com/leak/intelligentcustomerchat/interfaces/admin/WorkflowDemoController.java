@@ -1,11 +1,13 @@
 package com.leak.intelligentcustomerchat.interfaces.admin;
 
 import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
+import com.leak.intelligentcustomerchat.app.reply.ReplySendLifecycleService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowReplayView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
+import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatch;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEvent;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
@@ -31,13 +33,16 @@ public class WorkflowDemoController {
     private final MailIngestionService mailIngestionService;
     private final WorkflowRunService workflowRunService;
     private final WorkflowAnalysisService workflowAnalysisService;
+    private final ReplySendLifecycleService replySendLifecycleService;
 
     public WorkflowDemoController(MailIngestionService mailIngestionService,
                                   WorkflowRunService workflowRunService,
-                                  WorkflowAnalysisService workflowAnalysisService) {
+                                  WorkflowAnalysisService workflowAnalysisService,
+                                  ReplySendLifecycleService replySendLifecycleService) {
         this.mailIngestionService = mailIngestionService;
         this.workflowRunService = workflowRunService;
         this.workflowAnalysisService = workflowAnalysisService;
+        this.replySendLifecycleService = replySendLifecycleService;
     }
 
     @PostMapping("/demo")
@@ -87,12 +92,35 @@ public class WorkflowDemoController {
                 .orElseThrow(() -> new NoSuchElementException("draft not found for runId=" + runId));
     }
 
+    @PostMapping("/{runId}/approve-send")
+    public ReplyDraft approveSend(@PathVariable String runId, @RequestBody(required = false) SendApprovalRequest request) {
+        String approvalNote = request == null || request.approvalNote() == null || request.approvalNote().isBlank()
+                ? "approved for send from demo admin endpoint"
+                : request.approvalNote();
+        return replySendLifecycleService.approveForSend(runId, approvalNote);
+    }
+
+    @PostMapping("/{runId}/dispatch")
+    public ReplyDispatch dispatch(@PathVariable String runId) {
+        return replySendLifecycleService.dispatch(runId);
+    }
+
+    @GetMapping("/{runId}/dispatches")
+    public List<ReplyDispatch> listDispatches(@PathVariable String runId) {
+        return replySendLifecycleService.findDispatches(runId);
+    }
+
     public record DemoMailRequest(
             String messageId,
             String threadId,
             @Email String from,
             @NotBlank String subject,
             @NotBlank String body
+    ) {
+    }
+
+    public record SendApprovalRequest(
+            String approvalNote
     ) {
     }
 

@@ -73,6 +73,26 @@ public final class MailReceipt {
         );
     }
 
+    public static MailReceipt manual(String receiptId, InboundMail mail) {
+        OffsetDateTime now = OffsetDateTime.now();
+        return new MailReceipt(
+                receiptId,
+                "manual-ingestion",
+                "manual",
+                Integer.toUnsignedLong(mail.messageId().hashCode()),
+                mail.messageId(),
+                mail.threadId(),
+                mail.from(),
+                mail.subject(),
+                mail.receivedAt(),
+                MailReceiptStatus.FETCHED,
+                null,
+                null,
+                now,
+                now
+        );
+    }
+
     public static MailReceipt restore(String receiptId,
                                       String sourceKey,
                                       String folderName,

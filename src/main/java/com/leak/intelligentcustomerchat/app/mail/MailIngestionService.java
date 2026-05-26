@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class MailIngestionService {
@@ -43,6 +44,8 @@ public class MailIngestionService {
     }
 
     public WorkflowRun process(InboundMail inboundMail) {
+        mailReceiptRepository.findByMessageId(inboundMail.messageId())
+                .or(() -> java.util.Optional.of(mailReceiptRepository.save(MailReceipt.manual(UUID.randomUUID().toString(), inboundMail))));
         WorkflowRun run = workflowRunService.start(inboundMail);
         mailReceiptRepository.findByMessageId(inboundMail.messageId())
                 .ifPresent(receipt -> {

@@ -1,6 +1,7 @@
 package com.leak.intelligentcustomerchat.app.workflow;
 
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
+import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftRepository;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEvent;
@@ -17,17 +18,20 @@ public class WorkflowRunService {
     private final WorkflowRunRepository workflowRunRepository;
     private final WorkflowEventRepository workflowEventRepository;
     private final ReplyDraftRepository replyDraftRepository;
+    private final ReplyDispatchRepository replyDispatchRepository;
     private final WorkflowEventRecorder workflowEventRecorder;
     private final WorkflowStageExecutor workflowStageExecutor;
 
     public WorkflowRunService(WorkflowRunRepository workflowRunRepository,
                               WorkflowEventRepository workflowEventRepository,
                               ReplyDraftRepository replyDraftRepository,
+                              ReplyDispatchRepository replyDispatchRepository,
                               WorkflowEventRecorder workflowEventRecorder,
                               WorkflowStageExecutor workflowStageExecutor) {
         this.workflowRunRepository = workflowRunRepository;
         this.workflowEventRepository = workflowEventRepository;
         this.replyDraftRepository = replyDraftRepository;
+        this.replyDispatchRepository = replyDispatchRepository;
         this.workflowEventRecorder = workflowEventRecorder;
         this.workflowStageExecutor = workflowStageExecutor;
     }
@@ -69,7 +73,8 @@ public class WorkflowRunService {
         return new WorkflowReplayView(
                 run,
                 workflowEventRepository.findByRunId(run.getRunId()),
-                replyDraftRepository.findByRunId(run.getRunId()).orElse(null)
+                replyDraftRepository.findByRunId(run.getRunId()).orElse(null),
+                replyDispatchRepository.findByRunId(run.getRunId())
         );
     }
 }

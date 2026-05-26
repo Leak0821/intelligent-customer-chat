@@ -17,6 +17,8 @@ import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeRetrieveResult
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftRepository;
+import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftStatus;
+import com.leak.intelligentcustomerchat.domain.reply.SendReadiness;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEvent;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRunRepository;
@@ -97,6 +99,11 @@ public class WorkflowStageExecutor {
 
             ReviewDecision reviewDecision = reviewDecisionService.review(draft);
             draft.revise(draft.getSubject(), draft.getBody(), reviewDecision.finalStatus(), reviewDecision.reviewReason());
+            draft.updateSendReadiness(
+                    deriveSendReadiness(reviewDecision),
+                    deriveNextAction(reviewDecision),
+                    reviewDecision.reviewReason()
+            );
             replyDraftRepository.save(draft);
             advance(run, WorkflowStage.REVIEWED, reviewDecision.reviewReason());
 
@@ -119,5 +126,31 @@ public class WorkflowStageExecutor {
         run.moveTo(stage, reason);
         workflowRunRepository.save(run);
         workflowEventRecorder.record(WorkflowEvent.fromRun(run, run.getStatusReason()));
+    }
+
+    private SendReadiness deriveSendReadiness(ReviewDecision reviewDecision) {
+        if (reviewDecision.finalStatus() == ReplyDraftStatus.BLOCKED) {
+            return SendReadiness.HOLD;
+        }
+        if (reviewDecision.finalStatus() == ReplyDraftStatus.HUMAN_REVIEW_REQUIRED) {
+            return SendReadiness.PENDING_REVIEW;
+        }
+        if (reviewDecision.finalStatus() == ReplyDraftStatus.FOLLOW_UP_NEEDED) {
+            return SendReadiness.NOT_APPLICABLE;
+        }
+        return reviewDecision.autoSendAllowed() ? SendReadiness.READY_FOR_SEND : SendReadiness.PENDING_REVIEW;
+    }
+
+    private String deriveNextAction(ReviewDecision reviewDecision) {
+        if (reviewDecision.finalStatus() == ReplyDraftStatus.BLOCKED) {
+            return "hold_dispatch";
+        }
+        if (reviewDecision.finalStatus() == ReplyDraftStatus.HUMAN_REVIEW_REQUIRED) {
+            return "manual_review_required";
+        }
+        if (reviewDecision.finalStatus() == ReplyDraftStatus.FOLLOW_UP_NEEDED) {
+            return "request_customer_information";
+        }
+        return reviewDecision.autoSendAllowed() ? "dispatch_reply" : "manual_send_review";
     }
 }

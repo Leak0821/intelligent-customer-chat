@@ -4,6 +4,7 @@ import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
+import com.leak.intelligentcustomerchat.domain.reply.SendReadiness;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftStatus;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEventRepository;
@@ -55,6 +56,7 @@ class WorkflowRunServiceTest {
         assertThat(run.getStatus()).isEqualTo(WorkflowStatus.COMPLETED);
         assertThat(run.getStage()).isEqualTo(WorkflowStage.COMPLETED);
         assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.FOLLOW_UP_NEEDED);
+        assertThat(draft.getSendReadiness()).isEqualTo(SendReadiness.NOT_APPLICABLE);
         assertThat(draft.getBody()).contains("order number or tracking number");
 
         // 这里显式校验仓储落库结果，避免测试只证明了内存态流程成功。
@@ -81,6 +83,7 @@ class WorkflowRunServiceTest {
 
         assertThat(run.getStatus()).isEqualTo(WorkflowStatus.COMPLETED);
         assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
+        assertThat(draft.getSendReadiness()).isEqualTo(SendReadiness.PENDING_REVIEW);
         assertThat(draft.getBody()).contains("pre-sales reply direction");
     }
 
@@ -102,5 +105,6 @@ class WorkflowRunServiceTest {
         assertThat(replay.events()).isNotEmpty();
         assertThat(replay.events().get(0).createdAt()).isBeforeOrEqualTo(replay.events().get(replay.events().size() - 1).createdAt());
         assertThat(replay.latestDraft()).isNotNull();
+        assertThat(replay.dispatches()).isEmpty();
     }
 }

@@ -26,6 +26,12 @@ public class ReplyDraftEntity {
     @TableField("review_notes")
     private String reviewNotes;
 
+    @TableField("send_readiness")
+    private String sendReadiness;
+
+    @TableField("next_action")
+    private String nextAction;
+
     @TableField("created_at")
     private LocalDateTime createdAt;
 
@@ -78,6 +84,22 @@ public class ReplyDraftEntity {
 
     public void setReviewNotes(String reviewNotes) {
         this.reviewNotes = reviewNotes;
+    }
+
+    public String getSendReadiness() {
+        return sendReadiness;
+    }
+
+    public void setSendReadiness(String sendReadiness) {
+        this.sendReadiness = sendReadiness;
+    }
+
+    public String getNextAction() {
+        return nextAction;
+    }
+
+    public void setNextAction(String nextAction) {
+        this.nextAction = nextAction;
     }
 
     public LocalDateTime getCreatedAt() {
