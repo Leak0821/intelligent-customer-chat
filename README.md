@@ -79,6 +79,20 @@ source ./scripts/use-local-codex.sh
 docker compose up -d mysql redis elasticsearch nacos
 ```
 
+如果想先用第一版的本地配置启动应用，可以加上 `local` profile：
+
+```bash
+mvn -Dspring-boot.run.profiles=local spring-boot:run
+```
+
+或者直接在 IDE 里把 `spring.profiles.active` 设成 `local`。
+
+仓库里还提供了一个最小的 Maven 缓存清理脚本，专门处理网络失败后残留的 `*.lastUpdated`：
+
+```bash
+./scripts/cleanup-maven-lastupdated.sh
+```
+
 当前默认使用本仓库内的 `.mvn/settings.xml` 与 `.m2/repository`，执行测试可直接使用：
 
 ```bash
