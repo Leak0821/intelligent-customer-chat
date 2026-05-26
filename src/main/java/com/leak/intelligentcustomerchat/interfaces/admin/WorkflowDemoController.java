@@ -8,6 +8,8 @@ import com.leak.intelligentcustomerchat.app.review.ReplyReviewLifecycleService;
 import com.leak.intelligentcustomerchat.app.review.ReplyDraftRevisionService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisView;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationSampleView;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowReplayView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
@@ -38,6 +40,7 @@ public class WorkflowDemoController {
     private final MailIngestionService mailIngestionService;
     private final WorkflowRunService workflowRunService;
     private final WorkflowAnalysisService workflowAnalysisService;
+    private final WorkflowEvaluationService workflowEvaluationService;
     private final ReplySendLifecycleService replySendLifecycleService;
     private final ReplyDispatchCompensationService replyDispatchCompensationService;
     private final ReplyReviewLifecycleService replyReviewLifecycleService;
@@ -46,6 +49,7 @@ public class WorkflowDemoController {
     public WorkflowDemoController(MailIngestionService mailIngestionService,
                                   WorkflowRunService workflowRunService,
                                   WorkflowAnalysisService workflowAnalysisService,
+                                  WorkflowEvaluationService workflowEvaluationService,
                                   ReplySendLifecycleService replySendLifecycleService,
                                   ReplyDispatchCompensationService replyDispatchCompensationService,
                                   ReplyReviewLifecycleService replyReviewLifecycleService,
@@ -53,6 +57,7 @@ public class WorkflowDemoController {
         this.mailIngestionService = mailIngestionService;
         this.workflowRunService = workflowRunService;
         this.workflowAnalysisService = workflowAnalysisService;
+        this.workflowEvaluationService = workflowEvaluationService;
         this.replySendLifecycleService = replySendLifecycleService;
         this.replyDispatchCompensationService = replyDispatchCompensationService;
         this.replyReviewLifecycleService = replyReviewLifecycleService;
@@ -87,6 +92,16 @@ public class WorkflowDemoController {
     public WorkflowReplayView replay(@PathVariable String runId) {
         return workflowRunService.findReplay(runId)
                 .orElseThrow(() -> new NoSuchElementException("workflow replay not found for runId=" + runId));
+    }
+
+    @GetMapping("/{runId}/evaluation")
+    public WorkflowEvaluationSampleView evaluation(@PathVariable String runId) {
+        return workflowEvaluationService.getSample(runId);
+    }
+
+    @GetMapping("/evaluations/recent")
+    public List<WorkflowEvaluationSampleView> recentEvaluations() {
+        return workflowEvaluationService.listRecentSamples(20);
     }
 
     @GetMapping("/by-message/{messageId}/replay")

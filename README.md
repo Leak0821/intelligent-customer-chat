@@ -127,6 +127,8 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 - `POST /api/workflows/demo/replay`：提交一封测试邮件，直接返回完整回放
 - `GET /api/workflows/{runId}/replay`：按 `runId` 查看完整链路
 - `GET /api/workflows/by-message/{messageId}/replay`：按 `messageId` 查看最新链路
+- `GET /api/workflows/{runId}/evaluation`：按 `runId` 查看最小评估样本视图
+- `GET /api/workflows/evaluations/recent`：查看最近一批工作流评估样本
 - `POST /api/workflows/{runId}/approve-send`：把草稿从待审核推进到可发送
 - `POST /api/workflows/{runId}/reject-send`：驳回当前草稿发送，回到人工审核状态
 - `POST /api/workflows/{runId}/revise-draft`：人工修订草稿，并可选择是否再次送审
@@ -142,6 +144,14 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 - 谁驳回了发送
 - 草稿被修订到了第几版、最后由谁改动
 - 最近一次发送是人工批准触发、人工重试还是调度补偿触发
+
+新增的评估样本视图会进一步把回放压缩成一份更适合复盘和面试讲解的摘要，重点回答：
+
+- 这封邮件被识别成了什么场景和子意图
+- 是否触发了业务事实查询与知识检索
+- 当前草稿停在什么发送前状态
+- 最近一次审核、驳回或发送异常是什么
+- 当前有哪些风险标记，例如人工审核、追问、重试中、业务冲突
 
 ## 知识库管理接口
 
