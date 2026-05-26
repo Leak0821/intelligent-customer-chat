@@ -3,6 +3,7 @@ package com.leak.intelligentcustomerchat.interfaces.admin;
 import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
+import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEvent;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import jakarta.validation.constraints.Email;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Validated
@@ -53,6 +55,12 @@ public class WorkflowDemoController {
     @GetMapping("/{runId}/events")
     public List<WorkflowEvent> listEvents(@PathVariable String runId) {
         return workflowRunService.findEvents(runId);
+    }
+
+    @GetMapping("/{runId}/draft")
+    public ReplyDraft getDraft(@PathVariable String runId) {
+        return workflowRunService.findDraft(runId)
+                .orElseThrow(() -> new NoSuchElementException("draft not found for runId=" + runId));
     }
 
     public record DemoMailRequest(

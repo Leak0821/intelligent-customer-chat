@@ -1,9 +1,26 @@
 spring:
   application:
     name: intelligent-customer-chat
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:${MYSQL_PORT:3306}/intelligent_customer_chat?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${SPRING_DATASOURCE_USERNAME:${MYSQL_USER:icc}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${MYSQL_PASSWORD:icc123456}}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_REDIS_PORT:6379}
+      database: ${SPRING_REDIS_DATABASE:0}
+      timeout: 3s
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:dummy-key-for-slice-1}
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
 
 management:
   endpoints:
@@ -23,3 +40,14 @@ app:
     ssl-enabled: true
   workflow:
     auto-complete-empty-chain: true
+  context:
+    memory:
+      enabled: ${APP_CONTEXT_MEMORY_ENABLED:false}
+      recent-round-limit: ${APP_CONTEXT_RECENT_ROUND_LIMIT:5}
+      summary-threshold: ${APP_CONTEXT_SUMMARY_THRESHOLD:10}
+      redis-key-prefix: ${APP_CONTEXT_REDIS_KEY_PREFIX:icc:memory}
+  knowledge:
+    elasticsearch:
+      uris: ${APP_ELASTICSEARCH_URIS:http://127.0.0.1:9200}
+      index-name: ${APP_ELASTICSEARCH_INDEX_NAME:knowledge_chunks}
+      top-k: ${APP_ELASTICSEARCH_TOP_K:10}

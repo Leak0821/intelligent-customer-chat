@@ -34,4 +34,14 @@ public record WorkflowEvent(
                 OffsetDateTime.now()
         );
     }
+
+    public static WorkflowEvent restore(String eventId,
+                                        String runId,
+                                        String messageId,
+                                        WorkflowStage stage,
+                                        WorkflowStatus status,
+                                        String summary,
+                                        OffsetDateTime createdAt) {
+        return new WorkflowEvent(eventId, runId, messageId, stage, status, summary, createdAt);
+    }
 }

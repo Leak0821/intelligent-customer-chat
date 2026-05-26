@@ -40,6 +40,17 @@ public final class WorkflowRun {
         );
     }
 
+    public static WorkflowRun restore(String runId,
+                                      String messageId,
+                                      String threadId,
+                                      WorkflowStage stage,
+                                      WorkflowStatus status,
+                                      String statusReason,
+                                      OffsetDateTime createdAt,
+                                      OffsetDateTime updatedAt) {
+        return new WorkflowRun(runId, messageId, threadId, stage, status, statusReason, createdAt, updatedAt);
+    }
+
     public void moveTo(WorkflowStage nextStage, String reason) {
         this.stage = Objects.requireNonNull(nextStage, "nextStage must not be null");
         this.statusReason = Objects.requireNonNull(reason, "reason must not be null");
