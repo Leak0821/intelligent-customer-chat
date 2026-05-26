@@ -6,6 +6,9 @@ import com.leak.intelligentcustomerchat.app.reply.ReplyDispatchCompensationServi
 import com.leak.intelligentcustomerchat.app.reply.ReplySendLifecycleService;
 import com.leak.intelligentcustomerchat.app.review.ReplyReviewLifecycleService;
 import com.leak.intelligentcustomerchat.app.review.ReplyDraftRevisionService;
+import com.leak.intelligentcustomerchat.app.workflow.DemoScenarioCatalogService;
+import com.leak.intelligentcustomerchat.app.workflow.DemoScenarioExecutionView;
+import com.leak.intelligentcustomerchat.app.workflow.DemoScenarioSummaryView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationSampleView;
@@ -38,6 +41,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/workflows")
 public class WorkflowDemoController {
+    private final DemoScenarioCatalogService demoScenarioCatalogService;
     private final MailIngestionService mailIngestionService;
     private final WorkflowRunService workflowRunService;
     private final WorkflowAnalysisService workflowAnalysisService;
@@ -47,7 +51,8 @@ public class WorkflowDemoController {
     private final ReplyReviewLifecycleService replyReviewLifecycleService;
     private final ReplyDraftRevisionService replyDraftRevisionService;
 
-    public WorkflowDemoController(MailIngestionService mailIngestionService,
+    public WorkflowDemoController(DemoScenarioCatalogService demoScenarioCatalogService,
+                                  MailIngestionService mailIngestionService,
                                   WorkflowRunService workflowRunService,
                                   WorkflowAnalysisService workflowAnalysisService,
                                   WorkflowEvaluationService workflowEvaluationService,
@@ -55,6 +60,7 @@ public class WorkflowDemoController {
                                   ReplyDispatchCompensationService replyDispatchCompensationService,
                                   ReplyReviewLifecycleService replyReviewLifecycleService,
                                   ReplyDraftRevisionService replyDraftRevisionService) {
+        this.demoScenarioCatalogService = demoScenarioCatalogService;
         this.mailIngestionService = mailIngestionService;
         this.workflowRunService = workflowRunService;
         this.workflowAnalysisService = workflowAnalysisService;
@@ -82,6 +88,22 @@ public class WorkflowDemoController {
     @PostMapping("/demo/analysis")
     public WorkflowAnalysisView analyzeDemo(@RequestBody DemoMailRequest request) {
         return workflowAnalysisService.analyze(buildInboundMail(request));
+    }
+
+    @GetMapping("/demo/scenarios")
+    public List<DemoScenarioSummaryView> listDemoScenarios() {
+        return demoScenarioCatalogService.listScenarios();
+    }
+
+    @GetMapping("/demo/scenarios/{scenarioId}")
+    public DemoScenarioSummaryView getDemoScenario(@PathVariable String scenarioId) {
+        return demoScenarioCatalogService.getScenario(scenarioId);
+    }
+
+    @PostMapping("/demo/scenarios/{scenarioId}")
+    public DemoScenarioExecutionView executeDemoScenario(@PathVariable String scenarioId,
+                                                         @RequestParam(defaultValue = "run") String mode) {
+        return demoScenarioCatalogService.execute(scenarioId, mode);
     }
 
     @GetMapping

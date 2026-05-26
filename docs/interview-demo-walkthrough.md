@@ -31,6 +31,7 @@
 - `Nacos` 运行时配置样例可一键发布
 - `preflight` 可检查配置缺口
 - demo / replay / evaluation / dispatch 都有固定接口
+- 内置 demo 样例目录，可直接列出并一键执行
 
 ## 4. 推荐演示的 4 个样例
 
@@ -47,6 +48,14 @@
 2. 售后物流查询
 3. 售后政策说明
 4. 售后缺关键编号，触发追问
+
+同时也可以直接走内置目录接口：
+
+```bash
+curl http://127.0.0.1:8080/api/workflows/demo/scenarios
+curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/pre-sales-recommendation?mode=analysis"
+curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-logistics?mode=replay"
+```
 
 ## 5. 演示时怎么跑
 

@@ -1,0 +1,7 @@
+{
+  "messageId": "demo-after-sales-missing-id-001",
+  "threadId": "demo-thread-after-sales-missing-id-001",
+  "from": "customer@example.com",
+  "subject": "Need help with my recent order",
+  "body": "Hi, I have an issue with my recent order and want to know what happened, but I do not have the order details with me right now."
+}
