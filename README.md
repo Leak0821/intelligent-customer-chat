@@ -108,6 +108,7 @@ mvn -Dspring-boot.run.profiles=local spring-boot:run
 
 - [docs/local-smoke-checklist.md](./docs/local-smoke-checklist.md)
 - [docs/mail-local-setup.md](./docs/mail-local-setup.md)
+- [docs/interview-demo-walkthrough.md](./docs/interview-demo-walkthrough.md)
 
 也可以直接跑脚本：
 
@@ -119,6 +120,13 @@ mvn -Dspring-boot.run.profiles=local spring-boot:run
 
 ```bash
 ./scripts/send-lifecycle-smoke.sh
+```
+
+如果要批量演示典型样例，可以直接跑：
+
+```bash
+./scripts/demo-batch.sh analysis
+./scripts/demo-batch.sh replay
 ```
 
 如果要把运行时 prompt / intent / retrieval 配置切到本地 `Nacos`，仓库里已经带了脱敏样例配置和发布脚本：

@@ -1,0 +1,7 @@
+{
+  "messageId": "demo-after-sales-logistics-001",
+  "threadId": "demo-thread-after-sales-001",
+  "from": "customer@example.com",
+  "subject": "Need help with tracking update",
+  "body": "Hello, my order ABCD1234 tracking number is ZXCV9876. Could you check the latest logistics update for me?"
+}
