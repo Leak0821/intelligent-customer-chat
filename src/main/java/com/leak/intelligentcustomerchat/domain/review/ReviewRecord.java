@@ -37,6 +37,14 @@ public final class ReviewRecord {
         return new ReviewRecord(UUID.randomUUID().toString(), runId, draftId, ReviewAction.REJECT_SEND, reviewer, reviewNote, OffsetDateTime.now());
     }
 
+    public static ReviewRecord reviseDraft(String runId, String draftId, String reviewer, String reviewNote) {
+        return new ReviewRecord(UUID.randomUUID().toString(), runId, draftId, ReviewAction.REVISE_DRAFT, reviewer, reviewNote, OffsetDateTime.now());
+    }
+
+    public static ReviewRecord resubmitReview(String runId, String draftId, String reviewer, String reviewNote) {
+        return new ReviewRecord(UUID.randomUUID().toString(), runId, draftId, ReviewAction.RESUBMIT_REVIEW, reviewer, reviewNote, OffsetDateTime.now());
+    }
+
     public static ReviewRecord restore(String reviewId,
                                        String runId,
                                        String draftId,

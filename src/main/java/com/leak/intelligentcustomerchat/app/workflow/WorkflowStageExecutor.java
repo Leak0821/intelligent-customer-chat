@@ -98,7 +98,7 @@ public class WorkflowStageExecutor {
             advance(run, WorkflowStage.REPLY_DRAFTED, "draftStatus=%s".formatted(draft.getStatus()));
 
             ReviewDecision reviewDecision = reviewDecisionService.review(draft);
-            draft.revise(draft.getSubject(), draft.getBody(), reviewDecision.finalStatus(), reviewDecision.reviewReason());
+            draft.applyReviewOutcome(reviewDecision.finalStatus(), reviewDecision.reviewReason());
             draft.updateSendReadiness(
                     deriveSendReadiness(reviewDecision),
                     deriveNextAction(reviewDecision),

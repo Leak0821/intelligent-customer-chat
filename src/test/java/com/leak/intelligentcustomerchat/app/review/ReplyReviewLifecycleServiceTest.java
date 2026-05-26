@@ -28,6 +28,9 @@ class ReplyReviewLifecycleServiceTest {
     private ReplyReviewLifecycleService replyReviewLifecycleService;
 
     @Autowired
+    private ReplyDraftRevisionService replyDraftRevisionService;
+
+    @Autowired
     private ReplySendLifecycleService replySendLifecycleService;
 
     @Test
@@ -43,6 +46,7 @@ class ReplyReviewLifecycleServiceTest {
 
         var approvedDraft = replyReviewLifecycleService.approveForSend(run.getRunId(), "auditor-a", "content verified");
         assertThat(approvedDraft.getSendReadiness()).isEqualTo(SendReadiness.READY_FOR_SEND);
+        assertThat(approvedDraft.getDraftVersion()).isEqualTo(1);
 
         var reviews = replyReviewLifecycleService.findReviews(run.getRunId());
         assertThat(reviews).hasSize(1);
@@ -76,5 +80,39 @@ class ReplyReviewLifecycleServiceTest {
         assertThat(reviews.get(0).getAction()).isEqualTo(ReviewAction.REJECT_SEND);
         assertThat(reviews.get(0).getReviewer()).isEqualTo("auditor-b");
         assertThat(reviews.get(0).getReviewNote()).isEqualTo("promise wording needs revision");
+    }
+
+    @Test
+    void shouldReviseRejectedDraftAndResubmitForReview() {
+        var run = mailIngestionService.process(new InboundMail(
+                "msg-review-3",
+                "thread-review-3",
+                "customer@example.com",
+                "Need recommendation",
+                "Please recommend a product for my living room.",
+                OffsetDateTime.now()
+        ));
+
+        replyReviewLifecycleService.rejectSend(run.getRunId(), "auditor-c", "first draft too generic");
+        var revisedDraft = replyDraftRevisionService.revise(
+                run.getRunId(),
+                "editor-a",
+                "Re: Need recommendation",
+                "Updated reply with clearer feature explanation.",
+                "refined product explanation",
+                true
+        );
+
+        assertThat(revisedDraft.getDraftVersion()).isEqualTo(2);
+        assertThat(revisedDraft.getLastEditedBy()).isEqualTo("editor-a");
+        assertThat(revisedDraft.getStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
+        assertThat(revisedDraft.getSendReadiness()).isEqualTo(SendReadiness.PENDING_REVIEW);
+        assertThat(revisedDraft.getNextAction()).isEqualTo("await_review_decision");
+
+        var reviews = replyReviewLifecycleService.findReviews(run.getRunId());
+        assertThat(reviews).hasSize(3);
+        assertThat(reviews.get(0).getAction()).isEqualTo(ReviewAction.REJECT_SEND);
+        assertThat(reviews.get(1).getAction()).isEqualTo(ReviewAction.REVISE_DRAFT);
+        assertThat(reviews.get(2).getAction()).isEqualTo(ReviewAction.RESUBMIT_REVIEW);
     }
 }

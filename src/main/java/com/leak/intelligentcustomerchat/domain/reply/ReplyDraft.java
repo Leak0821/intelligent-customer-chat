@@ -11,6 +11,8 @@ public final class ReplyDraft {
     private String body;
     private ReplyDraftStatus status;
     private String reviewNotes;
+    private int draftVersion;
+    private String lastEditedBy;
     private SendReadiness sendReadiness;
     private String nextAction;
     private final OffsetDateTime createdAt;
@@ -22,6 +24,8 @@ public final class ReplyDraft {
                        String body,
                        ReplyDraftStatus status,
                        String reviewNotes,
+                       int draftVersion,
+                       String lastEditedBy,
                        SendReadiness sendReadiness,
                        String nextAction,
                        OffsetDateTime createdAt,
@@ -32,6 +36,8 @@ public final class ReplyDraft {
         this.body = Objects.requireNonNull(body, "body must not be null");
         this.status = Objects.requireNonNull(status, "status must not be null");
         this.reviewNotes = Objects.requireNonNull(reviewNotes, "reviewNotes must not be null");
+        this.draftVersion = validateDraftVersion(draftVersion);
+        this.lastEditedBy = normalizeActor(lastEditedBy);
         this.sendReadiness = Objects.requireNonNull(sendReadiness, "sendReadiness must not be null");
         this.nextAction = Objects.requireNonNull(nextAction, "nextAction must not be null");
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
@@ -47,6 +53,8 @@ public final class ReplyDraft {
                 body,
                 status,
                 reviewNotes,
+                1,
+                "system",
                 deriveInitialSendReadiness(status),
                 deriveInitialNextAction(status),
                 now,
@@ -60,16 +68,30 @@ public final class ReplyDraft {
                                      String body,
                                      ReplyDraftStatus status,
                                      String reviewNotes,
+                                     int draftVersion,
+                                     String lastEditedBy,
                                      SendReadiness sendReadiness,
                                      String nextAction,
                                      OffsetDateTime createdAt,
                                      OffsetDateTime updatedAt) {
-        return new ReplyDraft(draftId, runId, subject, body, status, reviewNotes, sendReadiness, nextAction, createdAt, updatedAt);
+        return new ReplyDraft(draftId, runId, subject, body, status, reviewNotes, draftVersion, lastEditedBy, sendReadiness, nextAction, createdAt, updatedAt);
     }
 
     public void revise(String subject, String body, ReplyDraftStatus status, String reviewNotes) {
+        revise(subject, body, status, reviewNotes, this.lastEditedBy);
+    }
+
+    public void revise(String subject, String body, ReplyDraftStatus status, String reviewNotes, String editedBy) {
         this.subject = Objects.requireNonNull(subject, "subject must not be null");
         this.body = Objects.requireNonNull(body, "body must not be null");
+        this.status = Objects.requireNonNull(status, "status must not be null");
+        this.reviewNotes = Objects.requireNonNull(reviewNotes, "reviewNotes must not be null");
+        this.draftVersion += 1;
+        this.lastEditedBy = normalizeActor(editedBy);
+        this.updatedAt = OffsetDateTime.now();
+    }
+
+    public void applyReviewOutcome(ReplyDraftStatus status, String reviewNotes) {
         this.status = Objects.requireNonNull(status, "status must not be null");
         this.reviewNotes = Objects.requireNonNull(reviewNotes, "reviewNotes must not be null");
         this.updatedAt = OffsetDateTime.now();
@@ -106,6 +128,14 @@ public final class ReplyDraft {
         return reviewNotes;
     }
 
+    public int getDraftVersion() {
+        return draftVersion;
+    }
+
+    public String getLastEditedBy() {
+        return lastEditedBy;
+    }
+
     public SendReadiness getSendReadiness() {
         return sendReadiness;
     }
@@ -137,5 +167,19 @@ public final class ReplyDraft {
             case HUMAN_REVIEW_REQUIRED -> "manual_review_required";
             case BLOCKED -> "investigate_blocking_issue";
         };
+    }
+
+    private static int validateDraftVersion(int draftVersion) {
+        if (draftVersion < 1) {
+            throw new IllegalArgumentException("draftVersion must be >= 1");
+        }
+        return draftVersion;
+    }
+
+    private static String normalizeActor(String actor) {
+        if (actor == null || actor.isBlank()) {
+            return "system";
+        }
+        return actor.trim();
     }
 }

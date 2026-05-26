@@ -43,6 +43,8 @@ class ReplySendLifecycleServiceTest {
 
         var draftBeforeApproval = replyDraftRepository.findByRunId(run.getRunId()).orElseThrow();
         assertThat(draftBeforeApproval.getSendReadiness()).isEqualTo(SendReadiness.PENDING_REVIEW);
+        assertThat(draftBeforeApproval.getDraftVersion()).isEqualTo(1);
+        assertThat(draftBeforeApproval.getLastEditedBy()).isEqualTo("system");
 
         var approvedDraft = replySendLifecycleService.approveForSend(run.getRunId(), "approved in test");
         assertThat(approvedDraft.getSendReadiness()).isEqualTo(SendReadiness.READY_FOR_SEND);

@@ -22,6 +22,8 @@ final class ReplyDraftEntityMapper {
         entity.setBody(draft.getBody());
         entity.setStatus(draft.getStatus().name());
         entity.setReviewNotes(draft.getReviewNotes());
+        entity.setDraftVersion(draft.getDraftVersion());
+        entity.setLastEditedBy(draft.getLastEditedBy());
         entity.setSendReadiness(draft.getSendReadiness().name());
         entity.setNextAction(draft.getNextAction());
         entity.setCreatedAt(toLocalDateTime(draft.getCreatedAt()));
@@ -37,6 +39,8 @@ final class ReplyDraftEntityMapper {
                 entity.getBody(),
                 ReplyDraftStatus.valueOf(entity.getStatus()),
                 entity.getReviewNotes(),
+                entity.getDraftVersion(),
+                entity.getLastEditedBy(),
                 SendReadiness.valueOf(entity.getSendReadiness()),
                 entity.getNextAction(),
                 toOffsetDateTime(entity.getCreatedAt()),

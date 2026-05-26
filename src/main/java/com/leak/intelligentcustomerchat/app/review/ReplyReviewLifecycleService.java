@@ -34,7 +34,7 @@ public class ReplyReviewLifecycleService {
 
     public ReplyDraft rejectSend(String runId, String reviewer, String reviewNote) {
         ReplyDraft draft = requireDraft(runId);
-        draft.revise(draft.getSubject(), draft.getBody(), ReplyDraftStatus.HUMAN_REVIEW_REQUIRED, reviewNote);
+        draft.applyReviewOutcome(ReplyDraftStatus.HUMAN_REVIEW_REQUIRED, reviewNote);
         draft.updateSendReadiness(SendReadiness.HOLD, "manual_review_required", reviewNote);
         replyDraftRepository.save(draft);
         reviewRecordRepository.save(ReviewRecord.rejectSend(runId, draft.getDraftId(), reviewer, reviewNote));

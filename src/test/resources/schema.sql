@@ -33,6 +33,8 @@ CREATE TABLE reply_drafts (
     body CLOB NOT NULL,
     status VARCHAR(64) NOT NULL,
     review_notes VARCHAR(512) NOT NULL,
+    draft_version INT NOT NULL,
+    last_edited_by VARCHAR(128) NOT NULL,
     send_readiness VARCHAR(64) NOT NULL,
     next_action VARCHAR(128) NOT NULL,
     created_at TIMESTAMP NOT NULL,

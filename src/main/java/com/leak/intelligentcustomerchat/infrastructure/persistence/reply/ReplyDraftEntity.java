@@ -26,6 +26,12 @@ public class ReplyDraftEntity {
     @TableField("review_notes")
     private String reviewNotes;
 
+    @TableField("draft_version")
+    private Integer draftVersion;
+
+    @TableField("last_edited_by")
+    private String lastEditedBy;
+
     @TableField("send_readiness")
     private String sendReadiness;
 
@@ -84,6 +90,22 @@ public class ReplyDraftEntity {
 
     public void setReviewNotes(String reviewNotes) {
         this.reviewNotes = reviewNotes;
+    }
+
+    public Integer getDraftVersion() {
+        return draftVersion;
+    }
+
+    public void setDraftVersion(Integer draftVersion) {
+        this.draftVersion = draftVersion;
+    }
+
+    public String getLastEditedBy() {
+        return lastEditedBy;
+    }
+
+    public void setLastEditedBy(String lastEditedBy) {
+        this.lastEditedBy = lastEditedBy;
     }
 
     public String getSendReadiness() {

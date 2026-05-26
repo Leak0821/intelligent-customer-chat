@@ -5,6 +5,7 @@ import com.leak.intelligentcustomerchat.app.reply.DispatchRetryBatchResult;
 import com.leak.intelligentcustomerchat.app.reply.ReplyDispatchCompensationService;
 import com.leak.intelligentcustomerchat.app.reply.ReplySendLifecycleService;
 import com.leak.intelligentcustomerchat.app.review.ReplyReviewLifecycleService;
+import com.leak.intelligentcustomerchat.app.review.ReplyDraftRevisionService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowReplayView;
@@ -40,19 +41,22 @@ public class WorkflowDemoController {
     private final ReplySendLifecycleService replySendLifecycleService;
     private final ReplyDispatchCompensationService replyDispatchCompensationService;
     private final ReplyReviewLifecycleService replyReviewLifecycleService;
+    private final ReplyDraftRevisionService replyDraftRevisionService;
 
     public WorkflowDemoController(MailIngestionService mailIngestionService,
                                   WorkflowRunService workflowRunService,
                                   WorkflowAnalysisService workflowAnalysisService,
                                   ReplySendLifecycleService replySendLifecycleService,
                                   ReplyDispatchCompensationService replyDispatchCompensationService,
-                                  ReplyReviewLifecycleService replyReviewLifecycleService) {
+                                  ReplyReviewLifecycleService replyReviewLifecycleService,
+                                  ReplyDraftRevisionService replyDraftRevisionService) {
         this.mailIngestionService = mailIngestionService;
         this.workflowRunService = workflowRunService;
         this.workflowAnalysisService = workflowAnalysisService;
         this.replySendLifecycleService = replySendLifecycleService;
         this.replyDispatchCompensationService = replyDispatchCompensationService;
         this.replyReviewLifecycleService = replyReviewLifecycleService;
+        this.replyDraftRevisionService = replyDraftRevisionService;
     }
 
     @PostMapping("/demo")
@@ -124,6 +128,21 @@ public class WorkflowDemoController {
         return replyReviewLifecycleService.rejectSend(runId, reviewer, rejectNote);
     }
 
+    @PostMapping("/{runId}/revise-draft")
+    public ReplyDraft reviseDraft(@PathVariable String runId, @RequestBody ReviseDraftRequest request) {
+        String editor = request.editor() == null || request.editor().isBlank()
+                ? "demo-admin"
+                : request.editor();
+        return replyDraftRevisionService.revise(
+                runId,
+                editor,
+                request.subject(),
+                request.body(),
+                request.revisionNote(),
+                request.submitForReview()
+        );
+    }
+
     @PostMapping("/{runId}/dispatch")
     public ReplyDispatch dispatch(@PathVariable String runId) {
         return replySendLifecycleService.dispatch(runId);
@@ -179,6 +198,15 @@ public class WorkflowDemoController {
     public record RetryDispatchRequest(
             String reviewer,
             String retryReason
+    ) {
+    }
+
+    public record ReviseDraftRequest(
+            String editor,
+            @NotBlank String subject,
+            @NotBlank String body,
+            String revisionNote,
+            boolean submitForReview
     ) {
     }
 
