@@ -1,6 +1,8 @@
 package com.leak.intelligentcustomerchat.interfaces.admin;
 
 import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisService;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowReplayView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
@@ -28,10 +30,14 @@ import java.util.UUID;
 public class WorkflowDemoController {
     private final MailIngestionService mailIngestionService;
     private final WorkflowRunService workflowRunService;
+    private final WorkflowAnalysisService workflowAnalysisService;
 
-    public WorkflowDemoController(MailIngestionService mailIngestionService, WorkflowRunService workflowRunService) {
+    public WorkflowDemoController(MailIngestionService mailIngestionService,
+                                  WorkflowRunService workflowRunService,
+                                  WorkflowAnalysisService workflowAnalysisService) {
         this.mailIngestionService = mailIngestionService;
         this.workflowRunService = workflowRunService;
+        this.workflowAnalysisService = workflowAnalysisService;
     }
 
     @PostMapping("/demo")
@@ -46,6 +52,11 @@ public class WorkflowDemoController {
         WorkflowRun run = mailIngestionService.process(buildInboundMail(request));
         return workflowRunService.findReplay(run.getRunId())
                 .orElseThrow(() -> new NoSuchElementException("workflow replay not found for runId=" + run.getRunId()));
+    }
+
+    @PostMapping("/demo/analysis")
+    public WorkflowAnalysisView analyzeDemo(@RequestBody DemoMailRequest request) {
+        return workflowAnalysisService.analyze(buildInboundMail(request));
     }
 
     @GetMapping

@@ -99,6 +99,7 @@ APP_KNOWLEDGE_EMBEDDING_ENABLED=true
 ## 本地演示接口
 
 - `POST /api/workflows/demo`：提交一封测试邮件，返回 `WorkflowRun`
+- `POST /api/workflows/demo/analysis`：提交一封测试邮件，直接返回清洗、意图、路由、业务事实、知识检索、草稿、审核结论
 - `POST /api/workflows/demo/replay`：提交一封测试邮件，直接返回完整回放
 - `GET /api/workflows/{runId}/replay`：按 `runId` 查看完整链路
 - `GET /api/workflows/by-message/{messageId}/replay`：按 `messageId` 查看最新链路
