@@ -9,17 +9,22 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class StaticKnowledgeRetrieverTest {
-    private final StaticKnowledgeRetriever retriever = new StaticKnowledgeRetriever();
+    private final StaticKnowledgeRetriever retriever = new StaticKnowledgeRetriever(
+            new KnowledgeSeedCatalog(),
+            new HeuristicKnowledgeChunker()
+    );
 
     @Test
-    void shouldReturnFallbackSnippet() {
+    void shouldReturnRelevantSeedSnippetForAfterSalesPolicy() {
         KnowledgeRetrieveResult result = retriever.retrieve(
                 new RetrievalQuery("shipping policy", "AFTER_SALES", "after_sales_policy", List.of(), 5)
         );
 
         assertThat(result.source()).isEqualTo("static-knowledge-retriever");
-        assertThat(result.recallCount()).isEqualTo(1);
-        assertThat(result.snippets()).singleElement()
-                .satisfies(snippet -> assertThat(snippet.content()).contains("after_sales_policy"));
+        assertThat(result.recallCount()).isGreaterThanOrEqualTo(1);
+        assertThat(result.snippets()).anySatisfy(snippet -> {
+            assertThat(snippet.title()).contains("售后政策");
+            assertThat(snippet.content()).contains("标准政策");
+        });
     }
 }

@@ -5,7 +5,9 @@ import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeRetrieveResult
 import com.leak.intelligentcustomerchat.domain.knowledge.RetrievalQuery;
 import com.leak.intelligentcustomerchat.infrastructure.knowledge.ChunkIndexWriter;
 import com.leak.intelligentcustomerchat.infrastructure.knowledge.ElasticsearchKnowledgeIndexManager;
+import com.leak.intelligentcustomerchat.infrastructure.knowledge.KnowledgeChunker;
 import com.leak.intelligentcustomerchat.infrastructure.knowledge.KnowledgeRetriever;
+import com.leak.intelligentcustomerchat.infrastructure.knowledge.KnowledgeSeedCatalog;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,13 +26,19 @@ public class KnowledgeAdminController {
     private final KnowledgeRetriever knowledgeRetriever;
     private final ChunkIndexWriter chunkIndexWriter;
     private final ObjectProvider<ElasticsearchKnowledgeIndexManager> indexManagerProvider;
+    private final KnowledgeSeedCatalog knowledgeSeedCatalog;
+    private final KnowledgeChunker knowledgeChunker;
 
     public KnowledgeAdminController(KnowledgeRetriever knowledgeRetriever,
                                     ChunkIndexWriter chunkIndexWriter,
-                                    ObjectProvider<ElasticsearchKnowledgeIndexManager> indexManagerProvider) {
+                                    ObjectProvider<ElasticsearchKnowledgeIndexManager> indexManagerProvider,
+                                    KnowledgeSeedCatalog knowledgeSeedCatalog,
+                                    KnowledgeChunker knowledgeChunker) {
         this.knowledgeRetriever = knowledgeRetriever;
         this.chunkIndexWriter = chunkIndexWriter;
         this.indexManagerProvider = indexManagerProvider;
+        this.knowledgeSeedCatalog = knowledgeSeedCatalog;
+        this.knowledgeChunker = knowledgeChunker;
     }
 
     @GetMapping("/index/status")
@@ -51,6 +59,31 @@ public class KnowledgeAdminController {
         }
         ElasticsearchKnowledgeIndexManager.KnowledgeIndexStatus status = indexManager.ensureIndex();
         return new IndexStatusResult(status.indexName(), status.elasticsearchEnabled(), status.exists());
+    }
+
+    @GetMapping("/seeds")
+    public List<KnowledgeSeedPreview> listSeeds() {
+        return knowledgeSeedCatalog.builtInDocuments().stream()
+                .map(document -> new KnowledgeSeedPreview(
+                        document.documentId(),
+                        document.title(),
+                        document.metadata().getOrDefault("scene", "UNKNOWN"),
+                        document.metadata().getOrDefault("subIntents", "general_inquiry"),
+                        knowledgeChunker.chunk(document).size()
+                ))
+                .toList();
+    }
+
+    @PostMapping("/index/seeds")
+    public SeedIndexResult indexSeeds() {
+        List<KnowledgeDocument> documents = knowledgeSeedCatalog.builtInDocuments();
+        int indexedDocuments = 0;
+        int indexedRecords = 0;
+        for (KnowledgeDocument document : documents) {
+            indexedDocuments++;
+            indexedRecords += chunkIndexWriter.index(document);
+        }
+        return new SeedIndexResult(indexedDocuments, indexedRecords);
     }
 
     @PostMapping("/index/sample")
@@ -91,6 +124,21 @@ public class KnowledgeAdminController {
             String indexName,
             boolean elasticsearchEnabled,
             boolean exists
+    ) {
+    }
+
+    public record KnowledgeSeedPreview(
+            String documentId,
+            String title,
+            String scene,
+            String subIntents,
+            int chunkCount
+    ) {
+    }
+
+    public record SeedIndexResult(
+            int indexedDocumentCount,
+            int indexedRecordCount
     ) {
     }
 }

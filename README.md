@@ -104,6 +104,13 @@ APP_KNOWLEDGE_EMBEDDING_ENABLED=true
 - `GET /api/workflows/{runId}/replay`：按 `runId` 查看完整链路
 - `GET /api/workflows/by-message/{messageId}/replay`：按 `messageId` 查看最新链路
 
+## 知识库管理接口
+
+- `GET /api/knowledge/seeds`：查看内置知识样本摘要
+- `POST /api/knowledge/index/seeds`：批量灌入内置知识样本
+- `POST /api/knowledge/index/sample`：手工灌入单篇知识文档
+- `GET /api/knowledge/search?q=...`：直接验证当前检索结果
+
 ## 分支管理记录
 
 - 这类练习项目建议保留特性分支，方便回看每次修改
