@@ -5,7 +5,6 @@ import com.leak.intelligentcustomerchat.config.KnowledgeElasticsearchProperties;
 import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeChunk;
 import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeDocument;
 import org.elasticsearch.client.Request;
-import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -23,32 +22,25 @@ public class ElasticsearchChunkIndexWriter implements ChunkIndexWriter {
     private final KnowledgeElasticsearchProperties properties;
     private final KnowledgeChunker knowledgeChunker;
     private final EmbeddingService embeddingService;
+    private final ElasticsearchKnowledgeIndexManager indexManager;
 
     public ElasticsearchChunkIndexWriter(RestClient restClient,
                                          ObjectMapper objectMapper,
                                          KnowledgeElasticsearchProperties properties,
                                          KnowledgeChunker knowledgeChunker,
-                                         EmbeddingService embeddingService) {
+                                         EmbeddingService embeddingService,
+                                         ElasticsearchKnowledgeIndexManager indexManager) {
         this.restClient = restClient;
         this.objectMapper = objectMapper;
         this.properties = properties;
         this.knowledgeChunker = knowledgeChunker;
         this.embeddingService = embeddingService;
+        this.indexManager = indexManager;
     }
 
     @Override
     public void ensureIndex() {
-        try {
-            Request request = new Request("PUT", "/" + properties.indexName());
-            request.setJsonEntity(buildIndexMapping());
-            restClient.performRequest(request);
-        } catch (ResponseException ex) {
-            if (ex.getResponse().getStatusLine().getStatusCode() != 400) {
-                throw new IllegalStateException("failed to ensure elasticsearch index", ex);
-            }
-        } catch (IOException ex) {
-            throw new IllegalStateException("failed to ensure elasticsearch index", ex);
-        }
+        indexManager.ensureIndex();
     }
 
     @Override
@@ -72,23 +64,6 @@ public class ElasticsearchChunkIndexWriter implements ChunkIndexWriter {
         } catch (IOException ex) {
             throw new IllegalStateException("failed to write knowledge document to elasticsearch", ex);
         }
-    }
-
-    private String buildIndexMapping() throws IOException {
-        Map<String, Object> mapping = new LinkedHashMap<>();
-        Map<String, Object> propertiesMap = new LinkedHashMap<>();
-        propertiesMap.put(properties.docTypeField(), Map.of("type", "keyword"));
-        propertiesMap.put(properties.parentIdField(), Map.of("type", "keyword"));
-        propertiesMap.put(properties.titleField(), Map.of("type", "text"));
-        propertiesMap.put(properties.contentField(), Map.of("type", "text"));
-        propertiesMap.put(properties.vectorField(), Map.of(
-                "type", "dense_vector",
-                "dims", properties.embeddingDimensions(),
-                "index", true,
-                "similarity", "cosine"
-        ));
-        mapping.put("mappings", Map.of("properties", propertiesMap));
-        return objectMapper.writeValueAsString(mapping);
     }
 
     private String buildParentDocumentId(KnowledgeDocument document) {

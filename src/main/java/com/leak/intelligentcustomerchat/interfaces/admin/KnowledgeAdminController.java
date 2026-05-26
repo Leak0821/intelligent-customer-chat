@@ -4,7 +4,9 @@ import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeDocument;
 import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeRetrieveResult;
 import com.leak.intelligentcustomerchat.domain.knowledge.RetrievalQuery;
 import com.leak.intelligentcustomerchat.infrastructure.knowledge.ChunkIndexWriter;
+import com.leak.intelligentcustomerchat.infrastructure.knowledge.ElasticsearchKnowledgeIndexManager;
 import com.leak.intelligentcustomerchat.infrastructure.knowledge.KnowledgeRetriever;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,10 +23,34 @@ import java.util.UUID;
 public class KnowledgeAdminController {
     private final KnowledgeRetriever knowledgeRetriever;
     private final ChunkIndexWriter chunkIndexWriter;
+    private final ObjectProvider<ElasticsearchKnowledgeIndexManager> indexManagerProvider;
 
-    public KnowledgeAdminController(KnowledgeRetriever knowledgeRetriever, ChunkIndexWriter chunkIndexWriter) {
+    public KnowledgeAdminController(KnowledgeRetriever knowledgeRetriever,
+                                    ChunkIndexWriter chunkIndexWriter,
+                                    ObjectProvider<ElasticsearchKnowledgeIndexManager> indexManagerProvider) {
         this.knowledgeRetriever = knowledgeRetriever;
         this.chunkIndexWriter = chunkIndexWriter;
+        this.indexManagerProvider = indexManagerProvider;
+    }
+
+    @GetMapping("/index/status")
+    public IndexStatusResult indexStatus() {
+        ElasticsearchKnowledgeIndexManager indexManager = indexManagerProvider.getIfAvailable();
+        if (indexManager == null) {
+            return new IndexStatusResult("", false, false);
+        }
+        ElasticsearchKnowledgeIndexManager.KnowledgeIndexStatus status = indexManager.status();
+        return new IndexStatusResult(status.indexName(), status.elasticsearchEnabled(), status.exists());
+    }
+
+    @PostMapping("/index/ensure")
+    public IndexStatusResult ensureIndex() {
+        ElasticsearchKnowledgeIndexManager indexManager = indexManagerProvider.getIfAvailable();
+        if (indexManager == null) {
+            return new IndexStatusResult("", false, false);
+        }
+        ElasticsearchKnowledgeIndexManager.KnowledgeIndexStatus status = indexManager.ensureIndex();
+        return new IndexStatusResult(status.indexName(), status.elasticsearchEnabled(), status.exists());
     }
 
     @PostMapping("/index/sample")
@@ -58,6 +84,13 @@ public class KnowledgeAdminController {
     public record IndexResult(
             String documentId,
             int indexedDocumentCount
+    ) {
+    }
+
+    public record IndexStatusResult(
+            String indexName,
+            boolean elasticsearchEnabled,
+            boolean exists
     ) {
     }
 }
