@@ -1,0 +1,14 @@
+{
+  "preSalesIntents": [
+    "product_recommendation",
+    "product_comparison",
+    "inventory_or_shipping",
+    "general_inquiry"
+  ],
+  "afterSalesIntents": [
+    "order_status",
+    "logistics_tracking",
+    "after_sales_policy",
+    "general_inquiry"
+  ]
+}

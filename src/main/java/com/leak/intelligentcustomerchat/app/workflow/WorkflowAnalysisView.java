@@ -13,20 +13,26 @@ import java.util.Objects;
 
 public record WorkflowAnalysisView(
         InboundMail cleanedMail,
+        WorkflowIntentDiagnosticsView intentDiagnostics,
         IntentNormalizationResult normalizationResult,
         IntentRouteResult routeResult,
         ContextSnapshot contextSnapshot,
+        WorkflowContextDiagnosticsView contextDiagnostics,
         BusinessFactResult businessFactResult,
+        WorkflowKnowledgeDiagnosticsView knowledgeDiagnostics,
         KnowledgeRetrieveResult knowledgeRetrieveResult,
         ReplyDraft draft,
         ReviewDecision reviewDecision
 ) {
     public WorkflowAnalysisView {
         Objects.requireNonNull(cleanedMail, "cleanedMail must not be null");
+        Objects.requireNonNull(intentDiagnostics, "intentDiagnostics must not be null");
         Objects.requireNonNull(normalizationResult, "normalizationResult must not be null");
         Objects.requireNonNull(routeResult, "routeResult must not be null");
         Objects.requireNonNull(contextSnapshot, "contextSnapshot must not be null");
+        Objects.requireNonNull(contextDiagnostics, "contextDiagnostics must not be null");
         Objects.requireNonNull(businessFactResult, "businessFactResult must not be null");
+        Objects.requireNonNull(knowledgeDiagnostics, "knowledgeDiagnostics must not be null");
         Objects.requireNonNull(knowledgeRetrieveResult, "knowledgeRetrieveResult must not be null");
         Objects.requireNonNull(draft, "draft must not be null");
         Objects.requireNonNull(reviewDecision, "reviewDecision must not be null");

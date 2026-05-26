@@ -1,0 +1,7 @@
+{
+  "messageId": "demo-after-sales-policy-001",
+  "threadId": "demo-thread-after-sales-policy-001",
+  "from": "customer@example.com",
+  "subject": "Question about return and refund policy",
+  "body": "Hello, I received the product but I want to understand the return and refund policy before making a decision."
+}

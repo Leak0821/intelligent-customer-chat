@@ -13,10 +13,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
-public class DefaultIntentNormalizationService implements IntentNormalizationService {
+public class DefaultIntentNormalizationService implements IntentNormalizationService, IntentNormalizationTraceService {
     private final PromptConfigService promptConfigService;
     private final LlmClient llmClient;
     private final ObjectMapper objectMapper;
@@ -32,12 +33,52 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
 
     @Override
     public IntentNormalizationResult normalize(InboundMail mail) {
+        return diagnose(mail).finalResult();
+    }
+
+    @Override
+    public IntentNormalizationDiagnostics diagnose(InboundMail mail) {
         IntentNormalizationResult heuristicResult = heuristics.normalize(mail);
         String userPrompt = buildUserPrompt(mail, heuristicResult);
-        return llmClient.complete(promptConfigService.currentPromptConfig().intentNormalizationSystemPrompt(), userPrompt)
-                .flatMap(this::parseLlmResponse)
-                .map(response -> mergeWithGuardrails(mail, heuristicResult, response))
-                .orElse(heuristicResult);
+        Optional<String> llmResponse = llmClient.complete(
+                promptConfigService.currentPromptConfig().intentNormalizationSystemPrompt(),
+                userPrompt
+        );
+        if (llmResponse.isEmpty()) {
+            return new IntentNormalizationDiagnostics(
+                    heuristicResult,
+                    heuristicResult,
+                    "heuristic_fallback",
+                    false,
+                    false,
+                    "llm_unavailable",
+                    List.of()
+            );
+        }
+
+        Optional<LlmIntentNormalizationPayload> payload = parseLlmResponse(llmResponse.get());
+        if (payload.isEmpty()) {
+            return new IntentNormalizationDiagnostics(
+                    heuristicResult,
+                    heuristicResult,
+                    "heuristic_fallback",
+                    true,
+                    false,
+                    "llm_response_invalid",
+                    List.of()
+            );
+        }
+
+        MergeOutcome mergeOutcome = mergeWithGuardrails(mail, heuristicResult, payload.get());
+        return new IntentNormalizationDiagnostics(
+                heuristicResult,
+                mergeOutcome.result(),
+                "llm_with_guardrails",
+                true,
+                true,
+                null,
+                mergeOutcome.guardrailActions()
+        );
     }
 
     private String buildUserPrompt(InboundMail mail, IntentNormalizationResult heuristicResult) {
@@ -74,9 +115,9 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
         }
     }
 
-    private IntentNormalizationResult mergeWithGuardrails(InboundMail mail,
-                                                          IntentNormalizationResult heuristicResult,
-                                                          LlmIntentNormalizationPayload llmPayload) {
+    private MergeOutcome mergeWithGuardrails(InboundMail mail,
+                                            IntentNormalizationResult heuristicResult,
+                                            LlmIntentNormalizationPayload llmPayload) {
         String mergedMailText = heuristics.mergeMailText(mail.subject(), mail.rawBody());
         List<CustomerScene> sceneCandidates = normalizeScenes(llmPayload.sceneCandidates(), heuristicResult.sceneCandidates());
         List<String> subIntentCandidates = normalizeStrings(llmPayload.subIntentCandidates(), heuristicResult.subIntentCandidates());
@@ -84,6 +125,7 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
         List<String> requiredEntities = normalizeStrings(llmPayload.requiredEntities(), heuristicResult.requiredEntities());
         List<String> missingEntities = normalizeStrings(llmPayload.missingEntities(), heuristicResult.missingEntities());
         ProcessingDisposition disposition = mergeDisposition(llmPayload.disposition(), heuristicResult.disposition());
+        List<String> guardrailActions = new ArrayList<>();
 
         // 订单号、物流号这类关键实体不能靠模型“猜有”。如果规则层没有识别到，就维持追问或更高等级处置。
         boolean hasExplicitOrderId = heuristics.hasExplicitOrderOrTrackingId(mergedMailText);
@@ -93,17 +135,21 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
             requiredEntities = mergeDistinct(requiredEntities, List.of(IntentNormalizationHeuristics.ORDER_ID_ENTITY));
             missingEntities = mergeDistinct(missingEntities, List.of(IntentNormalizationHeuristics.ORDER_ID_ENTITY));
             disposition = mergeDisposition(ProcessingDisposition.FOLLOW_UP.name(), disposition);
+            guardrailActions.add("enforce_order_id_for_after_sales");
         }
 
-        return new IntentNormalizationResult(
-                firstNonBlank(llmPayload.normalizedRequest(), heuristicResult.normalizedRequest()),
-                firstNonBlank(llmPayload.primaryQuestion(), heuristicResult.primaryQuestion()),
-                secondaryQuestions,
-                sceneCandidates,
-                subIntentCandidates,
-                requiredEntities,
-                missingEntities,
-                disposition
+        return new MergeOutcome(
+                new IntentNormalizationResult(
+                        firstNonBlank(llmPayload.normalizedRequest(), heuristicResult.normalizedRequest()),
+                        firstNonBlank(llmPayload.primaryQuestion(), heuristicResult.primaryQuestion()),
+                        secondaryQuestions,
+                        sceneCandidates,
+                        subIntentCandidates,
+                        requiredEntities,
+                        missingEntities,
+                        disposition
+                ),
+                List.copyOf(guardrailActions)
         );
     }
 
@@ -185,6 +231,12 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
             List<String> requiredEntities,
             List<String> missingEntities,
             String disposition
+    ) {
+    }
+
+    private record MergeOutcome(
+            IntentNormalizationResult result,
+            List<String> guardrailActions
     ) {
     }
 }

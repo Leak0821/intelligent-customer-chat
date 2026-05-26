@@ -37,13 +37,17 @@ class DefaultContextLoadingServiceTest {
 
         service.load(mail("thread-1", "first"), route());
         service.load(mail("thread-1", "second"), route());
-        service.load(mail("thread-1", "third"), route());
-        service.load(mail("thread-1", "fourth"), route());
+        ContextLoadingDiagnostics thirdDiagnostics = service.diagnose(mail("thread-1", "third"), route());
+        ContextLoadingDiagnostics fourthDiagnostics = service.diagnose(mail("thread-1", "fourth"), route());
 
         assertThat(compressionService.invocationCount()).isEqualTo(2);
         assertThat(summaryRepository.findLatestByThreadId("thread-1")).isPresent();
         assertThat(summaryRepository.findLatestByThreadId("thread-1").get().getCoveredMessageCount()).isEqualTo(4);
         assertThat(memoryStore.read("thread-1").threadSummary()).isEqualTo("summary-2");
+        assertThat(thirdDiagnostics.compressionAttempted()).isTrue();
+        assertThat(thirdDiagnostics.compressionSucceeded()).isTrue();
+        assertThat(thirdDiagnostics.summaryResolutionSource()).isEqualTo("memory_summary");
+        assertThat(fourthDiagnostics.compressionDecision()).isEqualTo("generated");
     }
 
     @Test
@@ -59,10 +63,14 @@ class DefaultContextLoadingServiceTest {
                 properties
         );
 
-        ContextSnapshot snapshot = service.load(mail("thread-2", "latest"), route());
+        ContextLoadingDiagnostics diagnostics = service.diagnose(mail("thread-2", "latest"), route());
+        ContextSnapshot snapshot = diagnostics.snapshot();
 
         assertThat(snapshot.threadSummary()).isEqualTo("persisted-summary");
         assertThat(memoryStore.read("thread-2").threadSummary()).isEqualTo("persisted-summary");
+        assertThat(diagnostics.summaryResolutionSource()).isEqualTo("persisted_summary");
+        assertThat(diagnostics.restoredPersistedSummaryToMemory()).isTrue();
+        assertThat(diagnostics.compressionSkipReason()).isEqualTo("compression_disabled");
     }
 
     private static InboundMail mail(String threadId, String body) {

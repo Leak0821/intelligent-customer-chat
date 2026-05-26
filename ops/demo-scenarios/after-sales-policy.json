@@ -1,0 +1,7 @@
+{
+  "messageId": "demo-after-sales-policy-001",
+  "threadId": "demo-thread-after-sales-002",
+  "from": "customer@example.com",
+  "subject": "Need after-sales policy clarification",
+  "body": "Hello, my order MNOP2468 was delivered, but I want to understand the after-sales policy before deciding the next step."
+}

@@ -1,0 +1,7 @@
+{
+  "messageId": "demo-after-sales-missing-id-001",
+  "threadId": "demo-thread-after-sales-003",
+  "from": "customer@example.com",
+  "subject": "Where is my package?",
+  "body": "Hi, my package still has not arrived. Can you help me check the status as soon as possible?"
+}

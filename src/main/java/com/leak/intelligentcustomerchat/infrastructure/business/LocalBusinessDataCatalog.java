@@ -87,6 +87,10 @@ public class LocalBusinessDataCatalog {
                 .findFirst();
     }
 
+    public Optional<AfterSalesPolicyCatalogRecord> findPolicyByCode(String policyCode) {
+        return Optional.ofNullable(policiesByCode.get(policyCode));
+    }
+
     private void seedDefaults() {
         OffsetDateTime now = OffsetDateTime.now();
         upsertOrder(new OrderCatalogRecord("ABCD1234", "buyer@example.com", "shipped", "paid", "ZXCV9876", now.minusDays(3)));

@@ -293,5 +293,17 @@ class WorkflowEvaluationServiceTest {
         public List<MailReceipt> findRecent(int limit) {
             return receiptsByMessageId.values().stream().limit(limit).toList();
         }
+
+        @Override
+        public long countAll() {
+            return receiptsByMessageId.size();
+        }
+
+        @Override
+        public long countByStatus(com.leak.intelligentcustomerchat.domain.mail.MailReceiptStatus status) {
+            return receiptsByMessageId.values().stream()
+                    .filter(receipt -> receipt.getStatus() == status)
+                    .count();
+        }
     }
 }

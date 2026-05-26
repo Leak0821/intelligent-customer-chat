@@ -76,4 +76,49 @@ class MailIngestionServiceTest {
         assertThat(processed.getStatus()).isEqualTo(MailReceiptStatus.PROCESSED);
         assertThat(processed.getWorkflowRunId()).isNotBlank();
     }
+
+    @Test
+    void shouldManuallyEnqueueReceiptBeforeAsyncProcessing() {
+        InboundMail mail = new InboundMail(
+                "msg-receipt-3",
+                "thread-receipt-3",
+                "buyer@example.com",
+                "Need async help",
+                "Please enqueue this mail first.",
+                OffsetDateTime.now()
+        );
+
+        MailReceipt queued = mailIngestionService.enqueueManual(mail);
+        MailReceipt persisted = mailReceiptRepository.findByMessageId(mail.messageId()).orElseThrow();
+
+        assertThat(queued.getStatus()).isEqualTo(MailReceiptStatus.QUEUED);
+        assertThat(persisted.getStatus()).isEqualTo(MailReceiptStatus.QUEUED);
+
+        MailPollingResult processingResult = mailIngestionService.processPendingReceipts(10);
+        MailReceipt processed = mailReceiptRepository.findByMessageId(mail.messageId()).orElseThrow();
+
+        assertThat(processingResult.processedCount()).isGreaterThanOrEqualTo(1);
+        assertThat(processed.getStatus()).isEqualTo(MailReceiptStatus.PROCESSED);
+    }
+
+    @Test
+    void shouldProcessSingleReceiptByMessageId() {
+        InboundMail mail = new InboundMail(
+                "msg-receipt-4",
+                "thread-receipt-4",
+                "buyer@example.com",
+                "Need targeted processing",
+                "Please only process this specific queued mail.",
+                OffsetDateTime.now()
+        );
+
+        mailIngestionService.enqueueManual(mail);
+
+        WorkflowRun run = mailIngestionService.processReceiptByMessageId(mail.messageId());
+        MailReceipt processed = mailReceiptRepository.findByMessageId(mail.messageId()).orElseThrow();
+
+        assertThat(run.getMessageId()).isEqualTo(mail.messageId());
+        assertThat(processed.getStatus()).isEqualTo(MailReceiptStatus.PROCESSED);
+        assertThat(processed.getWorkflowRunId()).isEqualTo(run.getRunId());
+    }
 }

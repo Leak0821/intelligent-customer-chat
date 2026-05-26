@@ -1,0 +1,5 @@
+{
+  "topK": 10,
+  "factsFirst": true,
+  "rrfWindowSize": 50
+}
