@@ -1,6 +1,10 @@
 package com.leak.intelligentcustomerchat.interfaces.admin;
 
+import com.leak.intelligentcustomerchat.app.business.BusinessFactPreviewService;
 import com.leak.intelligentcustomerchat.infrastructure.business.LocalBusinessDataCatalog;
+import com.leak.intelligentcustomerchat.infrastructure.business.StubAfterSalesPolicyGateway;
+import com.leak.intelligentcustomerchat.infrastructure.business.StubLogisticsQueryGateway;
+import com.leak.intelligentcustomerchat.infrastructure.business.StubOrderQueryGateway;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
@@ -12,7 +16,8 @@ class BusinessDataAdminControllerTest {
 
     @Test
     void shouldListAndUpsertBusinessDataCatalogRecords() {
-        BusinessDataAdminController controller = new BusinessDataAdminController(new LocalBusinessDataCatalog());
+        LocalBusinessDataCatalog businessDataCatalog = new LocalBusinessDataCatalog();
+        BusinessDataAdminController controller = controller(businessDataCatalog);
 
         assertThat(controller.listOrders()).isNotEmpty();
         assertThat(controller.listLogistics()).isNotEmpty();
@@ -49,5 +54,42 @@ class BusinessDataAdminControllerTest {
         assertThat(controller.listOrders()).anyMatch(item -> item.orderId().equals("QRST1357"));
         assertThat(controller.listLogistics()).anyMatch(item -> item.trackingNumber().equals("NEWTRACK1357"));
         assertThat(controller.listPolicies()).anyMatch(item -> item.policyCode().equals("CUSTOM_DELAY_POLICY"));
+        assertThat(controller.getOrder("QRST1357").customerEmail()).isEqualTo("new-buyer@example.com");
+        assertThat(controller.getLogistics("NEWTRACK1357").orderId()).isEqualTo("QRST1357");
+        assertThat(controller.getPolicy("CUSTOM_DELAY_POLICY").policyName()).isEqualTo("Custom delay policy");
+    }
+
+    @Test
+    void shouldPreviewBusinessFactsAndFindPolicyByIntent() {
+        LocalBusinessDataCatalog businessDataCatalog = new LocalBusinessDataCatalog();
+        BusinessDataAdminController controller = controller(businessDataCatalog);
+
+        var policy = controller.getPolicyByIntent("logistics_tracking");
+        var preview = controller.previewFacts(new BusinessDataAdminController.BusinessFactPreviewRequest(
+                "buyer@example.com",
+                "preview-thread-1",
+                "AFTER_SALES",
+                "logistics_tracking",
+                "ABCD1234",
+                "ZXCV9876",
+                "manual logistics preview"
+        ));
+
+        assertThat(policy.policyCode()).isEqualTo("AFTER_SALES_STANDARD_POLICY");
+        assertThat(preview.queriedGateways()).containsExactly("order", "logistics");
+        assertThat(preview.orderResult()).isNotNull();
+        assertThat(preview.logisticsResult()).isNotNull();
+        assertThat(preview.logisticsResult().trackingNumber()).isEqualTo("ZXCV9876");
+    }
+
+    private BusinessDataAdminController controller(LocalBusinessDataCatalog businessDataCatalog) {
+        return new BusinessDataAdminController(
+                businessDataCatalog,
+                new BusinessFactPreviewService(
+                        new StubOrderQueryGateway(businessDataCatalog),
+                        new StubLogisticsQueryGateway(businessDataCatalog),
+                        new StubAfterSalesPolicyGateway(businessDataCatalog)
+                )
+        );
     }
 }

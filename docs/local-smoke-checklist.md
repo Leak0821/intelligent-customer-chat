@@ -56,6 +56,17 @@ curl http://127.0.0.1:8080/api/knowledge/seeds
 curl http://127.0.0.1:8080/api/mail/overview
 ```
 
+6. 如果要单独验证业务事实查询
+
+```bash
+curl http://127.0.0.1:8080/api/business/orders/ABCD1234
+curl http://127.0.0.1:8080/api/business/logistics/ZXCV9876
+curl http://127.0.0.1:8080/api/business/policies/by-intent/logistics_tracking
+curl -X POST http://127.0.0.1:8080/api/business/facts/preview \
+  -H 'Content-Type: application/json' \
+  -d '{"customerEmail":"buyer@example.com","scene":"AFTER_SALES","subIntent":"logistics_tracking","orderId":"ABCD1234","trackingNumber":"ZXCV9876","queryReason":"manual smoke preview"}'
+```
+
 ## 3. 最小闭环验证
 
 ### 3.1 售后样例
@@ -137,4 +148,10 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 
 ```bash
 ./scripts/mail-ops-smoke.sh
+```
+
+如果要快速验证业务事实链路，可执行：
+
+```bash
+./scripts/business-facts-smoke.sh
 ```
