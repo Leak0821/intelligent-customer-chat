@@ -197,6 +197,13 @@ public class DemoScenarioCatalogService {
                             "客户提供订单号并询问当前订单状态，验证 order_status 子意图和订单 facts。"
                     ),
                     new DemoScenarioMetadata(
+                            "after-sales-manual-review",
+                            "售后人工审核样例",
+                            "AFTER_SALES",
+                            "AFTER_SALES_MANUAL_REVIEW",
+                            "客户要求退款与赔付，验证高风险请求进入人工审核。"
+                    ),
+                    new DemoScenarioMetadata(
                             "after-sales-logistics",
                             "售后物流查询样例",
                             "AFTER_SALES",
@@ -216,6 +223,13 @@ public class DemoScenarioCatalogService {
                             "AFTER_SALES",
                             "AFTER_SALES_MISSING_IDENTIFIER",
                             "客户表达售后诉求但缺少订单号或物流号，验证补充追问链路。"
+                    ),
+                    new DemoScenarioMetadata(
+                            "system-blocked-demo",
+                            "系统阻断样例",
+                            "SYSTEM",
+                            "BLOCKED_DEMO",
+                            "仅用于本地演示系统级故障进入 BLOCKED 状态，不代表真实业务子意图。"
                     )
             );
         }

@@ -25,12 +25,15 @@ class DemoScenarioCatalogServiceTest {
                         "pre-sales-general-inquiry",
                         "pre-sales-shipping-stock",
                         "after-sales-order-status",
+                        "after-sales-manual-review",
                         "after-sales-logistics",
                         "after-sales-policy",
-                        "after-sales-missing-id"
+                        "after-sales-missing-id",
+                        "system-blocked-demo"
                 );
         assertThat(scenarios.get(0).title()).isEqualTo("售前推荐样例");
         assertThat(scenarios.get(4).scene()).isEqualTo("AFTER_SALES");
+        assertThat(scenarios.get(9).scene()).isEqualTo("SYSTEM");
     }
 
     @Test

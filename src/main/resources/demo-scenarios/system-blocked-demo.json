@@ -1,0 +1,7 @@
+{
+  "messageId": "demo-blocked-runtime-001",
+  "threadId": "demo-thread-blocked-runtime-001",
+  "from": "customer@example.com",
+  "subject": "Demo blocked workflow scenario",
+  "body": "This built-in scenario is used only to demonstrate the blocked workflow path."
+}

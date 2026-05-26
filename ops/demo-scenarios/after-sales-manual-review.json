@@ -1,0 +1,7 @@
+{
+  "messageId": "demo-after-sales-manual-review-001",
+  "threadId": "demo-thread-after-sales-manual-review-001",
+  "from": "buyer@example.com",
+  "subject": "Request refund and compensation for delayed order",
+  "body": "Hello, my order number is ABCD1234 and the shipment has been delayed. I want a refund and compensation for this issue."
+}

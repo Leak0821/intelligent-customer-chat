@@ -33,7 +33,7 @@
 - demo / replay / evaluation / dispatch 都有固定接口
 - 内置 demo 样例目录，可直接列出并一键执行
 
-## 4. 推荐演示的 8 个样例
+## 4. 推荐演示的 10 个样例
 
 样例文件在：
 
@@ -42,9 +42,11 @@
 - [pre-sales-general-inquiry.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/pre-sales-general-inquiry.json)
 - [pre-sales-shipping-stock.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/pre-sales-shipping-stock.json)
 - [after-sales-order-status.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/after-sales-order-status.json)
+- [after-sales-manual-review.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/after-sales-manual-review.json)
 - [after-sales-logistics.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/after-sales-logistics.json)
 - [after-sales-policy.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/after-sales-policy.json)
 - [after-sales-missing-id.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/after-sales-missing-id.json)
+- [system-blocked-demo.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/system-blocked-demo.json)
 
 它们分别对应：
 
@@ -53,9 +55,11 @@
 3. 售前基础功能咨询
 4. 售前库存 / 发货咨询
 5. 售后订单状态查询
-6. 售后物流查询
-7. 售后政策说明
-8. 售后缺关键编号，触发追问
+6. 售后人工审核
+7. 售后物流查询
+8. 售后政策说明
+9. 售后缺关键编号，触发追问
+10. 系统阻断演示
 
 同时也可以直接走内置目录接口：
 
@@ -93,6 +97,7 @@ curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-log
 
 - 每条样例都能看到事件流、草稿、审核和派发相关状态
 - 不是黑盒聊天，而是可复盘的工作流
+- blocked 样例可以单独说明“这是系统级阻断演示，不代表普通客户意图”
 
 ### 5.3 单独演示发送闭环
 
