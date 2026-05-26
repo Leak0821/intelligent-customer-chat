@@ -105,6 +105,12 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
 - `knowledgeDiagnostics.fusedSnippetIds`
 - `knowledgeDiagnostics.bm25Snippets`
 - `knowledgeDiagnostics.vectorSnippets`
+- `replyDiagnostics.replySource`
+- `replyDiagnostics.llmAttempted`
+- `replyDiagnostics.llmResponseAccepted`
+- `replyDiagnostics.fallbackReason`
+- `replyDiagnostics.factPreview`
+- `replyDiagnostics.knowledgeSnippetIds`
 
 3. 如果需要完整回放，继续查看
 
@@ -148,6 +154,7 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 
 - `preflight` 返回 `ready=true`
 - `demo` 能生成 `WorkflowRun`
+- `analysis` 能解释回复阶段到底走了 `llm`、模板兜底还是追问模板
 - `analysis` 能返回 scene / subIntent / facts / knowledge / draft
 - `replay` 能看到事件、草稿、审核或派发信息
 - `knowledge` 和 `business` 接口能返回可读样本

@@ -40,12 +40,36 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                             ContextSnapshot contextSnapshot,
                             BusinessFactResult businessFactResult,
                             KnowledgeRetrieveResult knowledgeRetrieveResult) {
+        return draftWithDiagnostics(run, mail, normalizationResult, routeResult, contextSnapshot, businessFactResult, knowledgeRetrieveResult).draft();
+    }
+
+    @Override
+    public ReplyDraftingResult draftWithDiagnostics(WorkflowRun run,
+                                                    InboundMail mail,
+                                                    IntentNormalizationResult normalizationResult,
+                                                    IntentRouteResult routeResult,
+                                                    ContextSnapshot contextSnapshot,
+                                                    BusinessFactResult businessFactResult,
+                                                    KnowledgeRetrieveResult knowledgeRetrieveResult) {
         String subject = "Re: " + mail.subject();
         ReplyDraftStatus status = decideStatus(normalizationResult, businessFactResult);
         ReplyBodyResult replyBodyResult = buildBody(mail, routeResult, normalizationResult, businessFactResult, knowledgeRetrieveResult, contextSnapshot, status);
         String notes = "scene=%s, subIntent=%s, replySource=%s"
                 .formatted(routeResult.scene(), routeResult.subIntent(), replyBodyResult.source());
-        return ReplyDraft.create(run.getRunId(), subject, replyBodyResult.body(), status, notes);
+        ReplyDraft draft = ReplyDraft.create(run.getRunId(), subject, replyBodyResult.body(), status, notes);
+        ReplyDraftingDiagnostics diagnostics = new ReplyDraftingDiagnostics(
+                status,
+                replyBodyResult.source(),
+                replyBodyResult.llmAttempted(),
+                replyBodyResult.llmResponseAccepted(),
+                replyBodyResult.fallbackReason(),
+                replyBodyResult.systemPrompt(),
+                replyBodyResult.userPrompt(),
+                List.copyOf(businessFactResult.facts()),
+                knowledgeRetrieveResult.snippets().stream().map(KnowledgeSnippet::id).toList(),
+                knowledgeRetrieveResult.snippets().stream().map(KnowledgeSnippet::content).toList()
+        );
+        return new ReplyDraftingResult(draft, diagnostics);
     }
 
     private ReplyDraftStatus decideStatus(IntentNormalizationResult normalizationResult, BusinessFactResult businessFactResult) {
@@ -68,21 +92,44 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                                       ReplyDraftStatus status) {
         PromptTemplateConfig promptConfig = promptConfigService.currentPromptConfig();
         if (status == ReplyDraftStatus.FOLLOW_UP_NEEDED) {
-            return new ReplyBodyResult(renderTemplate(promptConfig.followUpTemplate(), normalizationResult.primaryQuestion(), routeResult.scene().name()), "follow-up-template");
+            return new ReplyBodyResult(
+                    renderTemplate(promptConfig.followUpTemplate(), normalizationResult.primaryQuestion(), routeResult.scene().name()),
+                    "follow-up-template",
+                    false,
+                    false,
+                    "follow_up_template_required",
+                    null,
+                    null
+            );
         }
 
         if (status == ReplyDraftStatus.HUMAN_REVIEW_REQUIRED) {
-            return new ReplyBodyResult(renderTemplate(promptConfig.humanReviewTemplate(), normalizationResult.primaryQuestion(), routeResult.scene().name()), "human-review-template");
+            return new ReplyBodyResult(
+                    renderTemplate(promptConfig.humanReviewTemplate(), normalizationResult.primaryQuestion(), routeResult.scene().name()),
+                    "human-review-template",
+                    false,
+                    false,
+                    "human_review_template_required",
+                    null,
+                    null
+            );
         }
 
+        String systemPrompt = promptConfig.directReplySystemPrompt();
+        String userPrompt = buildDirectReplyPrompt(mail, routeResult, normalizationResult, businessFactResult, knowledgeRetrieveResult, contextSnapshot, promptConfig.directReplySuffix());
         String fallbackBody = buildTemplateDirectReply(routeResult, normalizationResult, businessFactResult, knowledgeRetrieveResult, contextSnapshot, promptConfig.directReplySuffix());
-        return llmClient.complete(
-                        promptConfig.directReplySystemPrompt(),
-                        buildDirectReplyPrompt(mail, routeResult, normalizationResult, businessFactResult, knowledgeRetrieveResult, contextSnapshot, promptConfig.directReplySuffix())
-                )
+        return llmClient.complete(systemPrompt, userPrompt)
                 .filter(value -> !value.isBlank())
-                .map(body -> new ReplyBodyResult(body, "llm"))
-                .orElseGet(() -> new ReplyBodyResult(fallbackBody, "template"));
+                .map(body -> new ReplyBodyResult(body, "llm", true, true, null, systemPrompt, userPrompt))
+                .orElseGet(() -> new ReplyBodyResult(
+                        fallbackBody,
+                        "template",
+                        true,
+                        false,
+                        "llm_unavailable_or_empty",
+                        systemPrompt,
+                        userPrompt
+                ));
     }
 
     private String buildDirectReplyPrompt(InboundMail mail,
@@ -354,6 +401,12 @@ public class TemplateReplyDraftService implements ReplyDraftService {
         return "- " + first + normalized.substring(1);
     }
 
-    private record ReplyBodyResult(String body, String source) {
+    private record ReplyBodyResult(String body,
+                                   String source,
+                                   boolean llmAttempted,
+                                   boolean llmResponseAccepted,
+                                   String fallbackReason,
+                                   String systemPrompt,
+                                   String userPrompt) {
     }
 }

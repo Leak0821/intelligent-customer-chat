@@ -17,4 +17,15 @@ public interface ReplyDraftService {
                      ContextSnapshot contextSnapshot,
                      BusinessFactResult businessFactResult,
                      KnowledgeRetrieveResult knowledgeRetrieveResult);
+
+    default ReplyDraftingResult draftWithDiagnostics(WorkflowRun run,
+                                                     InboundMail mail,
+                                                     IntentNormalizationResult normalizationResult,
+                                                     IntentRouteResult routeResult,
+                                                     ContextSnapshot contextSnapshot,
+                                                     BusinessFactResult businessFactResult,
+                                                     KnowledgeRetrieveResult knowledgeRetrieveResult) {
+        ReplyDraft draft = draft(run, mail, normalizationResult, routeResult, contextSnapshot, businessFactResult, knowledgeRetrieveResult);
+        return new ReplyDraftingResult(draft, ReplyDraftingDiagnostics.unknown(draft));
+    }
 }

@@ -13,6 +13,8 @@ import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationTraceServi
 import com.leak.intelligentcustomerchat.app.intent.IntentRoutingService;
 import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrieveService;
 import com.leak.intelligentcustomerchat.app.mail.MailCleaner;
+import com.leak.intelligentcustomerchat.app.reply.ReplyDraftingDiagnostics;
+import com.leak.intelligentcustomerchat.app.reply.ReplyDraftingResult;
 import com.leak.intelligentcustomerchat.app.reply.ReplyDraftService;
 import com.leak.intelligentcustomerchat.app.review.ReviewDecisionService;
 import com.leak.intelligentcustomerchat.config.ContextMemoryProperties;
@@ -134,10 +136,44 @@ class WorkflowAnalysisServiceTest {
                 (mail, route) -> contextSnapshot,
                 (mail, normalization, route, context) -> businessFactResult,
                 (normalization, route, facts) -> knowledgeRetrieveResult,
-                (run, mail, normalization, route, context, facts, knowledge) -> {
-                    assertThat(run.getMessageId()).isEqualTo("msg-1");
-                    assertThat(run.getThreadId()).isEqualTo("thread-1");
-                    return draft;
+                new ReplyDraftService() {
+                    @Override
+                    public ReplyDraft draft(WorkflowRun run,
+                                            InboundMail mail,
+                                            IntentNormalizationResult normalization,
+                                            IntentRouteResult route,
+                                            ContextSnapshot context,
+                                            BusinessFactResult facts,
+                                            KnowledgeRetrieveResult knowledge) {
+                        assertThat(run.getMessageId()).isEqualTo("msg-1");
+                        assertThat(run.getThreadId()).isEqualTo("thread-1");
+                        return draft;
+                    }
+
+                    @Override
+                    public ReplyDraftingResult draftWithDiagnostics(WorkflowRun run,
+                                                                    InboundMail mail,
+                                                                    IntentNormalizationResult normalization,
+                                                                    IntentRouteResult route,
+                                                                    ContextSnapshot context,
+                                                                    BusinessFactResult facts,
+                                                                    KnowledgeRetrieveResult knowledge) {
+                        return new ReplyDraftingResult(
+                                draft(run, mail, normalization, route, context, facts, knowledge),
+                                new ReplyDraftingDiagnostics(
+                                        ReplyDraftStatus.DRAFT_READY,
+                                        "llm",
+                                        true,
+                                        true,
+                                        null,
+                                        "Write a safe and concise customer reply.",
+                                        "Customer email subject:\nNeed help",
+                                        List.of("current logistics status=in_transit"),
+                                        List.of("fused-1"),
+                                        List.of("fused content")
+                                )
+                        );
+                    }
                 },
                 (replyDraft, context) -> {
                     assertThat(context.routeResult()).isEqualTo(routeResult);
@@ -184,6 +220,12 @@ class WorkflowAnalysisServiceTest {
         assertThat(view.knowledgeDiagnostics().hybridDebugAvailable()).isTrue();
         assertThat(view.knowledgeDiagnostics().bm25Snippets()).hasSize(1);
         assertThat(view.knowledgeDiagnostics().vectorSnippets()).hasSize(1);
+        assertThat(view.replyDiagnostics().replySource()).isEqualTo("llm");
+        assertThat(view.replyDiagnostics().llmAttempted()).isTrue();
+        assertThat(view.replyDiagnostics().llmResponseAccepted()).isTrue();
+        assertThat(view.replyDiagnostics().systemPrompt()).contains("safe and concise customer reply");
+        assertThat(view.replyDiagnostics().factPreview()).contains("current logistics status=in_transit");
+        assertThat(view.replyDiagnostics().knowledgeSnippetIds()).containsExactly("fused-1");
     }
 
     private static final class StubConversationMemoryStore implements ConversationMemoryStore {

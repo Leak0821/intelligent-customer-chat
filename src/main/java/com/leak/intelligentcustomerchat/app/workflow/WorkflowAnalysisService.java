@@ -13,6 +13,8 @@ import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationTraceServi
 import com.leak.intelligentcustomerchat.app.intent.IntentRoutingService;
 import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrieveService;
 import com.leak.intelligentcustomerchat.app.mail.MailCleaner;
+import com.leak.intelligentcustomerchat.app.reply.ReplyDraftingDiagnostics;
+import com.leak.intelligentcustomerchat.app.reply.ReplyDraftingResult;
 import com.leak.intelligentcustomerchat.app.reply.ReplyDraftService;
 import com.leak.intelligentcustomerchat.app.review.ReviewDecisionContext;
 import com.leak.intelligentcustomerchat.app.review.ReviewDecisionService;
@@ -108,7 +110,7 @@ public class WorkflowAnalysisService {
 
         // 分析视图不落正式状态机，只复用同一套草稿与审核能力，方便快速检查中间产物。
         WorkflowRun previewRun = WorkflowRun.start(cleanedMail.messageId(), cleanedMail.threadId());
-        ReplyDraft draft = replyDraftService.draft(
+        ReplyDraftingResult draftingResult = replyDraftService.draftWithDiagnostics(
                 previewRun,
                 cleanedMail,
                 normalizationResult,
@@ -117,6 +119,7 @@ public class WorkflowAnalysisService {
                 businessFactResult,
                 knowledgeRetrieveResult
         );
+        ReplyDraft draft = draftingResult.draft();
         ReviewDecision reviewDecision = reviewDecisionService.review(
                 draft,
                 new ReviewDecisionContext(routeResult, businessFactResult, knowledgeRetrieveResult)
@@ -141,6 +144,7 @@ public class WorkflowAnalysisService {
                 businessFactResult,
                 buildKnowledgeDiagnostics(retrievalQuery, knowledgeRetrieveResult),
                 knowledgeRetrieveResult,
+                buildReplyDiagnostics(draftingResult.diagnostics()),
                 draft,
                 reviewDecision
         );
@@ -284,5 +288,20 @@ public class WorkflowAnalysisService {
             return "score_sort";
         }
         return hybridDebugAvailable ? "hybrid_unknown" : "single_path";
+    }
+
+    private WorkflowReplyDiagnosticsView buildReplyDiagnostics(ReplyDraftingDiagnostics diagnostics) {
+        return new WorkflowReplyDiagnosticsView(
+                diagnostics.draftStatus(),
+                diagnostics.replySource(),
+                diagnostics.llmAttempted(),
+                diagnostics.llmResponseAccepted(),
+                diagnostics.fallbackReason(),
+                diagnostics.systemPrompt(),
+                diagnostics.userPrompt(),
+                diagnostics.factPreview(),
+                diagnostics.knowledgeSnippetIds(),
+                diagnostics.knowledgeSnippetPreview()
+        );
     }
 }

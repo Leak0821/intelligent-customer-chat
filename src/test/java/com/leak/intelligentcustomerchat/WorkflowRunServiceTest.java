@@ -12,6 +12,7 @@ import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRunRepository;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowStage;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowStatus;
+import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -65,6 +66,11 @@ class WorkflowRunServiceTest {
         assertThat(workflowEventRepository.findByRunId(run.getRunId())).hasSizeGreaterThanOrEqualTo(8);
         assertThat(workflowRunService.findReplay(run.getRunId())).isPresent();
         assertThat(workflowRunService.findReplayByMessageId(mail.messageId())).isPresent();
+        WorkflowEvent draftedEvent = workflowRunService.findEvents(run.getRunId()).stream()
+                .filter(event -> event.stage() == WorkflowStage.REPLY_DRAFTED)
+                .findFirst()
+                .orElseThrow();
+        assertThat(draftedEvent.summary()).contains("replySource=follow-up-template");
     }
 
     @Test

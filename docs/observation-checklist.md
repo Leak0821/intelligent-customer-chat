@@ -56,6 +56,8 @@
 - fusedSnippetIds 是否和最终 knowledge 结果对得上
 - 是否触发了 business facts
 - 是否触发了 knowledge
+- replyDiagnostics 里是否能看到 replySource、llmAttempted、fallbackReason
+- replyDiagnostics.factPreview / knowledgeSnippetIds 是否与前面的 facts 和知识召回对得上
 - draft 状态和 send readiness 是否合理
 
 ## 4. 如果是售后场景，重点看什么

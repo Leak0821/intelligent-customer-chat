@@ -6,6 +6,7 @@ import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationService;
 import com.leak.intelligentcustomerchat.app.intent.IntentRoutingService;
 import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrieveService;
 import com.leak.intelligentcustomerchat.app.mail.MailCleaner;
+import com.leak.intelligentcustomerchat.app.reply.ReplyDraftingResult;
 import com.leak.intelligentcustomerchat.app.reply.ReplyDraftService;
 import com.leak.intelligentcustomerchat.app.review.ReviewDecisionContext;
 import com.leak.intelligentcustomerchat.app.review.ReviewDecisionService;
@@ -98,9 +99,18 @@ public class WorkflowStageExecutor {
             advance(run, WorkflowStage.KNOWLEDGE_READY,
                     "knowledgeRecallCount=%s".formatted(knowledgeRetrieveResult.recallCount()));
 
-            ReplyDraft draft = replyDraftService.draft(run, cleanedMail, normalizationResult, routeResult, contextSnapshot, businessFactResult, knowledgeRetrieveResult);
+            ReplyDraftingResult draftingResult = replyDraftService.draftWithDiagnostics(
+                    run,
+                    cleanedMail,
+                    normalizationResult,
+                    routeResult,
+                    contextSnapshot,
+                    businessFactResult,
+                    knowledgeRetrieveResult
+            );
+            ReplyDraft draft = draftingResult.draft();
             replyDraftRepository.save(draft);
-            advance(run, WorkflowStage.REPLY_DRAFTED, "draftStatus=%s".formatted(draft.getStatus()));
+            advance(run, WorkflowStage.REPLY_DRAFTED, buildDraftStageReason(draftingResult));
 
             ReviewDecision reviewDecision = reviewDecisionService.review(
                     draft,
@@ -160,5 +170,16 @@ public class WorkflowStageExecutor {
             return "request_customer_information";
         }
         return reviewDecision.autoSendAllowed() ? "dispatch_reply" : "manual_send_review";
+    }
+
+    private String buildDraftStageReason(ReplyDraftingResult draftingResult) {
+        String reason = "draftStatus=%s, replySource=%s".formatted(
+                draftingResult.draft().getStatus(),
+                draftingResult.diagnostics().replySource()
+        );
+        if (draftingResult.diagnostics().fallbackReason() == null || draftingResult.diagnostics().fallbackReason().isBlank()) {
+            return reason;
+        }
+        return reason + ", fallbackReason=" + draftingResult.diagnostics().fallbackReason();
     }
 }

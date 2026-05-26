@@ -21,6 +21,7 @@ public record WorkflowAnalysisView(
         BusinessFactResult businessFactResult,
         WorkflowKnowledgeDiagnosticsView knowledgeDiagnostics,
         KnowledgeRetrieveResult knowledgeRetrieveResult,
+        WorkflowReplyDiagnosticsView replyDiagnostics,
         ReplyDraft draft,
         ReviewDecision reviewDecision
 ) {
@@ -34,6 +35,7 @@ public record WorkflowAnalysisView(
         Objects.requireNonNull(businessFactResult, "businessFactResult must not be null");
         Objects.requireNonNull(knowledgeDiagnostics, "knowledgeDiagnostics must not be null");
         Objects.requireNonNull(knowledgeRetrieveResult, "knowledgeRetrieveResult must not be null");
+        Objects.requireNonNull(replyDiagnostics, "replyDiagnostics must not be null");
         Objects.requireNonNull(draft, "draft must not be null");
         Objects.requireNonNull(reviewDecision, "reviewDecision must not be null");
     }

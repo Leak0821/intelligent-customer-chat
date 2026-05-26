@@ -30,7 +30,7 @@ class TemplateReplyDraftServiceTest {
     void shouldUseFollowUpTemplateWhenInputIsIncomplete() {
         TemplateReplyDraftService service = new TemplateReplyDraftService(promptConfigService(), new StubLlmClient(Optional.of("should-not-be-used")));
 
-        ReplyDraft draft = service.draft(
+        ReplyDraftingResult result = service.draftWithDiagnostics(
                 WorkflowRun.start("msg-1", "thread-1"),
                 mail(),
                 normalizationResult(ProcessingDisposition.FOLLOW_UP),
@@ -39,10 +39,14 @@ class TemplateReplyDraftServiceTest {
                 BusinessFactResult.insufficientInput(List.of("order_id_or_tracking_no")),
                 KnowledgeRetrieveResult.empty()
         );
+        ReplyDraft draft = result.draft();
 
         assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.FOLLOW_UP_NEEDED);
         assertThat(draft.getBody().toLowerCase()).contains("please share your order number");
         assertThat(draft.getReviewNotes()).contains("replySource=follow-up-template");
+        assertThat(result.diagnostics().replySource()).isEqualTo("follow-up-template");
+        assertThat(result.diagnostics().llmAttempted()).isFalse();
+        assertThat(result.diagnostics().fallbackReason()).isEqualTo("follow_up_template_required");
     }
 
     @Test
@@ -54,7 +58,7 @@ class TemplateReplyDraftServiceTest {
                 We will keep monitoring the shipment and update you if anything changes.
                 """)));
 
-        ReplyDraft draft = service.draft(
+        ReplyDraftingResult result = service.draftWithDiagnostics(
                 WorkflowRun.start("msg-1", "thread-1"),
                 mail(),
                 normalizationResult(ProcessingDisposition.CONTINUE),
@@ -63,17 +67,25 @@ class TemplateReplyDraftServiceTest {
                 successFacts(),
                 knowledgeResult()
         );
+        ReplyDraft draft = result.draft();
 
         assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
         assertThat(draft.getBody()).contains("currently in transit");
         assertThat(draft.getReviewNotes()).contains("replySource=llm");
+        assertThat(result.diagnostics().replySource()).isEqualTo("llm");
+        assertThat(result.diagnostics().llmAttempted()).isTrue();
+        assertThat(result.diagnostics().llmResponseAccepted()).isTrue();
+        assertThat(result.diagnostics().systemPrompt()).contains("safe and concise customer reply");
+        assertThat(result.diagnostics().userPrompt()).contains("Customer email subject");
+        assertThat(result.diagnostics().factPreview()).contains("order confirmed");
+        assertThat(result.diagnostics().knowledgeSnippetIds()).containsExactly("k-1");
     }
 
     @Test
     void shouldFallbackToTemplateReplyWhenLlmIsUnavailable() {
         TemplateReplyDraftService service = new TemplateReplyDraftService(promptConfigService(), new StubLlmClient(Optional.empty()));
 
-        ReplyDraft draft = service.draft(
+        ReplyDraftingResult result = service.draftWithDiagnostics(
                 WorkflowRun.start("msg-1", "thread-1"),
                 mail(),
                 normalizationResult(ProcessingDisposition.CONTINUE),
@@ -82,11 +94,16 @@ class TemplateReplyDraftServiceTest {
                 successFacts(),
                 knowledgeResult()
         );
+        ReplyDraft draft = result.draft();
 
         assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
         assertThat(draft.getBody()).contains("Current update:");
         assertThat(draft.getBody()).contains("shipping-related information");
         assertThat(draft.getReviewNotes()).contains("replySource=template");
+        assertThat(result.diagnostics().replySource()).isEqualTo("template");
+        assertThat(result.diagnostics().llmAttempted()).isTrue();
+        assertThat(result.diagnostics().llmResponseAccepted()).isFalse();
+        assertThat(result.diagnostics().fallbackReason()).isEqualTo("llm_unavailable_or_empty");
     }
 
     @Test
