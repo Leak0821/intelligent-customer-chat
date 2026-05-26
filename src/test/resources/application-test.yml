@@ -42,7 +42,13 @@ app:
       index-name: knowledge_chunks
       title-field: title
       content-field: content
+      vector-field: content_vector
+      parent-id-field: parent_id
+      doc-type-field: doc_type
       top-k: 10
+      num-candidates: 50
+      embedding-dimensions: 16
+      rrf-k: 60
   runtime-config:
     nacos:
       enabled: false

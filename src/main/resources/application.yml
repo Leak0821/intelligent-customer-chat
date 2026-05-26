@@ -59,7 +59,13 @@ app:
       index-name: ${APP_ELASTICSEARCH_INDEX_NAME:knowledge_chunks}
       title-field: ${APP_ELASTICSEARCH_TITLE_FIELD:title}
       content-field: ${APP_ELASTICSEARCH_CONTENT_FIELD:content}
+      vector-field: ${APP_ELASTICSEARCH_VECTOR_FIELD:content_vector}
+      parent-id-field: ${APP_ELASTICSEARCH_PARENT_ID_FIELD:parent_id}
+      doc-type-field: ${APP_ELASTICSEARCH_DOC_TYPE_FIELD:doc_type}
       top-k: ${APP_ELASTICSEARCH_TOP_K:10}
+      num-candidates: ${APP_ELASTICSEARCH_NUM_CANDIDATES:50}
+      embedding-dimensions: ${APP_ELASTICSEARCH_EMBEDDING_DIMENSIONS:16}
+      rrf-k: ${APP_ELASTICSEARCH_RRF_K:60}
   runtime-config:
     nacos:
       enabled: ${APP_NACOS_CONFIG_ENABLED:false}

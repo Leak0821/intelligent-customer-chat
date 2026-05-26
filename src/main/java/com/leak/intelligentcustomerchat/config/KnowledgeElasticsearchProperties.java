@@ -11,6 +11,12 @@ public record KnowledgeElasticsearchProperties(
         @NotBlank String indexName,
         @NotBlank String titleField,
         @NotBlank String contentField,
-        @Min(1) int topK
+        @NotBlank String vectorField,
+        @NotBlank String parentIdField,
+        @NotBlank String docTypeField,
+        @Min(1) int topK,
+        @Min(1) int numCandidates,
+        @Min(4) int embeddingDimensions,
+        @Min(10) int rrfK
 ) {
 }
