@@ -83,6 +83,26 @@ docker compose up -d mysql redis elasticsearch nacos
 mvn test
 ```
 
+如果要接入 OpenAI 兼容模型网关，可优先配置以下环境变量：
+
+```bash
+OPENAI_API_KEY=...
+SPRING_AI_OPENAI_BASE_URL=https://api.openai.com
+SPRING_AI_OPENAI_CHAT_MODEL=gpt-4o-mini
+SPRING_AI_OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+APP_AI_CHAT_ENABLED=true
+APP_KNOWLEDGE_EMBEDDING_ENABLED=true
+```
+
+如果是 `DeepSeek`、`Qwen` 或其他 OpenAI 兼容网关，可直接替换 `base-url` 和模型名。
+
+## 本地演示接口
+
+- `POST /api/workflows/demo`：提交一封测试邮件，返回 `WorkflowRun`
+- `POST /api/workflows/demo/replay`：提交一封测试邮件，直接返回完整回放
+- `GET /api/workflows/{runId}/replay`：按 `runId` 查看完整链路
+- `GET /api/workflows/by-message/{messageId}/replay`：按 `messageId` 查看最新链路
+
 ## 分支管理记录
 
 - 这类练习项目建议保留特性分支，方便回看每次修改

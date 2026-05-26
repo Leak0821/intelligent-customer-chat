@@ -37,15 +37,15 @@ public class WorkflowDemoController {
     @PostMapping("/demo")
     public WorkflowRun triggerDemo(@RequestBody DemoMailRequest request) {
         // 管理口只用于本地验证最小闭环，不代表最终邮件接入协议。
-        InboundMail inboundMail = new InboundMail(
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(),
-                request.from(),
-                request.subject(),
-                request.body(),
-                OffsetDateTime.now()
-        );
+        InboundMail inboundMail = buildInboundMail(request);
         return mailIngestionService.process(inboundMail);
+    }
+
+    @PostMapping("/demo/replay")
+    public WorkflowReplayView triggerDemoAndReplay(@RequestBody DemoMailRequest request) {
+        WorkflowRun run = mailIngestionService.process(buildInboundMail(request));
+        return workflowRunService.findReplay(run.getRunId())
+                .orElseThrow(() -> new NoSuchElementException("workflow replay not found for runId=" + run.getRunId()));
     }
 
     @GetMapping
@@ -77,9 +77,22 @@ public class WorkflowDemoController {
     }
 
     public record DemoMailRequest(
+            String messageId,
+            String threadId,
             @Email String from,
             @NotBlank String subject,
             @NotBlank String body
     ) {
+    }
+
+    private InboundMail buildInboundMail(DemoMailRequest request) {
+        return new InboundMail(
+                request.messageId() == null || request.messageId().isBlank() ? UUID.randomUUID().toString() : request.messageId(),
+                request.threadId() == null || request.threadId().isBlank() ? UUID.randomUUID().toString() : request.threadId(),
+                request.from(),
+                request.subject(),
+                request.body(),
+                OffsetDateTime.now()
+        );
     }
 }
