@@ -1,8 +1,8 @@
 package com.leak.intelligentcustomerchat.infrastructure.business;
 
-import com.leak.intelligentcustomerchat.domain.business.BusinessFactResult;
 import com.leak.intelligentcustomerchat.domain.business.BusinessQueryContext;
+import com.leak.intelligentcustomerchat.domain.business.OrderQueryResult;
 
 public interface OrderQueryGateway {
-    BusinessFactResult query(BusinessQueryContext context);
+    OrderQueryResult query(BusinessQueryContext context);
 }

@@ -1,10 +1,14 @@
 package com.leak.intelligentcustomerchat.app.business;
 
+import com.leak.intelligentcustomerchat.domain.business.AfterSalesPolicyResult;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactResult;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactStatus;
 import com.leak.intelligentcustomerchat.domain.business.BusinessQueryContext;
 import com.leak.intelligentcustomerchat.domain.context.ContextSnapshot;
 import com.leak.intelligentcustomerchat.domain.intent.CustomerScene;
+import com.leak.intelligentcustomerchat.domain.business.GatewayQueryStatus;
+import com.leak.intelligentcustomerchat.domain.business.LogisticsQueryResult;
+import com.leak.intelligentcustomerchat.domain.business.OrderQueryResult;
 import com.leak.intelligentcustomerchat.domain.intent.IntentNormalizationResult;
 import com.leak.intelligentcustomerchat.domain.intent.IntentRouteResult;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
@@ -64,18 +68,18 @@ public class DefaultBusinessFactService implements BusinessFactService {
                 normalizationResult.primaryQuestion()
         );
 
-        List<BusinessFactResult> results = new ArrayList<>();
+        List<GatewayFactSlice> results = new ArrayList<>();
         if (requiresOrderFacts(routeResult.subIntent())) {
-            results.add(orderQueryGateway.query(queryContext));
+            results.add(toGatewayFactSlice(orderQueryGateway.query(queryContext)));
         }
         if (requiresLogisticsFacts(routeResult.subIntent())) {
-            results.add(logisticsQueryGateway.query(queryContext));
+            results.add(toGatewayFactSlice(logisticsQueryGateway.query(queryContext)));
         }
         if (requiresPolicyFacts(routeResult.subIntent())) {
-            results.add(afterSalesPolicyGateway.query(queryContext));
+            results.add(toGatewayFactSlice(afterSalesPolicyGateway.query(queryContext)));
         }
         if (results.isEmpty()) {
-            results.add(afterSalesPolicyGateway.query(queryContext));
+            results.add(toGatewayFactSlice(afterSalesPolicyGateway.query(queryContext)));
         }
 
         return merge(results);
@@ -95,7 +99,7 @@ public class DefaultBusinessFactService implements BusinessFactService {
         return "after_sales_policy".equals(subIntent);
     }
 
-    private BusinessFactResult merge(List<BusinessFactResult> results) {
+    private BusinessFactResult merge(List<GatewayFactSlice> results) {
         List<String> sourceSystems = new ArrayList<>();
         List<String> resolvedEntities = new ArrayList<>();
         List<String> facts = new ArrayList<>();
@@ -103,13 +107,17 @@ public class DefaultBusinessFactService implements BusinessFactService {
         List<String> conflictFlags = new ArrayList<>();
 
         BusinessFactStatus mergedStatus = BusinessFactStatus.SUCCESS;
-        for (BusinessFactResult result : results) {
+        OffsetDateTime latestTimestamp = results.get(0).queriedAt();
+        for (GatewayFactSlice result : results) {
             sourceSystems.add(result.sourceSystem());
             resolvedEntities.addAll(result.resolvedEntities());
             facts.addAll(result.facts());
             missingEntities.addAll(result.missingEntities());
             conflictFlags.addAll(result.conflictFlags());
             mergedStatus = mergeStatus(mergedStatus, result.status());
+            if (result.queriedAt().isAfter(latestTimestamp)) {
+                latestTimestamp = result.queriedAt();
+            }
         }
 
         return new BusinessFactResult(
@@ -119,7 +127,72 @@ public class DefaultBusinessFactService implements BusinessFactService {
                 facts,
                 missingEntities,
                 conflictFlags,
-                OffsetDateTime.now()
+                latestTimestamp
+        );
+    }
+
+    private GatewayFactSlice toGatewayFactSlice(OrderQueryResult result) {
+        List<String> resolvedEntities = result.orderId() == null || result.orderId().isBlank()
+                ? List.of()
+                : List.of("order_id=" + result.orderId());
+        List<String> facts = result.status() == GatewayQueryStatus.SUCCESS
+                ? List.of(
+                "order status=" + result.orderStatus(),
+                "payment status=" + result.paymentStatus(),
+                "order owner email=" + result.customerEmail()
+        )
+                : List.of();
+        return new GatewayFactSlice(
+                mapStatus(result.status()),
+                result.sourceSystem(),
+                resolvedEntities,
+                facts,
+                result.missingEntities(),
+                result.conflictFlags(),
+                result.queriedAt()
+        );
+    }
+
+    private GatewayFactSlice toGatewayFactSlice(LogisticsQueryResult result) {
+        List<String> resolvedEntities = new ArrayList<>();
+        if (result.orderId() != null && !result.orderId().isBlank()) {
+            resolvedEntities.add("order_id=" + result.orderId());
+        }
+        if (result.trackingNumber() != null && !result.trackingNumber().isBlank()) {
+            resolvedEntities.add("tracking_number=" + result.trackingNumber());
+        }
+        List<String> facts = result.status() == GatewayQueryStatus.SUCCESS
+                ? List.of(
+                "latest logistics node=" + result.latestNode(),
+                result.etaHint(),
+                "current logistics status=" + result.logisticsStatus()
+        )
+                : List.of();
+        return new GatewayFactSlice(
+                mapStatus(result.status()),
+                result.sourceSystem(),
+                resolvedEntities,
+                facts,
+                result.missingEntities(),
+                result.conflictFlags(),
+                result.queriedAt()
+        );
+    }
+
+    private GatewayFactSlice toGatewayFactSlice(AfterSalesPolicyResult result) {
+        List<String> facts = result.status() == GatewayQueryStatus.SUCCESS
+                ? result.policyNotes()
+                : List.of();
+        return new GatewayFactSlice(
+                mapStatus(result.status()),
+                result.sourceSystem(),
+                result.policyCode() == null || result.policyCode().isBlank()
+                        ? List.of()
+                        : List.of("policy_code=" + result.policyCode()),
+                facts,
+                result.missingEntities(),
+                result.conflictFlags(),
+                result.queriedAt()
         );
     }
 
@@ -139,6 +212,16 @@ public class DefaultBusinessFactService implements BusinessFactService {
         return current;
     }
 
+    private BusinessFactStatus mapStatus(GatewayQueryStatus status) {
+        return switch (status) {
+            case SUCCESS -> BusinessFactStatus.SUCCESS;
+            case INSUFFICIENT_INPUT -> BusinessFactStatus.INSUFFICIENT_INPUT;
+            case NO_RESULT -> BusinessFactStatus.NO_RESULT;
+            case TEMPORARY_FAILURE -> BusinessFactStatus.TEMPORARY_FAILURE;
+            case CONFLICT -> BusinessFactStatus.CONFLICT;
+        };
+    }
+
     private String extractFirstMatch(Pattern pattern, String text) {
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
@@ -147,4 +230,14 @@ public class DefaultBusinessFactService implements BusinessFactService {
         return null;
     }
 
+    private record GatewayFactSlice(
+            BusinessFactStatus status,
+            String sourceSystem,
+            List<String> resolvedEntities,
+            List<String> facts,
+            List<String> missingEntities,
+            List<String> conflictFlags,
+            OffsetDateTime queriedAt
+    ) {
+    }
 }

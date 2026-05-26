@@ -67,6 +67,31 @@ class DefaultBusinessFactServiceTest {
         assertThat(result.sourceSystem()).contains("stub-order-gateway");
         assertThat(result.sourceSystem()).contains("stub-logistics-gateway");
         assertThat(result.resolvedEntities()).anyMatch(item -> item.contains("ABCD1234"));
+        assertThat(result.resolvedEntities()).anyMatch(item -> item.contains("ZXCV9876"));
         assertThat(result.facts()).anyMatch(item -> item.contains("latest logistics node"));
+    }
+
+    @Test
+    void shouldIncludeStructuredPolicyFactsForAfterSalesPolicyIntent() {
+        BusinessFactResult result = service.loadFacts(
+                new InboundMail("msg-3", "thread-3", "buyer@example.com", "Refund policy", "Please check order #EFGH5678 and tell me the refund policy", java.time.OffsetDateTime.now()),
+                new IntentNormalizationResult(
+                        "Please check order #EFGH5678 and tell me the refund policy",
+                        "Please check order #EFGH5678 and tell me the refund policy",
+                        List.of(),
+                        List.of(CustomerScene.AFTER_SALES),
+                        List.of("after_sales_policy"),
+                        List.of("order_id_or_tracking_no"),
+                        List.of(),
+                        ProcessingDisposition.CONTINUE
+                ),
+                new IntentRouteResult(CustomerScene.AFTER_SALES, "after_sales_policy", ProcessingDisposition.CONTINUE, "test"),
+                new ContextSnapshot("thread=t-3", List.of(), List.of())
+        );
+
+        assertThat(result.status()).isEqualTo(BusinessFactStatus.SUCCESS);
+        assertThat(result.sourceSystem()).contains("stub-after-sales-policy-gateway");
+        assertThat(result.resolvedEntities()).contains("policy_code=AFTER_SALES_STANDARD_POLICY");
+        assertThat(result.facts()).anyMatch(item -> item.contains("verify order facts before promising compensation"));
     }
 }
