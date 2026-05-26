@@ -101,6 +101,51 @@ class WorkflowEvaluationServiceTest {
         assertThat(sample.latestDispatchStatus()).isEqualTo("RETRY_PENDING");
         assertThat(sample.latestReviewAction()).isEqualTo("REJECT_SEND");
         assertThat(sample.riskFlags()).contains("manual_review_required", "dispatch_retry_pending", "review_rejected", "business_fact_conflict");
+        assertThat(sample.scene()).isEqualTo("AFTER_SALES");
+        assertThat(sample.subIntent()).isEqualTo("LOGISTICS_TRACKING");
+    }
+
+    @Test
+    void shouldFilterSamplesBySceneStatusAndRiskFlag() {
+        InMemoryWorkflowRunRepository workflowRunRepository = new InMemoryWorkflowRunRepository();
+        InMemoryWorkflowEventRepository workflowEventRepository = new InMemoryWorkflowEventRepository();
+        InMemoryReplyDraftRepository replyDraftRepository = new InMemoryReplyDraftRepository();
+        InMemoryReplyDispatchRepository replyDispatchRepository = new InMemoryReplyDispatchRepository();
+        InMemoryReviewRecordRepository reviewRecordRepository = new InMemoryReviewRecordRepository();
+        InMemoryMailReceiptRepository mailReceiptRepository = new InMemoryMailReceiptRepository();
+
+        WorkflowRun afterSalesRun = WorkflowRun.start("msg-eval-2", "thread-eval-2");
+        afterSalesRun.moveTo(WorkflowStage.INTENT_ROUTED, "scene=AFTER_SALES, subIntent=logistics_tracking");
+        afterSalesRun.complete("workflow completed with draft status=FOLLOW_UP_NEEDED");
+        workflowRunRepository.save(afterSalesRun);
+        workflowEventRepository.save(new WorkflowEvent("evt-a", afterSalesRun.getRunId(), afterSalesRun.getMessageId(), WorkflowStage.INTENT_ROUTED, afterSalesRun.getStatus(), "scene=AFTER_SALES, subIntent=logistics_tracking", OffsetDateTime.now()));
+        replyDraftRepository.save(ReplyDraft.create(afterSalesRun.getRunId(), "subject-a", "body-a", ReplyDraftStatus.FOLLOW_UP_NEEDED, "missing order id"));
+        mailReceiptRepository.save(MailReceipt.manual("receipt-a", new InboundMail(afterSalesRun.getMessageId(), afterSalesRun.getThreadId(), "a@example.com", "subject-a", "body-a", OffsetDateTime.now())));
+
+        WorkflowRun preSalesRun = WorkflowRun.start("msg-eval-3", "thread-eval-3");
+        preSalesRun.moveTo(WorkflowStage.INTENT_ROUTED, "scene=PRE_SALES, subIntent=product_recommendation");
+        preSalesRun.complete("workflow completed with draft status=DRAFT_READY");
+        workflowRunRepository.save(preSalesRun);
+        workflowEventRepository.save(new WorkflowEvent("evt-b", preSalesRun.getRunId(), preSalesRun.getMessageId(), WorkflowStage.INTENT_ROUTED, preSalesRun.getStatus(), "scene=PRE_SALES, subIntent=product_recommendation", OffsetDateTime.now()));
+        replyDraftRepository.save(ReplyDraft.create(preSalesRun.getRunId(), "subject-b", "body-b", ReplyDraftStatus.DRAFT_READY, "ready"));
+        mailReceiptRepository.save(MailReceipt.manual("receipt-b", new InboundMail(preSalesRun.getMessageId(), preSalesRun.getThreadId(), "b@example.com", "subject-b", "body-b", OffsetDateTime.now())));
+
+        WorkflowEvaluationService service = new WorkflowEvaluationService(
+                workflowRunRepository,
+                workflowEventRepository,
+                replyDraftRepository,
+                replyDispatchRepository,
+                reviewRecordRepository,
+                mailReceiptRepository
+        );
+
+        List<WorkflowEvaluationSampleView> afterSalesSamples = service.listSamples(10, "AFTER_SALES", null, null, null, null);
+        List<WorkflowEvaluationSampleView> followUpSamples = service.listSamples(10, null, null, null, "FOLLOW_UP_NEEDED", "follow_up_needed");
+
+        assertThat(afterSalesSamples).hasSize(1);
+        assertThat(afterSalesSamples.get(0).messageId()).isEqualTo("msg-eval-2");
+        assertThat(followUpSamples).hasSize(1);
+        assertThat(followUpSamples.get(0).scene()).isEqualTo("AFTER_SALES");
     }
 
     private static final class InMemoryWorkflowRunRepository implements WorkflowRunRepository {
@@ -237,6 +282,11 @@ class WorkflowEvaluationServiceTest {
         @Override
         public Optional<MailReceipt> findByMessageId(String messageId) {
             return Optional.ofNullable(receiptsByMessageId.get(messageId));
+        }
+
+        @Override
+        public List<MailReceipt> findPendingForProcessing(int limit) {
+            return receiptsByMessageId.values().stream().limit(limit).toList();
         }
 
         @Override

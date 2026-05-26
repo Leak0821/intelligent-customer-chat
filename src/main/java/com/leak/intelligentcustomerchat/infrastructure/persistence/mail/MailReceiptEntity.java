@@ -32,6 +32,9 @@ public class MailReceiptEntity {
     @TableField("subject")
     private String subject;
 
+    @TableField("raw_body")
+    private String rawBody;
+
     @TableField("received_at")
     private LocalDateTime receivedAt;
 
@@ -112,6 +115,14 @@ public class MailReceiptEntity {
 
     public void setSubject(String subject) {
         this.subject = subject;
+    }
+
+    public String getRawBody() {
+        return rawBody;
+    }
+
+    public void setRawBody(String rawBody) {
+        this.rawBody = rawBody;
     }
 
     public LocalDateTime getReceivedAt() {

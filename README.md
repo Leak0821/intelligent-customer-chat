@@ -7,6 +7,7 @@
 - 当前以文档先行方式收敛第一阶段规范
 - 第一阶段实现基线已收敛为 `Java + Spring Boot + Spring AI`
 - 当前目标是先把“可审、可拆、可实现”的规范合同沉淀完整
+- 第一版默认按“中小公司先跑通主链路”的思路实现，不过早引入过重的实时编排和复杂调度体系
 
 ## 重要提醒
 
@@ -75,7 +76,32 @@ source ./scripts/use-local-codex.sh
 如果要启动本地基础依赖，可在仓库根目录执行：
 
 ```bash
-docker compose up -d mysql redis elasticsearch nacos
+docker compose up -d mysql redis elasticsearch nacos xxl-job-admin
+```
+
+如果只是先跑最小闭环，不需要马上启 `XXL-JOB`，也可以先不拉起 `xxl-job-admin`。
+第一版默认仍然可以走本地定时器或手工接口推进。
+
+如果想先用第一版的本地配置启动应用，可以加上 `local` profile：
+
+```bash
+mvn -Dspring-boot.run.profiles=local spring-boot:run
+```
+
+或者直接在 IDE 里把 `spring.profiles.active` 设成 `local`。
+
+如果要验证 `XXL-JOB` 调度链路，建议额外注意这几件事：
+
+- `docker compose` 首次启动时会自动初始化 `xxl_job` 库和默认管理员
+- 默认管理后台地址是 `http://127.0.0.1:8088/xxl-job-admin`
+- 默认登录账号是 `admin / 123456`
+- 应用侧需要额外打开 `APP_XXL_ENABLED=true`
+- 执行器默认 `appName` 是 `intelligent-customer-chat-executor`
+
+仓库里还提供了一个最小的 Maven 缓存清理脚本，专门处理网络失败后残留的 `*.lastUpdated`：
+
+```bash
+./scripts/cleanup-maven-lastupdated.sh
 ```
 
 当前默认使用本仓库内的 `.mvn/settings.xml` 与 `.m2/repository`，执行测试可直接使用：
@@ -120,6 +146,31 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 默认仍然是 `noop` 发件器，目的是先保留完整发送状态机，同时避免本地开发或演示时误发真实邮件。
 发送失败后默认会进入“待重试”状态，并通过本地定时器或 `XXL-JOB` 补偿入口继续推进；如果重试次数耗尽，则改为人工跟进状态。
 
+## 邮件处理策略
+
+第一版邮件链路默认不要求实时处理。
+
+当前实现更偏向中小公司常见做法：
+
+- 先把邮件收下来，落一条 `mail_receipt`
+- 可以先入队，再由后续任务批量推进工作流
+- 也保留一个 `poll-and-process` 组合入口，方便本地快速验证
+
+这样做的原因很简单：
+
+- 第一版更重视闭环跑通和可复盘，而不是追求毫秒级实时
+- 如果后面业务测试发现流程需要调整，轻量任务化方案比重工作流平台更容易改
+- 等真实接起来之后，再决定是否要拆成更细的异步任务和调度链
+
+## 审核策略
+
+第一版审核层不追求复杂评分模型，当前先采用轻量规则：
+
+- 草稿本身已标记为追问或人工审核时，直接沿用
+- 售后业务事实冲突、事实临时不可用、订单/物流查不到时，优先转人工审核
+- 售前如果没有知识检索支撑，优先转人工审核，避免幻觉式推荐
+- 只有场景、事实和知识信号都比较安全时，才保持 `DRAFT_READY`
+
 ## 本地演示接口
 
 - `POST /api/workflows/demo`：提交一封测试邮件，返回 `WorkflowRun`
@@ -129,6 +180,11 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 - `GET /api/workflows/by-message/{messageId}/replay`：按 `messageId` 查看最新链路
 - `GET /api/workflows/{runId}/evaluation`：按 `runId` 查看最小评估样本视图
 - `GET /api/workflows/evaluations/recent`：查看最近一批工作流评估样本
+  - 支持 `scene`
+  - 支持 `subIntent`
+  - 支持 `workflowStatus`
+  - 支持 `draftStatus`
+  - 支持 `riskFlag`
 - `POST /api/workflows/{runId}/approve-send`：把草稿从待审核推进到可发送
 - `POST /api/workflows/{runId}/reject-send`：驳回当前草稿发送，回到人工审核状态
 - `POST /api/workflows/{runId}/revise-draft`：人工修订草稿，并可选择是否再次送审
@@ -137,6 +193,10 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 - `GET /api/workflows/{runId}/reviews`：查看该链路的人工审核记录
 - `POST /api/workflows/{runId}/retry-dispatch`：手工触发一条待重试派发
 - `POST /api/workflows/dispatches/retry-due`：批量执行已到期的发送补偿任务
+- `POST /api/mail/poll`：拉取邮箱新邮件并入队
+- `POST /api/mail/process-pending`：批量处理待执行邮件
+- `POST /api/mail/poll-and-process`：一键完成“拉取 + 处理”，便于本地快速验证
+- `POST /api/mail/receipts/{messageId}/requeue`：把失败或待调整的邮件重新放回待处理队列
 
 当前回放视图除了事件、草稿、派发记录外，也会带上人工审核记录，便于说明：
 
@@ -152,6 +212,13 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 - 当前草稿停在什么发送前状态
 - 最近一次审核、驳回或发送异常是什么
 - 当前有哪些风险标记，例如人工审核、追问、重试中、业务冲突
+
+最近评估样本接口已经支持轻量筛选，适合第一版快速回答这类问题：
+
+- 目前售后物流类案例有多少条
+- 哪些案例还停留在 `FOLLOW_UP_NEEDED`
+- 哪些案例命中了 `manual_review_required`
+- 哪些案例当前存在发送重试风险
 
 ## 知识库管理接口
 

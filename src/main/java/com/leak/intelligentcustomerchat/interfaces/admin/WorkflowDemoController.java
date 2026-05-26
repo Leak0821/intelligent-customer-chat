@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
@@ -100,8 +101,13 @@ public class WorkflowDemoController {
     }
 
     @GetMapping("/evaluations/recent")
-    public List<WorkflowEvaluationSampleView> recentEvaluations() {
-        return workflowEvaluationService.listRecentSamples(20);
+    public List<WorkflowEvaluationSampleView> recentEvaluations(@RequestParam(defaultValue = "20") int limit,
+                                                                @RequestParam(required = false) String scene,
+                                                                @RequestParam(required = false) String subIntent,
+                                                                @RequestParam(required = false) String workflowStatus,
+                                                                @RequestParam(required = false) String draftStatus,
+                                                                @RequestParam(required = false) String riskFlag) {
+        return workflowEvaluationService.listSamples(limit, scene, subIntent, workflowStatus, draftStatus, riskFlag);
     }
 
     @GetMapping("/by-message/{messageId}/replay")

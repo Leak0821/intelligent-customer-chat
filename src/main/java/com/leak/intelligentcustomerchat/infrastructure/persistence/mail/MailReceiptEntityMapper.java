@@ -23,6 +23,7 @@ final class MailReceiptEntityMapper {
         entity.setThreadId(receipt.getThreadId());
         entity.setSender(receipt.getSender());
         entity.setSubject(receipt.getSubject());
+        entity.setRawBody(receipt.getRawBody());
         entity.setReceivedAt(toLocalDateTime(receipt.getReceivedAt()));
         entity.setStatus(receipt.getStatus().name());
         entity.setWorkflowRunId(receipt.getWorkflowRunId());
@@ -42,6 +43,7 @@ final class MailReceiptEntityMapper {
                 entity.getThreadId(),
                 entity.getSender(),
                 entity.getSubject(),
+                entity.getRawBody(),
                 toOffsetDateTime(entity.getReceivedAt()),
                 MailReceiptStatus.valueOf(entity.getStatus()),
                 entity.getWorkflowRunId(),

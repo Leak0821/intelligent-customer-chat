@@ -12,5 +12,7 @@ public interface MailReceiptRepository {
 
     Optional<MailReceipt> findByMessageId(String messageId);
 
+    List<MailReceipt> findPendingForProcessing(int limit);
+
     List<MailReceipt> findRecent(int limit);
 }

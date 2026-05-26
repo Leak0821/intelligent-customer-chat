@@ -12,6 +12,7 @@ public final class MailReceipt {
     private final String threadId;
     private final String sender;
     private final String subject;
+    private final String rawBody;
     private final OffsetDateTime receivedAt;
     private MailReceiptStatus status;
     private String workflowRunId;
@@ -27,6 +28,7 @@ public final class MailReceipt {
                         String threadId,
                         String sender,
                         String subject,
+                        String rawBody,
                         OffsetDateTime receivedAt,
                         MailReceiptStatus status,
                         String workflowRunId,
@@ -41,6 +43,7 @@ public final class MailReceipt {
         this.threadId = Objects.requireNonNull(threadId, "threadId must not be null");
         this.sender = Objects.requireNonNull(sender, "sender must not be null");
         this.subject = Objects.requireNonNull(subject, "subject must not be null");
+        this.rawBody = normalizeRawBody(rawBody);
         this.receivedAt = Objects.requireNonNull(receivedAt, "receivedAt must not be null");
         this.status = Objects.requireNonNull(status, "status must not be null");
         this.workflowRunId = workflowRunId;
@@ -64,6 +67,7 @@ public final class MailReceipt {
                 mail.threadId(),
                 mail.from(),
                 mail.subject(),
+                mail.rawBody(),
                 mail.receivedAt(),
                 MailReceiptStatus.FETCHED,
                 null,
@@ -84,6 +88,7 @@ public final class MailReceipt {
                 mail.threadId(),
                 mail.from(),
                 mail.subject(),
+                mail.rawBody(),
                 mail.receivedAt(),
                 MailReceiptStatus.FETCHED,
                 null,
@@ -101,14 +106,21 @@ public final class MailReceipt {
                                       String threadId,
                                       String sender,
                                       String subject,
+                                      String rawBody,
                                       OffsetDateTime receivedAt,
                                       MailReceiptStatus status,
                                       String workflowRunId,
                                       String errorMessage,
                                       OffsetDateTime createdAt,
                                       OffsetDateTime updatedAt) {
-        return new MailReceipt(receiptId, sourceKey, folderName, uid, messageId, threadId, sender, subject,
+        return new MailReceipt(receiptId, sourceKey, folderName, uid, messageId, threadId, sender, subject, rawBody,
                 receivedAt, status, workflowRunId, errorMessage, createdAt, updatedAt);
+    }
+
+    public void markQueued() {
+        this.status = MailReceiptStatus.QUEUED;
+        this.errorMessage = null;
+        this.updatedAt = OffsetDateTime.now();
     }
 
     public void markProcessed(String runId) {
@@ -122,6 +134,17 @@ public final class MailReceipt {
         this.status = MailReceiptStatus.FAILED;
         this.errorMessage = Objects.requireNonNull(errorMessage, "errorMessage must not be null");
         this.updatedAt = OffsetDateTime.now();
+    }
+
+    public InboundMail toInboundMail() {
+        return new InboundMail(
+                messageId,
+                threadId,
+                sender,
+                subject,
+                rawBody,
+                receivedAt
+        );
     }
 
     public String getReceiptId() {
@@ -156,6 +179,10 @@ public final class MailReceipt {
         return subject;
     }
 
+    public String getRawBody() {
+        return rawBody;
+    }
+
     public OffsetDateTime getReceivedAt() {
         return receivedAt;
     }
@@ -178,5 +205,9 @@ public final class MailReceipt {
 
     public OffsetDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    private static String normalizeRawBody(String rawBody) {
+        return rawBody == null ? "" : rawBody;
     }
 }

@@ -84,8 +84,48 @@ class TemplateReplyDraftServiceTest {
         );
 
         assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
-        assertThat(draft.getBody()).contains("Current understanding:");
+        assertThat(draft.getBody()).contains("Current update:");
+        assertThat(draft.getBody()).contains("shipping-related information");
         assertThat(draft.getReviewNotes()).contains("replySource=template");
+    }
+
+    @Test
+    void shouldUseIntentAwareTemplateForPreSalesRecommendationWhenLlmIsUnavailable() {
+        TemplateReplyDraftService service = new TemplateReplyDraftService(promptConfigService(), new StubLlmClient(Optional.empty()));
+
+        ReplyDraft draft = service.draft(
+                WorkflowRun.start("msg-2", "thread-2"),
+                new InboundMail(
+                        "msg-2",
+                        "thread-2",
+                        "customer@example.com",
+                        "Need recommendation",
+                        "Please recommend a product for a living room.",
+                        OffsetDateTime.now()
+                ),
+                new IntentNormalizationResult(
+                        "Customer wants a product recommendation for the living room.",
+                        "What product would fit the living room?",
+                        List.of(),
+                        List.of(CustomerScene.PRE_SALES),
+                        List.of("product_recommendation"),
+                        List.of(),
+                        List.of(),
+                        ProcessingDisposition.CONTINUE
+                ),
+                new IntentRouteResult(CustomerScene.PRE_SALES, "product_recommendation", ProcessingDisposition.CONTINUE, "test"),
+                new ContextSnapshot("customer asked for a living room suggestion", List.of(), List.of()),
+                BusinessFactResult.notRequired(),
+                new KnowledgeRetrieveResult(
+                        "knowledge-index",
+                        List.of(new KnowledgeSnippet("k-2", "recommendation", "Warm ambient options are usually suitable for living room relaxation.", 0.93d, "faq")),
+                        1
+                )
+        );
+
+        assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
+        assertThat(draft.getBody()).contains("first recommendation direction");
+        assertThat(draft.getBody()).contains("living room");
     }
 
     private static PromptConfigService promptConfigService() {

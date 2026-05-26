@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -51,12 +52,26 @@ public class WorkflowEvaluationService {
     }
 
     public List<WorkflowEvaluationSampleView> listRecentSamples(int limit) {
+        return listSamples(limit, null, null, null, null, null);
+    }
+
+    public List<WorkflowEvaluationSampleView> listSamples(int limit,
+                                                          String scene,
+                                                          String subIntent,
+                                                          String workflowStatus,
+                                                          String draftStatus,
+                                                          String riskFlag) {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
         return workflowRunRepository.findAll().stream()
                 .limit(limit)
                 .map(this::buildSample)
+                .filter(sample -> matches(sample.scene(), scene))
+                .filter(sample -> matches(sample.subIntent(), subIntent))
+                .filter(sample -> matches(sample.workflowStatus(), workflowStatus))
+                .filter(sample -> matches(sample.draftStatus(), draftStatus))
+                .filter(sample -> matchesRiskFlag(sample.riskFlags(), riskFlag))
                 .toList();
     }
 
@@ -79,6 +94,8 @@ public class WorkflowEvaluationService {
                 .orElse("business facts summary unavailable");
         String knowledgeSummary = findEventSummary(events, WorkflowStage.KNOWLEDGE_READY)
                 .orElse("knowledge summary unavailable");
+        String scene = extractToken(routingSummary, "scene");
+        String subIntent = extractToken(routingSummary, "subIntent");
 
         return new WorkflowEvaluationSampleView(
                 run.getRunId(),
@@ -87,6 +104,8 @@ public class WorkflowEvaluationService {
                 receipt.getSender(),
                 receipt.getSubject(),
                 normalizationSummary,
+                scene,
+                subIntent,
                 routingSummary,
                 containsStage(events, WorkflowStage.BUSINESS_FACTS_READY),
                 businessFactsSummary,
@@ -106,6 +125,23 @@ public class WorkflowEvaluationService {
                 buildRiskFlags(run, draft, latestDispatch, latestReview, businessFactsSummary),
                 OffsetDateTime.now()
         );
+    }
+
+    private boolean matches(String actual, String expected) {
+        if (expected == null || expected.isBlank()) {
+            return true;
+        }
+        if (actual == null) {
+            return false;
+        }
+        return actual.equalsIgnoreCase(expected.trim());
+    }
+
+    private boolean matchesRiskFlag(List<String> riskFlags, String expectedRiskFlag) {
+        if (expectedRiskFlag == null || expectedRiskFlag.isBlank()) {
+            return true;
+        }
+        return riskFlags.stream().anyMatch(flag -> flag.equalsIgnoreCase(expectedRiskFlag.trim()));
     }
 
     private boolean containsStage(List<WorkflowEvent> events, WorkflowStage stage) {
@@ -150,6 +186,22 @@ public class WorkflowEvaluationService {
             riskFlags.add("business_fact_insufficient_input");
         }
         return riskFlags;
+    }
+
+    private String extractToken(String summary, String key) {
+        String marker = key + "=";
+        int start = summary.indexOf(marker);
+        if (start < 0) {
+            return "UNKNOWN";
+        }
+        int valueStart = start + marker.length();
+        int end = summary.indexOf(",", valueStart);
+        String value = end < 0 ? summary.substring(valueStart) : summary.substring(valueStart, end);
+        value = value.trim();
+        if (value.isBlank()) {
+            return "UNKNOWN";
+        }
+        return value.toUpperCase(Locale.ROOT);
     }
 
     private MailReceipt fallbackReceipt(WorkflowRun run) {

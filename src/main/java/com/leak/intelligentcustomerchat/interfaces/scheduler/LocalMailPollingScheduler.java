@@ -28,7 +28,7 @@ public class LocalMailPollingScheduler {
     @Scheduled(fixedDelayString = "${app.mail.poll-interval-millis:60000}")
     public void pollInbox() {
         MailPollingResult result = mailIngestionService.fetchAndProcess();
-        log.info("local mail polling finished, source={}, fetched={}, processed={}, errors={}",
-                mailProperties.source(), result.fetchedCount(), result.processedCount(), result.errors().size());
+        log.info("local mail polling finished, source={}, fetched={}, queued={}, processed={}, failed={}, errors={}",
+                mailProperties.source(), result.fetchedCount(), result.queuedCount(), result.processedCount(), result.failedCount(), result.errors().size());
     }
 }

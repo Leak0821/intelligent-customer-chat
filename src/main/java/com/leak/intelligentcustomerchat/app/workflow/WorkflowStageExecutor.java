@@ -7,6 +7,7 @@ import com.leak.intelligentcustomerchat.app.intent.IntentRoutingService;
 import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrieveService;
 import com.leak.intelligentcustomerchat.app.mail.MailCleaner;
 import com.leak.intelligentcustomerchat.app.reply.ReplyDraftService;
+import com.leak.intelligentcustomerchat.app.review.ReviewDecisionContext;
 import com.leak.intelligentcustomerchat.app.review.ReviewDecisionService;
 import com.leak.intelligentcustomerchat.config.WorkflowProperties;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactResult;
@@ -97,7 +98,10 @@ public class WorkflowStageExecutor {
             replyDraftRepository.save(draft);
             advance(run, WorkflowStage.REPLY_DRAFTED, "draftStatus=%s".formatted(draft.getStatus()));
 
-            ReviewDecision reviewDecision = reviewDecisionService.review(draft);
+            ReviewDecision reviewDecision = reviewDecisionService.review(
+                    draft,
+                    new ReviewDecisionContext(routeResult, businessFactResult, knowledgeRetrieveResult)
+            );
             draft.applyReviewOutcome(reviewDecision.finalStatus(), reviewDecision.reviewReason());
             draft.updateSendReadiness(
                     deriveSendReadiness(reviewDecision),

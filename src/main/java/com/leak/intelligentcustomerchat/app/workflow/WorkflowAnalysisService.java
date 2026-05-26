@@ -7,6 +7,7 @@ import com.leak.intelligentcustomerchat.app.intent.IntentRoutingService;
 import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrieveService;
 import com.leak.intelligentcustomerchat.app.mail.MailCleaner;
 import com.leak.intelligentcustomerchat.app.reply.ReplyDraftService;
+import com.leak.intelligentcustomerchat.app.review.ReviewDecisionContext;
 import com.leak.intelligentcustomerchat.app.review.ReviewDecisionService;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactResult;
 import com.leak.intelligentcustomerchat.domain.context.ContextSnapshot;
@@ -67,7 +68,10 @@ public class WorkflowAnalysisService {
                 businessFactResult,
                 knowledgeRetrieveResult
         );
-        ReviewDecision reviewDecision = reviewDecisionService.review(draft);
+        ReviewDecision reviewDecision = reviewDecisionService.review(
+                draft,
+                new ReviewDecisionContext(routeResult, businessFactResult, knowledgeRetrieveResult)
+        );
 
         return new WorkflowAnalysisView(
                 cleanedMail,

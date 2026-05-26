@@ -78,7 +78,12 @@ class WorkflowAnalysisServiceTest {
                     assertThat(run.getThreadId()).isEqualTo("thread-1");
                     return draft;
                 },
-                replyDraft -> reviewDecision
+                (replyDraft, context) -> {
+                    assertThat(context.routeResult()).isEqualTo(routeResult);
+                    assertThat(context.businessFactResult()).isEqualTo(businessFactResult);
+                    assertThat(context.knowledgeRetrieveResult()).isEqualTo(knowledgeRetrieveResult);
+                    return reviewDecision;
+                }
         );
 
         WorkflowAnalysisView view = service.analyze(inboundMail);
