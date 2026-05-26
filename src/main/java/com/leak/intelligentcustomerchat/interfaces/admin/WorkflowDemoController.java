@@ -1,6 +1,7 @@
 package com.leak.intelligentcustomerchat.interfaces.admin;
 
 import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowReplayView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
@@ -50,6 +51,18 @@ public class WorkflowDemoController {
     @GetMapping
     public List<WorkflowRun> listRuns() {
         return workflowRunService.findAllRuns();
+    }
+
+    @GetMapping("/{runId}/replay")
+    public WorkflowReplayView replay(@PathVariable String runId) {
+        return workflowRunService.findReplay(runId)
+                .orElseThrow(() -> new NoSuchElementException("workflow replay not found for runId=" + runId));
+    }
+
+    @GetMapping("/by-message/{messageId}/replay")
+    public WorkflowReplayView replayByMessageId(@PathVariable String messageId) {
+        return workflowRunService.findReplayByMessageId(messageId)
+                .orElseThrow(() -> new NoSuchElementException("workflow replay not found for messageId=" + messageId));
     }
 
     @GetMapping("/{runId}/events")

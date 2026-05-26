@@ -43,11 +43,33 @@ public class WorkflowRunService {
         return workflowRunRepository.findAll();
     }
 
+    public Optional<WorkflowRun> findRun(String runId) {
+        return workflowRunRepository.findByRunId(runId);
+    }
+
+    public Optional<WorkflowReplayView> findReplay(String runId) {
+        return workflowRunRepository.findByRunId(runId)
+                .map(this::buildReplayView);
+    }
+
+    public Optional<WorkflowReplayView> findReplayByMessageId(String messageId) {
+        return workflowRunRepository.findLatestByMessageId(messageId)
+                .map(this::buildReplayView);
+    }
+
     public List<WorkflowEvent> findEvents(String runId) {
         return workflowEventRepository.findByRunId(runId);
     }
 
     public Optional<ReplyDraft> findDraft(String runId) {
         return replyDraftRepository.findByRunId(runId);
+    }
+
+    private WorkflowReplayView buildReplayView(WorkflowRun run) {
+        return new WorkflowReplayView(
+                run,
+                workflowEventRepository.findByRunId(run.getRunId()),
+                replyDraftRepository.findByRunId(run.getRunId()).orElse(null)
+        );
     }
 }

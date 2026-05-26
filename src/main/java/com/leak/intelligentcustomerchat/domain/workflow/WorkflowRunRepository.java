@@ -8,5 +8,7 @@ public interface WorkflowRunRepository {
 
     Optional<WorkflowRun> findByRunId(String runId);
 
+    Optional<WorkflowRun> findLatestByMessageId(String messageId);
+
     List<WorkflowRun> findAll();
 }

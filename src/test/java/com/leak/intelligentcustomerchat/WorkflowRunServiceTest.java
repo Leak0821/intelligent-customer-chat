@@ -61,6 +61,8 @@ class WorkflowRunServiceTest {
         assertThat(workflowRunRepository.findByRunId(run.getRunId())).isPresent();
         assertThat(workflowRunService.findEvents(run.getRunId())).hasSizeGreaterThanOrEqualTo(8);
         assertThat(workflowEventRepository.findByRunId(run.getRunId())).hasSizeGreaterThanOrEqualTo(8);
+        assertThat(workflowRunService.findReplay(run.getRunId())).isPresent();
+        assertThat(workflowRunService.findReplayByMessageId(mail.messageId())).isPresent();
     }
 
     @Test
@@ -80,5 +82,25 @@ class WorkflowRunServiceTest {
         assertThat(run.getStatus()).isEqualTo(WorkflowStatus.COMPLETED);
         assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
         assertThat(draft.getBody()).contains("pre-sales reply direction");
+    }
+
+    @Test
+    void shouldBuildReplayViewWithLatestDraftAndOrderedEvents() {
+        InboundMail mail = new InboundMail(
+                "msg-3",
+                "thread-3",
+                "customer@example.com",
+                "Check tracking",
+                "Please check order #AB123456 and tracking number ZX987654",
+                OffsetDateTime.now()
+        );
+
+        WorkflowRun run = mailIngestionService.process(mail);
+        var replay = workflowRunService.findReplay(run.getRunId()).orElseThrow();
+
+        assertThat(replay.run().getRunId()).isEqualTo(run.getRunId());
+        assertThat(replay.events()).isNotEmpty();
+        assertThat(replay.events().get(0).createdAt()).isBeforeOrEqualTo(replay.events().get(replay.events().size() - 1).createdAt());
+        assertThat(replay.latestDraft()).isNotNull();
     }
 }

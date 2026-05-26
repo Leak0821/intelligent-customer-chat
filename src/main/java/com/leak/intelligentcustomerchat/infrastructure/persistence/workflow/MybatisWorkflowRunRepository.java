@@ -37,6 +37,16 @@ public class MybatisWorkflowRunRepository implements WorkflowRunRepository {
     }
 
     @Override
+    public Optional<WorkflowRun> findLatestByMessageId(String messageId) {
+        LambdaQueryWrapper<WorkflowRunEntity> query = new LambdaQueryWrapper<WorkflowRunEntity>()
+                .eq(WorkflowRunEntity::getMessageId, messageId)
+                .orderByDesc(WorkflowRunEntity::getCreatedAt)
+                .last("limit 1");
+        WorkflowRunEntity entity = workflowRunMapper.selectOne(query);
+        return entity == null ? Optional.empty() : Optional.of(WorkflowEntityMapper.toDomain(entity));
+    }
+
+    @Override
     public List<WorkflowRun> findAll() {
         LambdaQueryWrapper<WorkflowRunEntity> query = new LambdaQueryWrapper<WorkflowRunEntity>()
                 .orderByDesc(WorkflowRunEntity::getCreatedAt);
