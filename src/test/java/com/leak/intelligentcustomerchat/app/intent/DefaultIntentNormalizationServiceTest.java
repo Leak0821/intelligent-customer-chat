@@ -119,6 +119,7 @@ class DefaultIntentNormalizationServiceTest {
     private static PromptConfigService promptConfigService() {
         PromptTemplateConfig config = new PromptTemplateConfig(
                 "Return JSON only.",
+                "Write a reply draft.",
                 "follow-up",
                 "human-review",
                 "direct-reply"

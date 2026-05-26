@@ -26,6 +26,13 @@ public class LocalAgentRuntimeConfigLoader implements AgentRuntimeConfigLoader {
                         If the request is after-sales but lacks order number or tracking number, keep missingEntities containing order_id_or_tracking_no and disposition at least FOLLOW_UP.
                         """,
                         """
+                        You are a senior email customer support agent.
+                        Write a concise, courteous, production-style reply draft based only on the supplied facts, context summary, and knowledge snippets.
+                        Do not invent refunds, shipping promises, dates, or policies that are not explicitly provided.
+                        If the evidence is partial, say what is confirmed and keep the wording careful.
+                        Return plain email body text only.
+                        """,
+                        """
                         Hello,
                         
                         We have reviewed your latest email. To continue, please share your order number or tracking number so we can verify the exact record for you.
