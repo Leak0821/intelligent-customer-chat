@@ -3,7 +3,9 @@ package com.leak.intelligentcustomerchat.app.workflow;
 import com.leak.intelligentcustomerchat.app.business.BusinessFactService;
 import com.leak.intelligentcustomerchat.app.config.IntentConfigService;
 import com.leak.intelligentcustomerchat.app.config.RetrievalConfigService;
+import com.leak.intelligentcustomerchat.app.context.ContextLoadingDiagnostics;
 import com.leak.intelligentcustomerchat.app.context.ContextLoadingService;
+import com.leak.intelligentcustomerchat.app.context.ContextLoadingTraceService;
 import com.leak.intelligentcustomerchat.app.intent.IntentHeuristicPreviewService;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationDiagnostics;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationService;
@@ -42,6 +44,7 @@ public class WorkflowAnalysisService {
     private final IntentHeuristicPreviewService intentHeuristicPreviewService;
     private final IntentNormalizationService intentNormalizationService;
     private final ObjectProvider<IntentNormalizationTraceService> intentNormalizationTraceServiceProvider;
+    private final ObjectProvider<ContextLoadingTraceService> contextLoadingTraceServiceProvider;
     private final IntentRoutingService intentRoutingService;
     private final ContextLoadingService contextLoadingService;
     private final BusinessFactService businessFactService;
@@ -59,6 +62,7 @@ public class WorkflowAnalysisService {
                                    IntentHeuristicPreviewService intentHeuristicPreviewService,
                                    IntentNormalizationService intentNormalizationService,
                                    ObjectProvider<IntentNormalizationTraceService> intentNormalizationTraceServiceProvider,
+                                   ObjectProvider<ContextLoadingTraceService> contextLoadingTraceServiceProvider,
                                    IntentRoutingService intentRoutingService,
                                    ContextLoadingService contextLoadingService,
                                    BusinessFactService businessFactService,
@@ -75,6 +79,7 @@ public class WorkflowAnalysisService {
         this.intentHeuristicPreviewService = intentHeuristicPreviewService;
         this.intentNormalizationService = intentNormalizationService;
         this.intentNormalizationTraceServiceProvider = intentNormalizationTraceServiceProvider;
+        this.contextLoadingTraceServiceProvider = contextLoadingTraceServiceProvider;
         this.intentRoutingService = intentRoutingService;
         this.contextLoadingService = contextLoadingService;
         this.businessFactService = businessFactService;
@@ -95,7 +100,8 @@ public class WorkflowAnalysisService {
         IntentNormalizationResult heuristicBaseline = normalizationDiagnostics.heuristicBaseline();
         IntentNormalizationResult normalizationResult = normalizationDiagnostics.finalResult();
         IntentRouteResult routeResult = intentRoutingService.route(normalizationResult);
-        ContextSnapshot contextSnapshot = contextLoadingService.load(cleanedMail, routeResult);
+        ContextLoadingDiagnostics contextLoadingDiagnostics = diagnoseContext(cleanedMail, routeResult);
+        ContextSnapshot contextSnapshot = contextLoadingDiagnostics.snapshot();
         BusinessFactResult businessFactResult = businessFactService.loadFacts(cleanedMail, normalizationResult, routeResult, contextSnapshot);
         RetrievalQuery retrievalQuery = buildRetrievalQuery(normalizationResult, routeResult, businessFactResult);
         KnowledgeRetrieveResult knowledgeRetrieveResult = knowledgeRetrieveService.retrieve(normalizationResult, routeResult, businessFactResult);
@@ -131,7 +137,7 @@ public class WorkflowAnalysisService {
                 normalizationResult,
                 routeResult,
                 contextSnapshot,
-                buildContextDiagnostics(cleanedMail.threadId()),
+                buildContextDiagnostics(cleanedMail.threadId(), contextLoadingDiagnostics),
                 businessFactResult,
                 buildKnowledgeDiagnostics(retrievalQuery),
                 knowledgeRetrieveResult,
@@ -158,6 +164,25 @@ public class WorkflowAnalysisService {
         );
     }
 
+    private ContextLoadingDiagnostics diagnoseContext(InboundMail cleanedMail, IntentRouteResult routeResult) {
+        ContextLoadingTraceService traceService = contextLoadingTraceServiceProvider.getIfAvailable();
+        if (traceService != null) {
+            return traceService.diagnose(cleanedMail, routeResult);
+        }
+        ContextSnapshot snapshot = contextLoadingService.load(cleanedMail, routeResult);
+        return new ContextLoadingDiagnostics(
+                snapshot,
+                conversationMemoryStore.totalMessageCount(cleanedMail.threadId()),
+                conversationMemoryStore.recentMessages(cleanedMail.threadId()).size(),
+                false,
+                false,
+                "unknown",
+                "trace_service_unavailable",
+                "unknown",
+                false
+        );
+    }
+
     private RetrievalQuery buildRetrievalQuery(IntentNormalizationResult normalizationResult,
                                                IntentRouteResult routeResult,
                                                BusinessFactResult businessFactResult) {
@@ -170,9 +195,9 @@ public class WorkflowAnalysisService {
         );
     }
 
-    private WorkflowContextDiagnosticsView buildContextDiagnostics(String threadId) {
-        long totalMessageCount = conversationMemoryStore.totalMessageCount(threadId);
-        List<String> recentMessages = conversationMemoryStore.recentMessages(threadId);
+    private WorkflowContextDiagnosticsView buildContextDiagnostics(String threadId,
+                                                                  ContextLoadingDiagnostics contextLoadingDiagnostics) {
+        long totalMessageCount = contextLoadingDiagnostics.totalMessageCount();
         Optional<ConversationSummary> latestSummary = conversationSummaryRepository.findLatestByThreadId(threadId);
         boolean persistedSummaryCoversCurrentThread = latestSummary
                 .map(summary -> summary.getCoveredMessageCount() >= totalMessageCount)
@@ -184,7 +209,13 @@ public class WorkflowAnalysisService {
                 contextMemoryProperties.recentRoundLimit(),
                 contextMemoryProperties.summaryThreshold(),
                 totalMessageCount,
-                recentMessages.size(),
+                contextLoadingDiagnostics.recentMessageCount(),
+                contextLoadingDiagnostics.compressionAttempted(),
+                contextLoadingDiagnostics.compressionSucceeded(),
+                contextLoadingDiagnostics.compressionDecision(),
+                contextLoadingDiagnostics.compressionSkipReason(),
+                contextLoadingDiagnostics.summaryResolutionSource(),
+                contextLoadingDiagnostics.restoredPersistedSummaryToMemory(),
                 persistedSummaryCoversCurrentThread,
                 latestSummary.map(this::toPersistedSummaryView).orElse(null)
         );

@@ -3,7 +3,9 @@ package com.leak.intelligentcustomerchat.app.workflow;
 import com.leak.intelligentcustomerchat.app.business.BusinessFactService;
 import com.leak.intelligentcustomerchat.app.config.IntentConfigService;
 import com.leak.intelligentcustomerchat.app.config.RetrievalConfigService;
+import com.leak.intelligentcustomerchat.app.context.ContextLoadingDiagnostics;
 import com.leak.intelligentcustomerchat.app.context.ContextLoadingService;
+import com.leak.intelligentcustomerchat.app.context.ContextLoadingTraceService;
 import com.leak.intelligentcustomerchat.app.intent.IntentHeuristicPreviewService;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationDiagnostics;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationService;
@@ -113,6 +115,17 @@ class WorkflowAnalysisServiceTest {
                         null,
                         List.of("enforce_order_id_for_after_sales")
                 )),
+                new SingleObjectProvider<ContextLoadingTraceService>((mail, route) -> new ContextLoadingDiagnostics(
+                        contextSnapshot,
+                        4L,
+                        2,
+                        true,
+                        true,
+                        "generated",
+                        null,
+                        "memory_summary",
+                        false
+                )),
                 normalization -> routeResult,
                 (mail, route) -> contextSnapshot,
                 (mail, normalization, route, context) -> businessFactResult,
@@ -153,6 +166,10 @@ class WorkflowAnalysisServiceTest {
         assertThat(view.intentDiagnostics().intentCatalog().afterSalesIntents()).contains("logistics_tracking");
         assertThat(view.intentDiagnostics().heuristicBaseline().sceneCandidates()).contains(CustomerScene.AFTER_SALES);
         assertThat(view.contextDiagnostics().totalMessageCount()).isEqualTo(4L);
+        assertThat(view.contextDiagnostics().compressionAttempted()).isTrue();
+        assertThat(view.contextDiagnostics().compressionSucceeded()).isTrue();
+        assertThat(view.contextDiagnostics().compressionDecision()).isEqualTo("generated");
+        assertThat(view.contextDiagnostics().summaryResolutionSource()).isEqualTo("memory_summary");
         assertThat(view.contextDiagnostics().persistedSummaryCoversCurrentThread()).isTrue();
         assertThat(view.contextDiagnostics().latestPersistedSummary()).isNotNull();
         assertThat(view.knowledgeDiagnostics().retrievalQuery().subIntent()).isEqualTo("logistics_tracking");

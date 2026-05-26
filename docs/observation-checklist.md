@@ -49,6 +49,8 @@
 - fallbackReason 是否说明了 `llm_unavailable` 或 `llm_response_invalid`
 - guardrailActions 是否命中了订单号等关键约束
 - contextDiagnostics 里是否能看到消息计数、压缩阈值和持久化摘要
+- compressionDecision / compressionSkipReason 是否解释了为什么压缩或为什么跳过
+- summaryResolutionSource 是否说明了摘要来自缓存、持久化摘要还是兜底拼装
 - knowledgeDiagnostics 里是否能看到 retrievalQuery，以及 bm25 / vector 两路召回
 - 是否触发了 business facts
 - 是否触发了 knowledge

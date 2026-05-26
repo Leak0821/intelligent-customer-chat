@@ -8,6 +8,12 @@ public record WorkflowContextDiagnosticsView(
         int summaryThreshold,
         long totalMessageCount,
         int recentMessageCount,
+        boolean compressionAttempted,
+        boolean compressionSucceeded,
+        String compressionDecision,
+        String compressionSkipReason,
+        String summaryResolutionSource,
+        boolean restoredPersistedSummaryToMemory,
         boolean persistedSummaryCoversCurrentThread,
         WorkflowPersistedSummaryView latestPersistedSummary
 ) {

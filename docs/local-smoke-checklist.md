@@ -96,6 +96,9 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
 - `intentDiagnostics.guardrailActions`
 - `contextDiagnostics.totalMessageCount`
 - `contextDiagnostics.latestPersistedSummary`
+- `contextDiagnostics.compressionDecision`
+- `contextDiagnostics.compressionSkipReason`
+- `contextDiagnostics.summaryResolutionSource`
 - `knowledgeDiagnostics.retrievalQuery`
 - `knowledgeDiagnostics.bm25Snippets`
 - `knowledgeDiagnostics.vectorSnippets`
