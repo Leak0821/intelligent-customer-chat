@@ -104,6 +104,25 @@ mvn -Dspring-boot.run.profiles=local spring-boot:run
 ./scripts/cleanup-maven-lastupdated.sh
 ```
 
+如果要把运行时 prompt / intent / retrieval 配置切到本地 `Nacos`，仓库里已经带了脱敏样例配置和发布脚本：
+
+```bash
+./scripts/publish-nacos-runtime-config.sh
+```
+
+默认会把 [agent-prompts.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/nacos/runtime-config/agent-prompts.json)、[agent-intents.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/nacos/runtime-config/agent-intents.json)、[agent-retrieval.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/nacos/runtime-config/agent-retrieval.json) 发布到本地 `Nacos` 的 `DEFAULT_GROUP`。
+
+如果你要切到 `Nacos` 运行时配置，可以再打开：
+
+```bash
+APP_NACOS_CONFIG_ENABLED=true
+APP_NACOS_SERVER_ADDR=127.0.0.1:8848
+APP_NACOS_GROUP=DEFAULT_GROUP
+```
+
+当前这条脚本默认面向“本地 auth 关闭的 Nacos 容器”。
+如果后面把 `Nacos` 权限体系打开，再单独补带鉴权的发布方式。
+
 当前默认使用本仓库内的 `.mvn/settings.xml` 与 `.m2/repository`，执行测试可直接使用：
 
 ```bash

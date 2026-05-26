@@ -80,6 +80,7 @@
 - 新增 `local` profile、本地启动说明、`.env.example` 和 Maven `.lastUpdated` 清理脚本，降低第一版联调摩擦
 - 为本地 `docker-compose` 补齐 `xxl-job-admin`，并新增适配当前项目的 `xxl_job` 初始化脚本
 - 补充 `XXL-JOB` 本地登录与启用说明，以及 MySQL 初始化脚本只会在首次建卷时执行的踩坑记录
+- 新增本地 `Nacos` 运行时配置样例和一键发布脚本，降低切换 prompt / intent / retrieval 到运行时配置的成本
 
 ### 结果
 
