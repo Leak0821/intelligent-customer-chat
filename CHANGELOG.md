@@ -81,6 +81,7 @@
 - 为本地 `docker-compose` 补齐 `xxl-job-admin`，并新增适配当前项目的 `xxl_job` 初始化脚本
 - 补充 `XXL-JOB` 本地登录与启用说明，以及 MySQL 初始化脚本只会在首次建卷时执行的踩坑记录
 - 新增本地 `Nacos` 运行时配置样例和一键发布脚本，降低切换 prompt / intent / retrieval 到运行时配置的成本
+- 新增本地 smoke checklist 和演示脚本，方便按固定顺序验证体检、样本、demo、回放这条最小闭环
 
 ### 结果
 
