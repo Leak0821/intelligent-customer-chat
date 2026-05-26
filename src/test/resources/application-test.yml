@@ -32,10 +32,15 @@ app:
   context:
     memory:
       enabled: false
+      compression-enabled: true
+      llm-summary-enabled: false
       recent-round-limit: 5
       summary-threshold: 10
       redis-key-prefix: icc:test:memory
   knowledge:
+    embedding:
+      enabled: false
+      max-input-length: 4000
     elasticsearch:
       enabled: false
       uris: http://127.0.0.1:9200

@@ -55,3 +55,13 @@ CREATE TABLE IF NOT EXISTS mail_receipts (
     KEY idx_mail_receipts_message_id (message_id),
     KEY idx_mail_receipts_created_at (created_at)
 );
+
+CREATE TABLE IF NOT EXISTS conversation_summaries (
+    summary_id VARCHAR(64) PRIMARY KEY,
+    thread_id VARCHAR(128) NOT NULL,
+    summary_text TEXT NOT NULL,
+    summary_source VARCHAR(64) NOT NULL,
+    covered_message_count INT NOT NULL,
+    created_at DATETIME(3) NOT NULL,
+    KEY idx_conversation_summaries_thread_id_created_at (thread_id, created_at)
+);

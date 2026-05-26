@@ -1,9 +1,11 @@
 package com.leak.intelligentcustomerchat.infrastructure.knowledge;
 
 import com.leak.intelligentcustomerchat.config.KnowledgeElasticsearchProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnMissingBean(EmbeddingService.class)
 public class HashingEmbeddingService implements EmbeddingService {
     private final KnowledgeElasticsearchProperties properties;
 

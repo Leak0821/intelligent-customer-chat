@@ -49,10 +49,15 @@ app:
   context:
     memory:
       enabled: ${APP_CONTEXT_MEMORY_ENABLED:false}
+      compression-enabled: ${APP_CONTEXT_MEMORY_COMPRESSION_ENABLED:true}
+      llm-summary-enabled: ${APP_CONTEXT_MEMORY_LLM_SUMMARY_ENABLED:false}
       recent-round-limit: ${APP_CONTEXT_RECENT_ROUND_LIMIT:5}
       summary-threshold: ${APP_CONTEXT_SUMMARY_THRESHOLD:10}
       redis-key-prefix: ${APP_CONTEXT_REDIS_KEY_PREFIX:icc:memory}
   knowledge:
+    embedding:
+      enabled: ${APP_KNOWLEDGE_EMBEDDING_ENABLED:false}
+      max-input-length: ${APP_KNOWLEDGE_EMBEDDING_MAX_INPUT_LENGTH:4000}
     elasticsearch:
       enabled: ${APP_ELASTICSEARCH_ENABLED:false}
       uris: ${APP_ELASTICSEARCH_URIS:http://127.0.0.1:9200}

@@ -59,3 +59,14 @@ CREATE TABLE mail_receipts (
 CREATE UNIQUE INDEX uk_mail_receipts_source_folder_uid ON mail_receipts (source_key, folder_name, mail_uid);
 CREATE INDEX idx_mail_receipts_message_id ON mail_receipts (message_id);
 CREATE INDEX idx_mail_receipts_created_at ON mail_receipts (created_at);
+
+CREATE TABLE conversation_summaries (
+    summary_id VARCHAR(64) PRIMARY KEY,
+    thread_id VARCHAR(128) NOT NULL,
+    summary_text CLOB NOT NULL,
+    summary_source VARCHAR(64) NOT NULL,
+    covered_message_count INT NOT NULL,
+    created_at TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_conversation_summaries_thread_id_created_at ON conversation_summaries (thread_id, created_at);
