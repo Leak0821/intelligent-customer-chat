@@ -146,6 +146,11 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 - `GET /api/workflows/by-message/{messageId}/replay`：按 `messageId` 查看最新链路
 - `GET /api/workflows/{runId}/evaluation`：按 `runId` 查看最小评估样本视图
 - `GET /api/workflows/evaluations/recent`：查看最近一批工作流评估样本
+  - 支持 `scene`
+  - 支持 `subIntent`
+  - 支持 `workflowStatus`
+  - 支持 `draftStatus`
+  - 支持 `riskFlag`
 - `POST /api/workflows/{runId}/approve-send`：把草稿从待审核推进到可发送
 - `POST /api/workflows/{runId}/reject-send`：驳回当前草稿发送，回到人工审核状态
 - `POST /api/workflows/{runId}/revise-draft`：人工修订草稿，并可选择是否再次送审
@@ -173,6 +178,13 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 - 当前草稿停在什么发送前状态
 - 最近一次审核、驳回或发送异常是什么
 - 当前有哪些风险标记，例如人工审核、追问、重试中、业务冲突
+
+最近评估样本接口已经支持轻量筛选，适合第一版快速回答这类问题：
+
+- 目前售后物流类案例有多少条
+- 哪些案例还停留在 `FOLLOW_UP_NEEDED`
+- 哪些案例命中了 `manual_review_required`
+- 哪些案例当前存在发送重试风险
 
 ## 知识库管理接口
 

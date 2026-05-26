@@ -11,6 +11,8 @@ public record WorkflowEvaluationSampleView(
         String sender,
         String subject,
         String normalizationSummary,
+        String scene,
+        String subIntent,
         String routingSummary,
         boolean businessFactsTriggered,
         String businessFactsSummary,
@@ -37,6 +39,8 @@ public record WorkflowEvaluationSampleView(
         Objects.requireNonNull(sender, "sender must not be null");
         Objects.requireNonNull(subject, "subject must not be null");
         Objects.requireNonNull(normalizationSummary, "normalizationSummary must not be null");
+        Objects.requireNonNull(scene, "scene must not be null");
+        Objects.requireNonNull(subIntent, "subIntent must not be null");
         Objects.requireNonNull(routingSummary, "routingSummary must not be null");
         Objects.requireNonNull(businessFactsSummary, "businessFactsSummary must not be null");
         Objects.requireNonNull(knowledgeSummary, "knowledgeSummary must not be null");
