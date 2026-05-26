@@ -10,6 +10,10 @@ import java.util.Objects;
 public record WorkflowKnowledgeDiagnosticsView(
         RetrievalQuery retrievalQuery,
         RetrievalSettingsConfig retrievalSettings,
+        String retrievalSource,
+        String fusionStrategy,
+        int recallCount,
+        List<String> fusedSnippetIds,
         boolean hybridDebugAvailable,
         List<KnowledgeSnippet> bm25Snippets,
         List<KnowledgeSnippet> vectorSnippets
@@ -17,6 +21,9 @@ public record WorkflowKnowledgeDiagnosticsView(
     public WorkflowKnowledgeDiagnosticsView {
         Objects.requireNonNull(retrievalQuery, "retrievalQuery must not be null");
         Objects.requireNonNull(retrievalSettings, "retrievalSettings must not be null");
+        Objects.requireNonNull(retrievalSource, "retrievalSource must not be null");
+        Objects.requireNonNull(fusionStrategy, "fusionStrategy must not be null");
+        fusedSnippetIds = List.copyOf(fusedSnippetIds);
         bm25Snippets = List.copyOf(bm25Snippets);
         vectorSnippets = List.copyOf(vectorSnippets);
     }

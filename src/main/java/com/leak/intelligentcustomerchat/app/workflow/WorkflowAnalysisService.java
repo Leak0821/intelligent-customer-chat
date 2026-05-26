@@ -139,7 +139,7 @@ public class WorkflowAnalysisService {
                 contextSnapshot,
                 buildContextDiagnostics(cleanedMail.threadId(), contextLoadingDiagnostics),
                 businessFactResult,
-                buildKnowledgeDiagnostics(retrievalQuery),
+                buildKnowledgeDiagnostics(retrievalQuery, knowledgeRetrieveResult),
                 knowledgeRetrieveResult,
                 draft,
                 reviewDecision
@@ -231,12 +231,17 @@ public class WorkflowAnalysisService {
         );
     }
 
-    private WorkflowKnowledgeDiagnosticsView buildKnowledgeDiagnostics(RetrievalQuery retrievalQuery) {
+    private WorkflowKnowledgeDiagnosticsView buildKnowledgeDiagnostics(RetrievalQuery retrievalQuery,
+                                                                      KnowledgeRetrieveResult knowledgeRetrieveResult) {
         HybridSearchService hybridSearchService = hybridSearchServiceProvider.getIfAvailable();
         if (hybridSearchService == null) {
             return new WorkflowKnowledgeDiagnosticsView(
                     retrievalQuery,
                     retrievalConfigService.currentRetrievalSettings(),
+                    knowledgeRetrieveResult.source(),
+                    inferFusionStrategy(knowledgeRetrieveResult, false),
+                    knowledgeRetrieveResult.recallCount(),
+                    knowledgeRetrieveResult.snippets().stream().map(com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeSnippet::id).toList(),
                     false,
                     List.of(),
                     List.of()
@@ -248,6 +253,10 @@ public class WorkflowAnalysisService {
             return new WorkflowKnowledgeDiagnosticsView(
                     retrievalQuery,
                     retrievalConfigService.currentRetrievalSettings(),
+                    knowledgeRetrieveResult.source(),
+                    inferFusionStrategy(knowledgeRetrieveResult, true),
+                    knowledgeRetrieveResult.recallCount(),
+                    knowledgeRetrieveResult.snippets().stream().map(com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeSnippet::id).toList(),
                     true,
                     hybridRetrievalResult.bm25Snippets(),
                     hybridRetrievalResult.vectorSnippets()
@@ -256,10 +265,24 @@ public class WorkflowAnalysisService {
             return new WorkflowKnowledgeDiagnosticsView(
                     retrievalQuery,
                     retrievalConfigService.currentRetrievalSettings(),
+                    knowledgeRetrieveResult.source(),
+                    inferFusionStrategy(knowledgeRetrieveResult, false),
+                    knowledgeRetrieveResult.recallCount(),
+                    knowledgeRetrieveResult.snippets().stream().map(com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeSnippet::id).toList(),
                     false,
                     List.of(),
                     List.of()
             );
         }
+    }
+
+    private String inferFusionStrategy(KnowledgeRetrieveResult knowledgeRetrieveResult, boolean hybridDebugAvailable) {
+        if (hybridDebugAvailable && "elasticsearch-hybrid".equals(knowledgeRetrieveResult.source())) {
+            return "rrf";
+        }
+        if ("static-knowledge-retriever".equals(knowledgeRetrieveResult.source())) {
+            return "score_sort";
+        }
+        return hybridDebugAvailable ? "hybrid_unknown" : "single_path";
     }
 }

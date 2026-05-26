@@ -52,6 +52,8 @@
 - compressionDecision / compressionSkipReason 是否解释了为什么压缩或为什么跳过
 - summaryResolutionSource 是否说明了摘要来自缓存、持久化摘要还是兜底拼装
 - knowledgeDiagnostics 里是否能看到 retrievalQuery，以及 bm25 / vector 两路召回
+- retrievalSource / fusionStrategy 是否说明了最终采用的检索通路和融合方式
+- fusedSnippetIds 是否和最终 knowledge 结果对得上
 - 是否触发了 business facts
 - 是否触发了 knowledge
 - draft 状态和 send readiness 是否合理

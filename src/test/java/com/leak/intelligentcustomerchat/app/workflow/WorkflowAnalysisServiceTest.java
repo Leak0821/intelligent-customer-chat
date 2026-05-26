@@ -80,7 +80,11 @@ class WorkflowAnalysisServiceTest {
                 List.of(),
                 OffsetDateTime.now()
         );
-        KnowledgeRetrieveResult knowledgeRetrieveResult = new KnowledgeRetrieveResult("stub-knowledge", List.of(), 0);
+        KnowledgeRetrieveResult knowledgeRetrieveResult = new KnowledgeRetrieveResult(
+                "elasticsearch-hybrid",
+                List.of(new KnowledgeSnippet("fused-1", "fused title", "fused content", 1.1d, "rrf")),
+                1
+        );
         ReplyDraft draft = ReplyDraft.create("preview-run", "Re: Need help", "Draft body", ReplyDraftStatus.DRAFT_READY, "notes");
         ReviewDecision reviewDecision = new ReviewDecision(ReplyDraftStatus.DRAFT_READY, false, "ready");
         ConversationSummary persistedSummary = ConversationSummary.create(
@@ -173,6 +177,10 @@ class WorkflowAnalysisServiceTest {
         assertThat(view.contextDiagnostics().persistedSummaryCoversCurrentThread()).isTrue();
         assertThat(view.contextDiagnostics().latestPersistedSummary()).isNotNull();
         assertThat(view.knowledgeDiagnostics().retrievalQuery().subIntent()).isEqualTo("logistics_tracking");
+        assertThat(view.knowledgeDiagnostics().retrievalSource()).isEqualTo("elasticsearch-hybrid");
+        assertThat(view.knowledgeDiagnostics().fusionStrategy()).isEqualTo("rrf");
+        assertThat(view.knowledgeDiagnostics().recallCount()).isEqualTo(1);
+        assertThat(view.knowledgeDiagnostics().fusedSnippetIds()).containsExactly("fused-1");
         assertThat(view.knowledgeDiagnostics().hybridDebugAvailable()).isTrue();
         assertThat(view.knowledgeDiagnostics().bm25Snippets()).hasSize(1);
         assertThat(view.knowledgeDiagnostics().vectorSnippets()).hasSize(1);
