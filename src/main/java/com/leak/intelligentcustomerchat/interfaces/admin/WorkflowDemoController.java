@@ -9,6 +9,8 @@ import com.leak.intelligentcustomerchat.app.review.ReplyDraftRevisionService;
 import com.leak.intelligentcustomerchat.app.workflow.DemoScenarioCatalogService;
 import com.leak.intelligentcustomerchat.app.workflow.DemoScenarioExecutionView;
 import com.leak.intelligentcustomerchat.app.workflow.DemoScenarioSummaryView;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowQueueAdminService;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowQueueItemView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationSampleView;
@@ -42,6 +44,7 @@ import java.util.UUID;
 @RequestMapping("/api/workflows")
 public class WorkflowDemoController {
     private final DemoScenarioCatalogService demoScenarioCatalogService;
+    private final WorkflowQueueAdminService workflowQueueAdminService;
     private final MailIngestionService mailIngestionService;
     private final WorkflowRunService workflowRunService;
     private final WorkflowAnalysisService workflowAnalysisService;
@@ -52,6 +55,7 @@ public class WorkflowDemoController {
     private final ReplyDraftRevisionService replyDraftRevisionService;
 
     public WorkflowDemoController(DemoScenarioCatalogService demoScenarioCatalogService,
+                                  WorkflowQueueAdminService workflowQueueAdminService,
                                   MailIngestionService mailIngestionService,
                                   WorkflowRunService workflowRunService,
                                   WorkflowAnalysisService workflowAnalysisService,
@@ -61,6 +65,7 @@ public class WorkflowDemoController {
                                   ReplyReviewLifecycleService replyReviewLifecycleService,
                                   ReplyDraftRevisionService replyDraftRevisionService) {
         this.demoScenarioCatalogService = demoScenarioCatalogService;
+        this.workflowQueueAdminService = workflowQueueAdminService;
         this.mailIngestionService = mailIngestionService;
         this.workflowRunService = workflowRunService;
         this.workflowAnalysisService = workflowAnalysisService;
@@ -109,6 +114,16 @@ public class WorkflowDemoController {
     @GetMapping
     public List<WorkflowRun> listRuns() {
         return workflowRunService.findAllRuns();
+    }
+
+    @GetMapping("/queues/review")
+    public List<WorkflowQueueItemView> listReviewQueue(@RequestParam(defaultValue = "20") int limit) {
+        return workflowQueueAdminService.listReviewQueue(limit);
+    }
+
+    @GetMapping("/queues/dispatch")
+    public List<WorkflowQueueItemView> listDispatchQueue(@RequestParam(defaultValue = "20") int limit) {
+        return workflowQueueAdminService.listDispatchQueue(limit);
     }
 
     @GetMapping("/{runId}/replay")

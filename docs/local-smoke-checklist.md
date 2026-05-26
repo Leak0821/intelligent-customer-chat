@@ -161,3 +161,9 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 ```bash
 ./scripts/async-mail-smoke.sh
 ```
+
+如果要验证待审核/待发送队列视图，可执行：
+
+```bash
+./scripts/workflow-queues-smoke.sh
+```
