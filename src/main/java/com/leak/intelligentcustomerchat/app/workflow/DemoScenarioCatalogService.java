@@ -169,6 +169,34 @@ public class DemoScenarioCatalogService {
                             "客户咨询产品推荐方向，验证售前意图识别、知识召回和推荐草稿生成。"
                     ),
                     new DemoScenarioMetadata(
+                            "pre-sales-comparison",
+                            "售前对比样例",
+                            "PRE_SALES",
+                            "PRE_SALES_COMPARISON",
+                            "客户咨询两个产品方向的差异，验证对比说明与知识召回。"
+                    ),
+                    new DemoScenarioMetadata(
+                            "pre-sales-general-inquiry",
+                            "售前基础功能咨询样例",
+                            "PRE_SALES",
+                            "PRE_SALES_GENERAL_INQUIRY",
+                            "客户咨询基础功能与使用方式，验证售前 general inquiry 路由与回复。"
+                    ),
+                    new DemoScenarioMetadata(
+                            "pre-sales-shipping-stock",
+                            "售前库存发货样例",
+                            "PRE_SALES",
+                            "PRE_SALES_INVENTORY_OR_SHIPPING",
+                            "客户咨询库存和跨境发货时效，验证 inventory_or_shipping 子意图。"
+                    ),
+                    new DemoScenarioMetadata(
+                            "after-sales-order-status",
+                            "售后订单状态样例",
+                            "AFTER_SALES",
+                            "AFTER_SALES_ORDER_STATUS",
+                            "客户提供订单号并询问当前订单状态，验证 order_status 子意图和订单 facts。"
+                    ),
+                    new DemoScenarioMetadata(
                             "after-sales-logistics",
                             "售后物流查询样例",
                             "AFTER_SALES",

@@ -21,12 +21,16 @@ class DemoScenarioCatalogServiceTest {
                 .extracting(DemoScenarioSummaryView::scenarioId)
                 .containsExactly(
                         "pre-sales-recommendation",
+                        "pre-sales-comparison",
+                        "pre-sales-general-inquiry",
+                        "pre-sales-shipping-stock",
+                        "after-sales-order-status",
                         "after-sales-logistics",
                         "after-sales-policy",
                         "after-sales-missing-id"
                 );
         assertThat(scenarios.get(0).title()).isEqualTo("售前推荐样例");
-        assertThat(scenarios.get(1).scene()).isEqualTo("AFTER_SALES");
+        assertThat(scenarios.get(4).scene()).isEqualTo("AFTER_SALES");
     }
 
     @Test

@@ -1,0 +1,7 @@
+{
+  "messageId": "demo-pre-sales-general-inquiry-001",
+  "threadId": "demo-thread-pre-sales-general-inquiry-001",
+  "from": "customer@example.com",
+  "subject": "Question about app control and daily use",
+  "body": "Hello, I want to know whether the product supports app control and color temperature adjustment for daily use in a study room."
+}

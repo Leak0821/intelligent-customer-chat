@@ -1,0 +1,7 @@
+{
+  "messageId": "demo-after-sales-order-status-001",
+  "threadId": "demo-thread-after-sales-order-status-001",
+  "from": "buyer@example.com",
+  "subject": "Question about current order status",
+  "body": "Hello, my order number is EFGH5678. Could you let me know the current order status and when it will ship?"
+}

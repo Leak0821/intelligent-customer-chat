@@ -144,6 +144,26 @@ class DefaultIntentNormalizationServiceTest {
         assertThat(result.disposition()).isEqualTo(ProcessingDisposition.CONTINUE);
     }
 
+    @Test
+    void shouldRecognizeOrderStatusIntentWhenCustomerAsksForShipmentProgressWithoutTrackingId() {
+        DefaultIntentNormalizationService service = new DefaultIntentNormalizationService(
+                promptConfigService(),
+                new StubLlmClient(Optional.empty()),
+                new ObjectMapper()
+        );
+
+        IntentNormalizationResult result = service.normalize(mail(
+                "Order status question",
+                "My order number is EFGH5678. Could you let me know the current order status and when it will ship?"
+        ));
+
+        assertThat(result.sceneCandidates()).containsExactly(CustomerScene.AFTER_SALES);
+        assertThat(result.subIntentCandidates()).contains("order_status");
+        assertThat(result.requiredEntities()).contains("order_id_or_tracking_no");
+        assertThat(result.missingEntities()).isEmpty();
+        assertThat(result.disposition()).isEqualTo(ProcessingDisposition.CONTINUE);
+    }
+
     private static PromptConfigService promptConfigService() {
         PromptTemplateConfig config = new PromptTemplateConfig(
                 "Return JSON only.",

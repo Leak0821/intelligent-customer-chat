@@ -33,11 +33,15 @@
 - demo / replay / evaluation / dispatch 都有固定接口
 - 内置 demo 样例目录，可直接列出并一键执行
 
-## 4. 推荐演示的 4 个样例
+## 4. 推荐演示的 8 个样例
 
 样例文件在：
 
 - [pre-sales-recommendation.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/pre-sales-recommendation.json)
+- [pre-sales-comparison.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/pre-sales-comparison.json)
+- [pre-sales-general-inquiry.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/pre-sales-general-inquiry.json)
+- [pre-sales-shipping-stock.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/pre-sales-shipping-stock.json)
+- [after-sales-order-status.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/after-sales-order-status.json)
 - [after-sales-logistics.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/after-sales-logistics.json)
 - [after-sales-policy.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/after-sales-policy.json)
 - [after-sales-missing-id.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/demo-scenarios/after-sales-missing-id.json)
@@ -45,9 +49,13 @@
 它们分别对应：
 
 1. 售前推荐
-2. 售后物流查询
-3. 售后政策说明
-4. 售后缺关键编号，触发追问
+2. 售前对比说明
+3. 售前基础功能咨询
+4. 售前库存 / 发货咨询
+5. 售后订单状态查询
+6. 售后物流查询
+7. 售后政策说明
+8. 售后缺关键编号，触发追问
 
 同时也可以直接走内置目录接口：
 
