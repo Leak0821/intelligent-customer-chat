@@ -4,6 +4,7 @@ import com.leak.intelligentcustomerchat.domain.mail.MailReceipt;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceiptRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatch;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchRepository;
+import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchStatus;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftStatus;
@@ -54,7 +55,7 @@ public class ReplySendLifecycleService {
             throw new IllegalStateException("draft is not ready for send, sendReadiness=" + draft.getSendReadiness());
         }
         replyDispatchRepository.findLatestByRunId(runId)
-                .filter(dispatch -> dispatch.getStatus() == com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchStatus.SENT)
+                .filter(dispatch -> dispatch.getStatus() == ReplyDispatchStatus.SENT)
                 .ifPresent(dispatch -> {
                     throw new IllegalStateException("draft already dispatched for runId=" + runId);
                 });

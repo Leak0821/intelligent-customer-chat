@@ -4,11 +4,9 @@ import com.leak.intelligentcustomerchat.app.reply.OutboundMailRequest;
 import com.leak.intelligentcustomerchat.app.reply.OutboundMailSendResult;
 import com.leak.intelligentcustomerchat.app.reply.OutboundMailSender;
 import com.leak.intelligentcustomerchat.config.MailOutboundProperties;
-import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-@Component
 public class NoopOutboundMailSender implements OutboundMailSender {
     private final MailOutboundProperties properties;
 

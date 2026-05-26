@@ -96,6 +96,24 @@ APP_KNOWLEDGE_EMBEDDING_ENABLED=true
 
 如果是 `DeepSeek`、`Qwen` 或其他 OpenAI 兼容网关，可直接替换 `base-url` 和模型名。
 
+如果要把回复链路切换到真实 SMTP 发信，可额外配置：
+
+```bash
+APP_MAIL_OUTBOUND_ENABLED=true
+APP_MAIL_OUTBOUND_PROVIDER=smtp
+APP_MAIL_OUTBOUND_FROM_ADDRESS=support@example.com
+APP_MAIL_OUTBOUND_FROM_NAME=intelligent-customer-chat
+APP_MAIL_OUTBOUND_HOST=smtp.example.com
+APP_MAIL_OUTBOUND_PORT=587
+APP_MAIL_OUTBOUND_USERNAME=mailer@example.com
+APP_MAIL_OUTBOUND_PASSWORD=your-password
+APP_MAIL_OUTBOUND_AUTH_ENABLED=true
+APP_MAIL_OUTBOUND_STARTTLS_ENABLED=true
+APP_MAIL_OUTBOUND_SSL_ENABLED=false
+```
+
+默认仍然是 `noop` 发件器，目的是先保留完整发送状态机，同时避免本地开发或演示时误发真实邮件。
+
 ## 本地演示接口
 
 - `POST /api/workflows/demo`：提交一封测试邮件，返回 `WorkflowRun`

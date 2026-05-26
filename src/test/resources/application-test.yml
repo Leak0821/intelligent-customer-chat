@@ -48,8 +48,19 @@ app:
     read-timeout-millis: 5000
     outbound:
       enabled: false
+      provider: noop
       from-address: support@example.com
       from-name: intelligent-customer-chat
+      host:
+      port: 587
+      username:
+      password:
+      auth-enabled: true
+      start-tls-enabled: true
+      ssl-enabled: false
+      connection-timeout-millis: 5000
+      timeout-millis: 5000
+      write-timeout-millis: 5000
   context:
     memory:
       enabled: false

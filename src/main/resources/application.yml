@@ -60,8 +60,19 @@ app:
     read-timeout-millis: ${APP_MAIL_READ_TIMEOUT_MILLIS:5000}
     outbound:
       enabled: ${APP_MAIL_OUTBOUND_ENABLED:false}
+      provider: ${APP_MAIL_OUTBOUND_PROVIDER:noop}
       from-address: ${APP_MAIL_OUTBOUND_FROM_ADDRESS:support@example.com}
       from-name: ${APP_MAIL_OUTBOUND_FROM_NAME:intelligent-customer-chat}
+      host: ${APP_MAIL_OUTBOUND_HOST:}
+      port: ${APP_MAIL_OUTBOUND_PORT:587}
+      username: ${APP_MAIL_OUTBOUND_USERNAME:}
+      password: ${APP_MAIL_OUTBOUND_PASSWORD:}
+      auth-enabled: ${APP_MAIL_OUTBOUND_AUTH_ENABLED:true}
+      start-tls-enabled: ${APP_MAIL_OUTBOUND_STARTTLS_ENABLED:true}
+      ssl-enabled: ${APP_MAIL_OUTBOUND_SSL_ENABLED:false}
+      connection-timeout-millis: ${APP_MAIL_OUTBOUND_CONNECTION_TIMEOUT_MILLIS:5000}
+      timeout-millis: ${APP_MAIL_OUTBOUND_TIMEOUT_MILLIS:5000}
+      write-timeout-millis: ${APP_MAIL_OUTBOUND_WRITE_TIMEOUT_MILLIS:5000}
   workflow:
     auto-complete-empty-chain: true
   context:
