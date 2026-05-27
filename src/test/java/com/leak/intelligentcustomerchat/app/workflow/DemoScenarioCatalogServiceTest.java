@@ -47,6 +47,14 @@ class DemoScenarioCatalogServiceTest {
 
         assertThat(executionView.mode()).isEqualTo("replay");
         assertThat(executionView.scenario().scenarioId()).isEqualTo("after-sales-logistics");
+        assertThat(executionView.summary().mode()).isEqualTo("replay");
+        assertThat(executionView.summary().runId()).isNotBlank();
+        assertThat(executionView.summary().scene()).isEqualTo("AFTER_SALES");
+        assertThat(executionView.summary().businessFactStatus()).isEqualTo("CONFLICT");
+        assertThat(executionView.summary().businessEvidence()).contains("conflict");
+        assertThat(executionView.summary().knowledgeEvidence()).contains("knowledge");
+        assertThat(executionView.summary().replyEvidence()).contains("replySource=");
+        assertThat(executionView.summary().keyEvidence()).anyMatch(item -> item.startsWith("fact_source="));
         assertThat(executionView.result()).isInstanceOf(WorkflowReplayView.class);
 
         WorkflowReplayView replayView = (WorkflowReplayView) executionView.result();
@@ -65,6 +73,12 @@ class DemoScenarioCatalogServiceTest {
 
         assertThat(executionView.mode()).isEqualTo("review_loop");
         assertThat(executionView.scenario().scenarioId()).isEqualTo("after-sales-manual-review");
+        assertThat(executionView.summary().mode()).isEqualTo("review_loop");
+        assertThat(executionView.summary().resultType()).isEqualTo("人工审核闭环");
+        assertThat(executionView.summary().operatorDecision()).isEqualTo("manual_review_completed");
+        assertThat(executionView.summary().nextAction()).isNotBlank();
+        assertThat(executionView.summary().replyEvidence()).contains("latestReviewAction=APPROVE_SEND");
+        assertThat(executionView.summary().keyEvidence()).contains("review_count=4");
         assertThat(executionView.result()).isInstanceOf(DemoReviewLoopExecutionView.class);
 
         DemoReviewLoopExecutionView reviewLoopView = (DemoReviewLoopExecutionView) executionView.result();
@@ -96,6 +110,11 @@ class DemoScenarioCatalogServiceTest {
         DemoScenarioExecutionView executionView = demoScenarioCatalogService.execute("after-sales-policy", "validate");
 
         assertThat(executionView.mode()).isEqualTo("validate");
+        assertThat(executionView.summary().mode()).isEqualTo("validate");
+        assertThat(executionView.summary().operatorDecision()).isEqualTo("scenario_expectation_matched");
+        assertThat(executionView.summary().resultType()).isEqualTo("校验通过");
+        assertThat(executionView.summary().nextAction()).isEqualTo("continue_demo");
+        assertThat(executionView.summary().replyEvidence()).contains("validatedMode=analysis");
         assertThat(executionView.result()).isInstanceOf(DemoScenarioValidationView.class);
 
         DemoScenarioValidationView validationView = (DemoScenarioValidationView) executionView.result();
@@ -116,6 +135,8 @@ class DemoScenarioCatalogServiceTest {
         DemoScenarioExecutionView executionView = demoScenarioCatalogService.execute("after-sales-order-status", "validate");
 
         assertThat(executionView.mode()).isEqualTo("validate");
+        assertThat(executionView.summary().mode()).isEqualTo("validate");
+        assertThat(executionView.summary().replyEvidence()).contains("validatedMode=replay");
         assertThat(executionView.result()).isInstanceOf(DemoScenarioValidationView.class);
 
         DemoScenarioValidationView validationView = (DemoScenarioValidationView) executionView.result();
@@ -136,6 +157,8 @@ class DemoScenarioCatalogServiceTest {
         DemoScenarioExecutionView executionView = demoScenarioCatalogService.execute("after-sales-manual-review", "validate");
 
         assertThat(executionView.mode()).isEqualTo("validate");
+        assertThat(executionView.summary().mode()).isEqualTo("validate");
+        assertThat(executionView.summary().replyEvidence()).contains("validatedMode=review_loop");
         assertThat(executionView.result()).isInstanceOf(DemoScenarioValidationView.class);
 
         DemoScenarioValidationView validationView = (DemoScenarioValidationView) executionView.result();
@@ -149,5 +172,24 @@ class DemoScenarioCatalogServiceTest {
                 .containsExactly("scene", "workflowSubIntent", "workflowStatus", "draftStatus", "businessFactStatus", "resultType");
         assertThat(validationView.checks())
                 .allMatch(DemoScenarioValidationCheckView::passed);
+    }
+
+    @Test
+    void shouldExecuteAnalysisModeWithTopLevelSummary() {
+        DemoScenarioExecutionView executionView = demoScenarioCatalogService.execute("pre-sales-recommendation", "analysis");
+
+        assertThat(executionView.mode()).isEqualTo("analysis");
+        assertThat(executionView.summary().mode()).isEqualTo("analysis");
+        assertThat(executionView.summary().runId()).isEqualTo("ANALYSIS_PREVIEW");
+        assertThat(executionView.summary().scene()).isNotBlank();
+        assertThat(executionView.summary().subIntent()).isNotBlank();
+        assertThat(executionView.summary().operatorDecision()).isNotBlank();
+        assertThat(executionView.summary().nextAction()).isNotBlank();
+        assertThat(executionView.summary().businessFactStatus()).isEqualTo("NOT_REQUIRED");
+        assertThat(executionView.summary().businessEvidence()).contains("不依赖业务 facts");
+        assertThat(executionView.summary().knowledgeEvidence()).contains("知识检索");
+        assertThat(executionView.summary().replyEvidence()).contains("最终状态");
+        assertThat(executionView.summary().keyEvidence()).anyMatch(item -> item.startsWith("knowledge_hint="));
+        assertThat(executionView.result()).isInstanceOf(WorkflowAnalysisView.class);
     }
 }

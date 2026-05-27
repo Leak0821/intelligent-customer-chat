@@ -56,7 +56,12 @@ public class DemoScenarioCatalogService {
             case REVIEW_LOOP -> demoReviewLoopService.execute(scenario.toInboundMail());
             case VALIDATE -> validateScenario(scenario);
         };
-        return new DemoScenarioExecutionView(scenario.summary(), executeMode.modeName(), result);
+        return new DemoScenarioExecutionView(
+                scenario.summary(),
+                executeMode.modeName(),
+                buildExecutionSummary(scenario, executeMode, result),
+                result
+        );
     }
 
     public DemoScenarioSummaryView getScenario(String scenarioId) {
@@ -181,6 +186,263 @@ public class DemoScenarioCatalogService {
             return "人工审核";
         }
         return "直接草稿";
+    }
+
+    private DemoScenarioExecutionSummaryView buildExecutionSummary(DemoScenarioDefinition scenario,
+                                                                  DemoScenarioMode executeMode,
+                                                                  Object result) {
+        return switch (executeMode) {
+            case ANALYSIS -> buildAnalysisExecutionSummary(scenario, (WorkflowAnalysisView) result);
+            case REPLAY -> buildReplayExecutionSummary(scenario, (WorkflowReplayView) result);
+            case REVIEW_LOOP -> buildReviewLoopExecutionSummary(scenario, (DemoReviewLoopExecutionView) result);
+            case RUN -> buildRunExecutionSummary(scenario, (WorkflowRun) result);
+            case VALIDATE -> buildValidationExecutionSummary(scenario, (DemoScenarioValidationView) result);
+        };
+    }
+
+    private DemoScenarioExecutionSummaryView buildAnalysisExecutionSummary(DemoScenarioDefinition scenario,
+                                                                          WorkflowAnalysisView analysisView) {
+        WorkflowAnalysisSummaryView summary = analysisView.summary();
+        return new DemoScenarioExecutionSummaryView(
+                "ANALYSIS_PREVIEW",
+                "analysis",
+                scenario.metadata().demoFocus(),
+                summary.scene(),
+                summary.subIntent(),
+                mapResultType(analysisView.draft().getStatus().name(), null),
+                "ANALYSIS_PREVIEW",
+                analysisView.draft().getStatus().name(),
+                summary.operatorDecision(),
+                summary.nextAction(),
+                analysisView.businessFactResult().status().name(),
+                summary.factSummary(),
+                summary.knowledgeSummary(),
+                summary.replySummary(),
+                mergeEvidence(
+                        List.of(
+                                "scenario=" + scenario.metadata().scenarioId(),
+                                "business_hint=" + scenario.metadata().businessEvidenceHint(),
+                                "knowledge_hint=" + scenario.metadata().knowledgeEvidenceHint()
+                        ),
+                        summary.keyEvidence()
+                )
+        );
+    }
+
+    private DemoScenarioExecutionSummaryView buildReplayExecutionSummary(DemoScenarioDefinition scenario,
+                                                                        WorkflowReplayView replayView) {
+        WorkflowEvaluationSampleView evaluation = workflowEvaluationService.getSample(replayView.run().getRunId());
+        return buildEvaluationBackedSummary(
+                scenario,
+                "replay",
+                replayView.run().getRunId(),
+                evaluation,
+                mapResultType(evaluation.draftStatus(), replayView.run().getStatus().name()),
+                deriveOperatorDecision(evaluation),
+                defaultText(evaluation.nextAction(), "inspect_replay"),
+                buildReplyEvidence(evaluation),
+                mergeEvidence(
+                        List.of("scenario=" + scenario.metadata().scenarioId()),
+                        extractEvaluationEvidence(evaluation)
+                )
+        );
+    }
+
+    private DemoScenarioExecutionSummaryView buildReviewLoopExecutionSummary(DemoScenarioDefinition scenario,
+                                                                            DemoReviewLoopExecutionView reviewLoopView) {
+        WorkflowEvaluationSampleView evaluation = reviewLoopView.evaluation();
+        return buildEvaluationBackedSummary(
+                scenario,
+                "review_loop",
+                reviewLoopView.run().getRunId(),
+                evaluation,
+                "人工审核闭环",
+                "manual_review_completed",
+                defaultText(reviewLoopView.approvedDraft().nextAction(), "dispatch_reply"),
+                buildReviewLoopReplyEvidence(reviewLoopView),
+                mergeEvidence(
+                        List.of("scenario=" + scenario.metadata().scenarioId()),
+                        extractReviewLoopEvidence(reviewLoopView)
+                )
+        );
+    }
+
+    private DemoScenarioExecutionSummaryView buildRunExecutionSummary(DemoScenarioDefinition scenario,
+                                                                     WorkflowRun run) {
+        WorkflowEvaluationSampleView evaluation = workflowEvaluationService.getSample(run.getRunId());
+        return buildEvaluationBackedSummary(
+                scenario,
+                "run",
+                run.getRunId(),
+                evaluation,
+                mapResultType(evaluation.draftStatus(), run.getStatus().name()),
+                deriveOperatorDecision(evaluation),
+                defaultText(evaluation.nextAction(), "inspect_run"),
+                buildReplyEvidence(evaluation),
+                mergeEvidence(
+                        List.of("scenario=" + scenario.metadata().scenarioId()),
+                        extractEvaluationEvidence(evaluation)
+                )
+        );
+    }
+
+    private DemoScenarioExecutionSummaryView buildValidationExecutionSummary(DemoScenarioDefinition scenario,
+                                                                            DemoScenarioValidationView validationView) {
+        List<String> keyEvidence = validationView.checks().stream()
+                .map(check -> (check.passed() ? "passed_check=" : "failed_check=") + check.key()
+                        + ":" + check.actual())
+                .limit(6)
+                .toList();
+        return new DemoScenarioExecutionSummaryView(
+                "VALIDATE_ONLY",
+                "validate",
+                scenario.metadata().demoFocus(),
+                defaultText(scenario.metadata().expectedWorkflowScene(), scenario.metadata().scene()),
+                defaultText(scenario.metadata().expectedWorkflowSubIntent(), scenario.metadata().subIntent()),
+                validationView.passed() ? "校验通过" : "校验失败",
+                validationView.validatedMode().toUpperCase(Locale.ROOT),
+                defaultText(scenario.metadata().expectedDraftStatus(), "UNKNOWN"),
+                validationView.passed() ? "scenario_expectation_matched" : "scenario_expectation_mismatch",
+                validationView.passed() ? "continue_demo" : "inspect_failed_checks",
+                defaultText(scenario.metadata().expectedBusinessFactStatus(), "UNKNOWN"),
+                scenario.metadata().businessEvidenceHint(),
+                scenario.metadata().knowledgeEvidenceHint(),
+                buildValidationReplyEvidence(scenario, validationView),
+                keyEvidence
+        );
+    }
+
+    private DemoScenarioExecutionSummaryView buildEvaluationBackedSummary(DemoScenarioDefinition scenario,
+                                                                         String mode,
+                                                                         String runId,
+                                                                         WorkflowEvaluationSampleView evaluation,
+                                                                         String resultType,
+                                                                         String operatorDecision,
+                                                                         String nextAction,
+                                                                         String replyEvidence,
+                                                                         List<String> keyEvidence) {
+        return new DemoScenarioExecutionSummaryView(
+                runId,
+                mode,
+                scenario.metadata().demoFocus(),
+                evaluation.scene(),
+                evaluation.subIntent(),
+                resultType,
+                evaluation.workflowStatus(),
+                defaultText(evaluation.draftStatus(), "UNKNOWN"),
+                operatorDecision,
+                nextAction,
+                evaluation.businessFactStatus(),
+                evaluation.businessFactsSummary(),
+                evaluation.knowledgeSummary(),
+                replyEvidence,
+                keyEvidence
+        );
+    }
+
+    private String deriveOperatorDecision(WorkflowEvaluationSampleView evaluation) {
+        if ("BLOCKED".equalsIgnoreCase(evaluation.workflowStatus())) {
+            return "blocked";
+        }
+        if (evaluation.manualReviewOutcome() != null
+                && !evaluation.manualReviewOutcome().isBlank()
+                && !"NOT_REVIEWED".equalsIgnoreCase(evaluation.manualReviewOutcome())) {
+            return "manual_review_completed";
+        }
+        if ("FOLLOW_UP_NEEDED".equalsIgnoreCase(evaluation.draftStatus())) {
+            return "follow_up_required";
+        }
+        if ("HUMAN_REVIEW_REQUIRED".equalsIgnoreCase(evaluation.draftStatus())) {
+            return "manual_review_required";
+        }
+        if ("READY_FOR_SEND".equalsIgnoreCase(evaluation.sendReadiness())) {
+            return "ready_for_dispatch";
+        }
+        if (evaluation.latestDispatchStatus() != null && !evaluation.latestDispatchStatus().isBlank()) {
+            return "dispatch_recorded";
+        }
+        return "draft_generated";
+    }
+
+    private String buildReplyEvidence(WorkflowEvaluationSampleView evaluation) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("replySource=").append(evaluation.replySource());
+        if (evaluation.replyFallbackReason() != null && !evaluation.replyFallbackReason().isBlank()) {
+            builder.append(", fallback=").append(evaluation.replyFallbackReason());
+        }
+        if (evaluation.sendReadiness() != null && !evaluation.sendReadiness().isBlank()) {
+            builder.append(", sendReadiness=").append(evaluation.sendReadiness());
+        }
+        if (evaluation.latestDispatchStatus() != null && !evaluation.latestDispatchStatus().isBlank()) {
+            builder.append(", dispatchStatus=").append(evaluation.latestDispatchStatus());
+        }
+        return builder.toString();
+    }
+
+    private String buildReviewLoopReplyEvidence(DemoReviewLoopExecutionView reviewLoopView) {
+        return "initialDraft=" + reviewLoopView.initialDraft().draftStatus()
+                + ", approvedDraft=" + reviewLoopView.approvedDraft().draftStatus()
+                + ", sendReadiness=" + reviewLoopView.approvedDraft().sendReadiness()
+                + ", latestReviewAction=" + reviewLoopView.evaluation().latestReviewAction();
+    }
+
+    private String buildValidationReplyEvidence(DemoScenarioDefinition scenario,
+                                                DemoScenarioValidationView validationView) {
+        return "validatedMode=" + validationView.validatedMode()
+                + ", expectedResultType=" + scenario.metadata().expectedResultType()
+                + ", passed=" + validationView.passed();
+    }
+
+    private List<String> extractEvaluationEvidence(WorkflowEvaluationSampleView evaluation) {
+        return mergeEvidence(
+                evaluation.businessFactSourceSystems().stream()
+                        .limit(2)
+                        .map(value -> "fact_source=" + value)
+                        .toList(),
+                mergeEvidence(
+                        evaluation.knowledgeSnippetIds().stream()
+                                .limit(3)
+                                .map(value -> "knowledge_snippet=" + value)
+                                .toList(),
+                        mergeEvidence(
+                                evaluation.riskFlags().stream()
+                                        .limit(2)
+                                        .map(value -> "risk_flag=" + value)
+                                        .toList(),
+                                evaluation.latestReviewFeedbackTags().stream()
+                                        .limit(2)
+                                        .map(value -> "review_tag=" + value)
+                                        .toList()
+                        )
+                )
+        );
+    }
+
+    private List<String> extractReviewLoopEvidence(DemoReviewLoopExecutionView reviewLoopView) {
+        WorkflowEvaluationSampleView evaluation = reviewLoopView.evaluation();
+        return mergeEvidence(
+                List.of(
+                        "review_count=" + evaluation.reviewCount(),
+                        "revision_count=" + evaluation.revisionCount(),
+                        "manual_review_outcome=" + evaluation.manualReviewOutcome()
+                ),
+                extractEvaluationEvidence(evaluation)
+        );
+    }
+
+    private List<String> mergeEvidence(List<String> primary, List<String> secondary) {
+        java.util.LinkedHashSet<String> merged = new java.util.LinkedHashSet<>();
+        if (primary != null) {
+            merged.addAll(primary.stream().filter(value -> value != null && !value.isBlank()).toList());
+        }
+        if (secondary != null) {
+            merged.addAll(secondary.stream().filter(value -> value != null && !value.isBlank()).toList());
+        }
+        return List.copyOf(merged);
+    }
+
+    private String defaultText(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 
     private DemoScenarioDefinition requireScenario(String scenarioId) {

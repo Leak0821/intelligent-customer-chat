@@ -86,6 +86,14 @@ curl http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-policy
 - `businessEvidenceHint`
 - `knowledgeEvidenceHint`
 
+如果直接走场景执行接口，再重点看：
+
+- `summary.mode / summary.demoTakeaway`
+- `summary.scene / summary.subIntent / summary.resultType`
+- `summary.operatorDecision / summary.nextAction`
+- `summary.businessEvidence / summary.knowledgeEvidence / summary.replyEvidence`
+- `summary.keyEvidence`
+
 如果主要跑售后链路，可先对照 [after-sales-demo-matrix.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/docs/after-sales-demo-matrix.md) 选样例。
 
 如果想先确认“内置样例当前有没有整体跑偏”，可以先执行：

@@ -42,6 +42,7 @@
 
 重点观察：
 
+- `demo/scenarios/{scenarioId}` 的 `summary` 是否已经把 mode 差异抹平，能统一说明“证明点 / 结果类型 / 下一步动作”
 - `summary` 里能否先直接说明场景、子意图、主问题、最终状态和下一步动作
 - `summary.keyEvidence` 是否已经把关键编号、知识片段、审核信号等证据提炼出来
 - scene 是否符合预期

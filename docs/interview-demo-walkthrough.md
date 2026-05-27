@@ -82,6 +82,13 @@ curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 
 如果主要讲售后链路，建议先对照 [after-sales-demo-matrix.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/docs/after-sales-demo-matrix.md) 选样例。
 
+现在场景执行接口也会统一返回 `summary`，适合先讲：
+
+- 这个样例主要想证明什么
+- 当前实际跑成了什么结果类型
+- 下一步应该追问、转审核还是可继续派发
+- facts / knowledge / reply 分别给了什么证据
+
 ## 5. 演示时怎么跑
 
 ### 5.1 批量看分析结果
@@ -93,6 +100,7 @@ curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 你可以重点说明：
 
 - 现在 `analysis.summary` 会先把“这是哪类邮件、为什么这么判、下一步做什么”直接提炼出来
+- 如果走 `demo/scenarios/{scenarioId}`，外层 `summary` 还能把不同 mode 的结果统一成一套讲法
 - 系统不是直接生成回复，而是先做场景和子意图识别
 - 现在 analysis 结果里可以直接看到启发式基线、最终归一化结果和是否被模型改写
 - 还可以直接看到是模型生效还是启发式回退，以及为什么回退
