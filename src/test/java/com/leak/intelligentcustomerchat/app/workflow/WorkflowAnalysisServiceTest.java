@@ -91,7 +91,7 @@ class WorkflowAnalysisServiceTest {
                 1
         );
         ReplyDraft draft = ReplyDraft.create("preview-run", "Re: Need help", "Draft body", ReplyDraftStatus.DRAFT_READY, "notes");
-        ReviewDecision reviewDecision = new ReviewDecision(ReplyDraftStatus.DRAFT_READY, false, "ready");
+        ReviewDecision reviewDecision = new ReviewDecision(ReplyDraftStatus.DRAFT_READY, false, "ready", List.of());
         ConversationSummary persistedSummary = ConversationSummary.create(
                 "thread-1",
                 "customer asked again after previous email",
@@ -251,6 +251,8 @@ class WorkflowAnalysisServiceTest {
         assertThat(view.replyDiagnostics().replySource()).isEqualTo("llm");
         assertThat(view.replyDiagnostics().llmAttempted()).isTrue();
         assertThat(view.replyDiagnostics().llmResponseAccepted()).isTrue();
+        assertThat(view.replyDiagnostics().reviewReason()).isEqualTo("ready");
+        assertThat(view.replyDiagnostics().reviewSignals()).isEmpty();
         assertThat(view.replyDiagnostics().coverageMode()).isEqualTo("primary_only");
         assertThat(view.replyDiagnostics().coveredQuestions()).containsExactly("What is the tracking status?");
         assertThat(view.replyDiagnostics().contextMode()).isEqualTo("summary_only");

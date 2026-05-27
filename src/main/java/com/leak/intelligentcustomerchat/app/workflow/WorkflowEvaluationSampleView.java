@@ -37,12 +37,14 @@ public record WorkflowEvaluationSampleView(
         String latestDispatchStatus,
         String latestReviewAction,
         String manualReviewOutcome,
+        List<String> latestReviewFeedbackTags,
         String latestReviewer,
         String latestReviewNote,
         Integer reviewCount,
         Integer revisionCount,
         boolean resubmittedForReview,
         List<WorkflowEvaluationCountView> reviewActionCounts,
+        List<WorkflowEvaluationCountView> reviewFeedbackTagCounts,
         List<String> reviewTimeline,
         List<String> riskFlags,
         OffsetDateTime sampledAt
@@ -70,13 +72,17 @@ public record WorkflowEvaluationSampleView(
         Objects.requireNonNull(workflowReason, "workflowReason must not be null");
         Objects.requireNonNull(replySource, "replySource must not be null");
         Objects.requireNonNull(manualReviewOutcome, "manualReviewOutcome must not be null");
+        Objects.requireNonNull(latestReviewFeedbackTags, "latestReviewFeedbackTags must not be null");
         Objects.requireNonNull(reviewActionCounts, "reviewActionCounts must not be null");
+        Objects.requireNonNull(reviewFeedbackTagCounts, "reviewFeedbackTagCounts must not be null");
         Objects.requireNonNull(reviewTimeline, "reviewTimeline must not be null");
         Objects.requireNonNull(riskFlags, "riskFlags must not be null");
         Objects.requireNonNull(sampledAt, "sampledAt must not be null");
         businessFactSourceSystems = List.copyOf(businessFactSourceSystems);
         knowledgeSnippetIds = List.copyOf(knowledgeSnippetIds);
+        latestReviewFeedbackTags = List.copyOf(latestReviewFeedbackTags);
         reviewActionCounts = List.copyOf(reviewActionCounts);
+        reviewFeedbackTagCounts = List.copyOf(reviewFeedbackTagCounts);
         reviewTimeline = List.copyOf(reviewTimeline);
         riskFlags = List.copyOf(riskFlags);
     }

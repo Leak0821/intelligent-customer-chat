@@ -11,6 +11,8 @@ public record WorkflowReplyDiagnosticsView(
         boolean llmAttempted,
         boolean llmResponseAccepted,
         String fallbackReason,
+        String reviewReason,
+        List<String> reviewSignals,
         String coverageMode,
         List<String> coveredQuestions,
         List<String> deferredQuestions,
@@ -26,6 +28,8 @@ public record WorkflowReplyDiagnosticsView(
     public WorkflowReplyDiagnosticsView {
         Objects.requireNonNull(draftStatus, "draftStatus must not be null");
         Objects.requireNonNull(replySource, "replySource must not be null");
+        Objects.requireNonNull(reviewReason, "reviewReason must not be null");
+        Objects.requireNonNull(reviewSignals, "reviewSignals must not be null");
         Objects.requireNonNull(coverageMode, "coverageMode must not be null");
         Objects.requireNonNull(coveredQuestions, "coveredQuestions must not be null");
         Objects.requireNonNull(deferredQuestions, "deferredQuestions must not be null");
@@ -35,6 +39,7 @@ public record WorkflowReplyDiagnosticsView(
         Objects.requireNonNull(factPreview, "factPreview must not be null");
         Objects.requireNonNull(knowledgeSnippetIds, "knowledgeSnippetIds must not be null");
         Objects.requireNonNull(knowledgeSnippetPreview, "knowledgeSnippetPreview must not be null");
+        reviewSignals = List.copyOf(reviewSignals);
         coveredQuestions = List.copyOf(coveredQuestions);
         deferredQuestions = List.copyOf(deferredQuestions);
         contextPreview = List.copyOf(contextPreview);

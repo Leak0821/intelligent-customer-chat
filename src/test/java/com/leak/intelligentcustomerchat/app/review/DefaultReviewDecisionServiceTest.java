@@ -16,7 +16,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DefaultReviewDecisionServiceTest {
-    private final DefaultReviewDecisionService service = new DefaultReviewDecisionService();
+    private final DefaultReviewDecisionService service = new DefaultReviewDecisionService(new ReviewFeedbackTagger());
 
     @Test
     void shouldKeepFollowUpDraftAsFollowUpNeeded() {
@@ -45,6 +45,7 @@ class DefaultReviewDecisionServiceTest {
 
         assertThat(decision.finalStatus()).isEqualTo(ReplyDraftStatus.HUMAN_REVIEW_REQUIRED);
         assertThat(decision.reviewReason()).contains("business facts conflict");
+        assertThat(decision.reviewSignals()).contains("fact_gap");
     }
 
     @Test
@@ -60,6 +61,7 @@ class DefaultReviewDecisionServiceTest {
 
         assertThat(decision.finalStatus()).isEqualTo(ReplyDraftStatus.HUMAN_REVIEW_REQUIRED);
         assertThat(decision.reviewReason()).contains("knowledge support");
+        assertThat(decision.reviewSignals()).contains("knowledge_gap");
     }
 
     @Test
@@ -74,6 +76,7 @@ class DefaultReviewDecisionServiceTest {
         ));
 
         assertThat(decision.finalStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
+        assertThat(decision.reviewSignals()).isEmpty();
     }
 
     private ReviewDecisionContext context(CustomerScene scene,

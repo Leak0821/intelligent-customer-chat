@@ -159,7 +159,7 @@ public class WorkflowAnalysisService {
                 businessFactResult,
                 buildKnowledgeDiagnostics(retrievalQuery, routeResult, businessFactResult, knowledgeRetrieveResult),
                 knowledgeRetrieveResult,
-                buildReplyDiagnostics(draftingResult.diagnostics()),
+                buildReplyDiagnostics(draftingResult.diagnostics(), reviewDecision),
                 draft,
                 reviewDecision
         );
@@ -453,13 +453,16 @@ public class WorkflowAnalysisService {
                 .trim();
     }
 
-    private WorkflowReplyDiagnosticsView buildReplyDiagnostics(ReplyDraftingDiagnostics diagnostics) {
+    private WorkflowReplyDiagnosticsView buildReplyDiagnostics(ReplyDraftingDiagnostics diagnostics,
+                                                              ReviewDecision reviewDecision) {
         return new WorkflowReplyDiagnosticsView(
                 diagnostics.draftStatus(),
                 diagnostics.replySource(),
                 diagnostics.llmAttempted(),
                 diagnostics.llmResponseAccepted(),
                 diagnostics.fallbackReason(),
+                reviewDecision.reviewReason(),
+                reviewDecision.reviewSignals(),
                 diagnostics.coverageMode(),
                 diagnostics.coveredQuestions(),
                 diagnostics.deferredQuestions(),

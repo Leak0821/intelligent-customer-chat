@@ -31,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class WorkflowEvaluationServiceTest {
     private final WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser = new WorkflowEvidenceSummaryParser();
+    private final com.leak.intelligentcustomerchat.app.review.ReviewFeedbackTagger reviewFeedbackTagger =
+            new com.leak.intelligentcustomerchat.app.review.ReviewFeedbackTagger();
 
     @Test
     void shouldBuildEvaluationSampleFromWorkflowArtifacts() {
@@ -92,7 +94,8 @@ class WorkflowEvaluationServiceTest {
                 replyDispatchRepository,
                 reviewRecordRepository,
                 mailReceiptRepository,
-                workflowEvidenceSummaryParser
+                workflowEvidenceSummaryParser,
+                reviewFeedbackTagger
         );
 
         WorkflowEvaluationSampleView sample = service.getSample(run.getRunId());
@@ -115,6 +118,7 @@ class WorkflowEvaluationServiceTest {
         assertThat(sample.latestDispatchStatus()).isEqualTo("RETRY_PENDING");
         assertThat(sample.latestReviewAction()).isEqualTo("REJECT_SEND");
         assertThat(sample.manualReviewOutcome()).isEqualTo("REJECTED_FOR_REVISION");
+        assertThat(sample.latestReviewFeedbackTags()).containsExactly("promise_risk", "tone_risk");
         assertThat(sample.reviewCount()).isEqualTo(3);
         assertThat(sample.revisionCount()).isEqualTo(1);
         assertThat(sample.resubmittedForReview()).isTrue();
@@ -122,6 +126,11 @@ class WorkflowEvaluationServiceTest {
                 new WorkflowEvaluationCountView("REJECT_SEND", 1),
                 new WorkflowEvaluationCountView("RESUBMIT_REVIEW", 1),
                 new WorkflowEvaluationCountView("REVISE_DRAFT", 1)
+        );
+        assertThat(sample.reviewFeedbackTagCounts()).containsExactlyInAnyOrder(
+                new WorkflowEvaluationCountView("other", 1),
+                new WorkflowEvaluationCountView("promise_risk", 2),
+                new WorkflowEvaluationCountView("tone_risk", 2)
         );
         assertThat(sample.reviewTimeline()).contains(
                 "REVISE_DRAFT by editor-a: soften the compensation promise",
@@ -180,7 +189,8 @@ class WorkflowEvaluationServiceTest {
                 replyDispatchRepository,
                 reviewRecordRepository,
                 mailReceiptRepository,
-                workflowEvidenceSummaryParser
+                workflowEvidenceSummaryParser,
+                reviewFeedbackTagger
         );
 
         List<WorkflowEvaluationSampleView> afterSalesSamples = service.listSamples(10, "AFTER_SALES", null, null, null, null);
@@ -264,7 +274,8 @@ class WorkflowEvaluationServiceTest {
                 replyDispatchRepository,
                 reviewRecordRepository,
                 mailReceiptRepository,
-                workflowEvidenceSummaryParser
+                workflowEvidenceSummaryParser,
+                reviewFeedbackTagger
         );
 
         WorkflowEvaluationSummaryView summary = service.summarizeRecentSamples(10, null, null, null, null, null);
@@ -322,6 +333,9 @@ class WorkflowEvaluationServiceTest {
         assertThat(summary.manualReviewOutcomes()).containsExactly(
                 new WorkflowEvaluationCountView("NOT_REVIEWED", 2),
                 new WorkflowEvaluationCountView("REJECTED_FOR_REVISION", 1)
+        );
+        assertThat(summary.reviewFeedbackTags()).containsExactly(
+                new WorkflowEvaluationCountView("tone_risk", 1)
         );
         assertThat(summary.riskFlags()).contains(
                 new WorkflowEvaluationCountView("follow_up_needed", 1),

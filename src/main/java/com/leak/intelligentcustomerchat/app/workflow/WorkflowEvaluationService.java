@@ -15,6 +15,7 @@ import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEventRepository;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRunRepository;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowStage;
+import com.leak.intelligentcustomerchat.app.review.ReviewFeedbackTagger;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -36,6 +37,7 @@ public class WorkflowEvaluationService {
     private final ReviewRecordRepository reviewRecordRepository;
     private final MailReceiptRepository mailReceiptRepository;
     private final WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser;
+    private final ReviewFeedbackTagger reviewFeedbackTagger;
 
     public WorkflowEvaluationService(WorkflowRunRepository workflowRunRepository,
                                      WorkflowEventRepository workflowEventRepository,
@@ -43,7 +45,8 @@ public class WorkflowEvaluationService {
                                      ReplyDispatchRepository replyDispatchRepository,
                                      ReviewRecordRepository reviewRecordRepository,
                                      MailReceiptRepository mailReceiptRepository,
-                                     WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser) {
+                                     WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser,
+                                     ReviewFeedbackTagger reviewFeedbackTagger) {
         this.workflowRunRepository = workflowRunRepository;
         this.workflowEventRepository = workflowEventRepository;
         this.replyDraftRepository = replyDraftRepository;
@@ -51,6 +54,7 @@ public class WorkflowEvaluationService {
         this.reviewRecordRepository = reviewRecordRepository;
         this.mailReceiptRepository = mailReceiptRepository;
         this.workflowEvidenceSummaryParser = workflowEvidenceSummaryParser;
+        this.reviewFeedbackTagger = reviewFeedbackTagger;
     }
 
     public WorkflowEvaluationSampleView getSample(String runId) {
@@ -135,6 +139,7 @@ public class WorkflowEvaluationService {
                 summarize(samples, WorkflowEvaluationSampleView::replyFallbackReason),
                 summarize(samples, WorkflowEvaluationSampleView::latestReviewAction),
                 summarize(samples, WorkflowEvaluationSampleView::manualReviewOutcome),
+                summarizeExpandedCounts(samples, WorkflowEvaluationSampleView::reviewFeedbackTagCounts),
                 summarizeRiskFlags(samples),
                 OffsetDateTime.now()
         );
@@ -217,6 +222,9 @@ public class WorkflowEvaluationService {
         int revisionCount = countAction(reviews, ReviewAction.REVISE_DRAFT);
         boolean resubmittedForReview = containsAction(reviews, ReviewAction.RESUBMIT_REVIEW);
         String manualReviewOutcome = determineManualReviewOutcome(draft, reviews);
+        List<String> latestReviewFeedbackTags = latestReview == null
+                ? List.of()
+                : reviewFeedbackTagger.tagManualReviewNote(latestReview.getReviewNote());
 
         String normalizationSummary = findEventSummary(events, WorkflowStage.INTENT_NORMALIZED)
                 .orElse("intent normalization summary unavailable");
@@ -269,12 +277,14 @@ public class WorkflowEvaluationService {
                 latestDispatch == null ? null : latestDispatch.getStatus().name(),
                 latestReview == null ? null : latestReview.getAction().name(),
                 manualReviewOutcome,
+                latestReviewFeedbackTags,
                 latestReview == null ? null : latestReview.getReviewer(),
                 latestReview == null ? null : latestReview.getReviewNote(),
                 reviewCount,
                 revisionCount,
                 resubmittedForReview,
                 summarizeReviewActions(reviews),
+                summarizeReviewFeedbackTags(reviews),
                 buildReviewTimeline(reviews),
                 buildRiskFlags(run, draft, latestDispatch, latestReview, reviews, businessFactsSummary, replySource, replyFallbackReason),
                 OffsetDateTime.now()
@@ -324,6 +334,21 @@ public class WorkflowEvaluationService {
         for (WorkflowEvaluationSampleView sample : samples) {
             for (String riskFlag : sample.riskFlags()) {
                 counts.merge(riskFlag, 1L, Long::sum);
+            }
+        }
+        return counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder())
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .map(entry -> new WorkflowEvaluationCountView(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+    private List<WorkflowEvaluationCountView> summarizeExpandedCounts(List<WorkflowEvaluationSampleView> samples,
+                                                                      java.util.function.Function<WorkflowEvaluationSampleView, List<WorkflowEvaluationCountView>> extractor) {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (WorkflowEvaluationSampleView sample : samples) {
+            for (WorkflowEvaluationCountView countView : extractor.apply(sample)) {
+                counts.merge(countView.key(), countView.count(), Long::sum);
             }
         }
         return counts.entrySet().stream()
@@ -466,6 +491,20 @@ public class WorkflowEvaluationService {
         Map<String, Long> counts = new LinkedHashMap<>();
         for (ReviewRecord review : reviews) {
             counts.merge(review.getAction().name(), 1L, Long::sum);
+        }
+        return counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder())
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .map(entry -> new WorkflowEvaluationCountView(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+    private List<WorkflowEvaluationCountView> summarizeReviewFeedbackTags(List<ReviewRecord> reviews) {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (ReviewRecord review : reviews) {
+            for (String tag : reviewFeedbackTagger.tagManualReviewNote(review.getReviewNote())) {
+                counts.merge(tag, 1L, Long::sum);
+            }
         }
         return counts.entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder())

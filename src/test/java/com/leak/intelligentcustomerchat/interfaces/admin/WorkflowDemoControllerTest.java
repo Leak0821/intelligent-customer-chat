@@ -37,6 +37,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class WorkflowDemoControllerTest {
     private final WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser = new WorkflowEvidenceSummaryParser();
+    private final com.leak.intelligentcustomerchat.app.review.ReviewFeedbackTagger reviewFeedbackTagger =
+            new com.leak.intelligentcustomerchat.app.review.ReviewFeedbackTagger();
 
     @Test
     void shouldExposeReviewAndDispatchQueues() {
@@ -157,7 +159,8 @@ class WorkflowDemoControllerTest {
                 replyDispatchRepository,
                 reviewRecordRepository,
                 mailReceiptRepository,
-                workflowEvidenceSummaryParser
+                workflowEvidenceSummaryParser,
+                reviewFeedbackTagger
         );
 
         WorkflowDemoController controller = new WorkflowDemoController(
