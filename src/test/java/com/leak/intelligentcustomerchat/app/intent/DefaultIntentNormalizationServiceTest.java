@@ -39,6 +39,7 @@ class DefaultIntentNormalizationServiceTest {
         assertThat(diagnostics.llmAttempted()).isFalse();
         assertThat(diagnostics.llmResponseAccepted()).isFalse();
         assertThat(diagnostics.fallbackReason()).isEqualTo("llm_unavailable");
+        assertThat(diagnostics.heuristicMatchedSignals()).contains("scene_after_sales", "sub_intent_logistics_tracking");
     }
 
     @Test
@@ -104,6 +105,7 @@ class DefaultIntentNormalizationServiceTest {
         assertThat(result.disposition()).isEqualTo(ProcessingDisposition.FOLLOW_UP);
         assertThat(diagnostics.guardrailActions()).contains("enforce_order_id_for_after_sales");
         assertThat(diagnostics.normalizationSource()).isEqualTo("llm_with_guardrails");
+        assertThat(diagnostics.heuristicMatchedSignals()).contains("scene_after_sales", "require_order_id_for_after_sales");
     }
 
     @Test
@@ -124,6 +126,7 @@ class DefaultIntentNormalizationServiceTest {
         assertThat(diagnostics.llmAttempted()).isTrue();
         assertThat(diagnostics.llmResponseAccepted()).isFalse();
         assertThat(diagnostics.fallbackReason()).isEqualTo("llm_response_invalid");
+        assertThat(diagnostics.heuristicMatchedSignals()).contains("scene_after_sales");
     }
 
     @Test
@@ -162,6 +165,66 @@ class DefaultIntentNormalizationServiceTest {
         assertThat(result.requiredEntities()).contains("order_id_or_tracking_no");
         assertThat(result.missingEntities()).isEmpty();
         assertThat(result.disposition()).isEqualTo(ProcessingDisposition.CONTINUE);
+    }
+
+    @Test
+    void shouldTreatReturnPolicyQuestionBeforePurchaseAsPreSalesGeneralInquiry() {
+        DefaultIntentNormalizationService service = new DefaultIntentNormalizationService(
+                promptConfigService(),
+                new StubLlmClient(Optional.empty()),
+                new ObjectMapper()
+        );
+
+        IntentNormalizationDiagnostics diagnostics = service.diagnose(mail(
+                "Question before buying",
+                "Before I buy, could you tell me the return policy if the product does not fit my room?"
+        ));
+        IntentNormalizationResult result = diagnostics.finalResult();
+
+        assertThat(result.sceneCandidates()).containsExactly(CustomerScene.PRE_SALES);
+        assertThat(result.subIntentCandidates()).containsExactly("general_inquiry");
+        assertThat(result.requiredEntities()).isEmpty();
+        assertThat(result.missingEntities()).isEmpty();
+        assertThat(result.disposition()).isEqualTo(ProcessingDisposition.CONTINUE);
+        assertThat(diagnostics.heuristicMatchedSignals()).contains(
+                "pre_purchase_policy_question",
+                "scene_pre_sales_policy_before_purchase",
+                "sub_intent_general_inquiry_fallback"
+        );
+    }
+
+    @Test
+    void shouldOverrideLlmAfterSalesRouteForPrePurchasePolicyQuestion() {
+        String json = """
+                {
+                  "normalizedRequest": "Customer asks whether return is possible.",
+                  "primaryQuestion": "Can I return the product later?",
+                  "secondaryQuestions": [],
+                  "sceneCandidates": ["AFTER_SALES"],
+                  "subIntentCandidates": ["after_sales_policy"],
+                  "requiredEntities": ["order_id_or_tracking_no"],
+                  "missingEntities": ["order_id_or_tracking_no"],
+                  "disposition": "FOLLOW_UP"
+                }
+                """;
+        DefaultIntentNormalizationService service = new DefaultIntentNormalizationService(
+                promptConfigService(),
+                new StubLlmClient(Optional.of(json)),
+                new ObjectMapper()
+        );
+
+        IntentNormalizationDiagnostics diagnostics = service.diagnose(mail(
+                "Question before buying",
+                "Before I place an order, I want to understand the return policy if it does not fit."
+        ));
+        IntentNormalizationResult result = diagnostics.finalResult();
+
+        assertThat(result.sceneCandidates()).containsExactly(CustomerScene.PRE_SALES);
+        assertThat(result.subIntentCandidates()).containsExactly("general_inquiry");
+        assertThat(result.requiredEntities()).isEmpty();
+        assertThat(result.missingEntities()).isEmpty();
+        assertThat(result.disposition()).isEqualTo(ProcessingDisposition.CONTINUE);
+        assertThat(diagnostics.guardrailActions()).contains("prefer_pre_sales_policy_before_purchase");
     }
 
     private static PromptConfigService promptConfigService() {

@@ -38,7 +38,8 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
 
     @Override
     public IntentNormalizationDiagnostics diagnose(InboundMail mail) {
-        IntentNormalizationResult heuristicResult = heuristics.normalize(mail);
+        IntentNormalizationHeuristics.HeuristicAnalysis heuristicAnalysis = heuristics.analyze(mail);
+        IntentNormalizationResult heuristicResult = heuristicAnalysis.result();
         String userPrompt = buildUserPrompt(mail, heuristicResult);
         Optional<String> llmResponse = llmClient.complete(
                 promptConfigService.currentPromptConfig().intentNormalizationSystemPrompt(),
@@ -52,7 +53,8 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
                     false,
                     false,
                     "llm_unavailable",
-                    List.of()
+                    List.of(),
+                    heuristicAnalysis.matchedSignals()
             );
         }
 
@@ -65,11 +67,12 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
                     true,
                     false,
                     "llm_response_invalid",
-                    List.of()
+                    List.of(),
+                    heuristicAnalysis.matchedSignals()
             );
         }
 
-        MergeOutcome mergeOutcome = mergeWithGuardrails(mail, heuristicResult, payload.get());
+        MergeOutcome mergeOutcome = mergeWithGuardrails(mail, heuristicAnalysis, payload.get());
         return new IntentNormalizationDiagnostics(
                 heuristicResult,
                 mergeOutcome.result(),
@@ -77,7 +80,8 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
                 true,
                 true,
                 null,
-                mergeOutcome.guardrailActions()
+                mergeOutcome.guardrailActions(),
+                heuristicAnalysis.matchedSignals()
         );
     }
 
@@ -116,8 +120,9 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
     }
 
     private MergeOutcome mergeWithGuardrails(InboundMail mail,
-                                            IntentNormalizationResult heuristicResult,
-                                            LlmIntentNormalizationPayload llmPayload) {
+                                             IntentNormalizationHeuristics.HeuristicAnalysis heuristicAnalysis,
+                                             LlmIntentNormalizationPayload llmPayload) {
+        IntentNormalizationResult heuristicResult = heuristicAnalysis.result();
         String mergedMailText = heuristics.mergeMailText(mail.subject(), mail.rawBody());
         List<CustomerScene> sceneCandidates = normalizeScenes(llmPayload.sceneCandidates(), heuristicResult.sceneCandidates());
         List<String> subIntentCandidates = normalizeStrings(llmPayload.subIntentCandidates(), heuristicResult.subIntentCandidates());
@@ -127,10 +132,20 @@ public class DefaultIntentNormalizationService implements IntentNormalizationSer
         ProcessingDisposition disposition = mergeDisposition(llmPayload.disposition(), heuristicResult.disposition());
         List<String> guardrailActions = new ArrayList<>();
 
+        boolean prePurchasePolicyQuestion = heuristicAnalysis.matchedSignals().contains(IntentNormalizationHeuristics.PRE_PURCHASE_POLICY_SIGNAL);
         // 订单号、物流号这类关键实体不能靠模型“猜有”。如果规则层没有识别到，就维持追问或更高等级处置。
         boolean hasExplicitOrderId = heuristics.hasExplicitOrderOrTrackingId(mergedMailText);
         boolean afterSalesLike = sceneCandidates.contains(CustomerScene.AFTER_SALES)
                 || heuristicResult.sceneCandidates().contains(CustomerScene.AFTER_SALES);
+        if (prePurchasePolicyQuestion && !hasExplicitOrderId) {
+            sceneCandidates = List.of(CustomerScene.PRE_SALES);
+            subIntentCandidates = heuristicResult.subIntentCandidates();
+            requiredEntities = List.of();
+            missingEntities = List.of();
+            disposition = heuristicResult.disposition();
+            guardrailActions.add("prefer_pre_sales_policy_before_purchase");
+            afterSalesLike = false;
+        }
         if (afterSalesLike && !hasExplicitOrderId) {
             requiredEntities = mergeDistinct(requiredEntities, List.of(IntentNormalizationHeuristics.ORDER_ID_ENTITY));
             missingEntities = mergeDistinct(missingEntities, List.of(IntentNormalizationHeuristics.ORDER_ID_ENTITY));

@@ -13,12 +13,14 @@ public record WorkflowIntentDiagnosticsView(
         boolean llmAttempted,
         boolean llmResponseAccepted,
         String fallbackReason,
-        java.util.List<String> guardrailActions
+        java.util.List<String> guardrailActions,
+        java.util.List<String> heuristicMatchedSignals
 ) {
     public WorkflowIntentDiagnosticsView {
         Objects.requireNonNull(heuristicBaseline, "heuristicBaseline must not be null");
         Objects.requireNonNull(intentCatalog, "intentCatalog must not be null");
         Objects.requireNonNull(normalizationSource, "normalizationSource must not be null");
         guardrailActions = java.util.List.copyOf(guardrailActions);
+        heuristicMatchedSignals = java.util.List.copyOf(heuristicMatchedSignals);
     }
 }

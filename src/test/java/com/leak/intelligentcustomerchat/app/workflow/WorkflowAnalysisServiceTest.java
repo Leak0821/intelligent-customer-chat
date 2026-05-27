@@ -119,7 +119,8 @@ class WorkflowAnalysisServiceTest {
                         true,
                         true,
                         null,
-                        List.of("enforce_order_id_for_after_sales")
+                        List.of("enforce_order_id_for_after_sales"),
+                        List.of("scene_after_sales", "sub_intent_logistics_tracking")
                 )),
                 new SingleObjectProvider<ContextLoadingTraceService>((mail, route) -> new ContextLoadingDiagnostics(
                         contextSnapshot,
@@ -203,6 +204,7 @@ class WorkflowAnalysisServiceTest {
         assertThat(view.intentDiagnostics().llmAttempted()).isTrue();
         assertThat(view.intentDiagnostics().llmResponseAccepted()).isTrue();
         assertThat(view.intentDiagnostics().guardrailActions()).contains("enforce_order_id_for_after_sales");
+        assertThat(view.intentDiagnostics().heuristicMatchedSignals()).contains("scene_after_sales", "sub_intent_logistics_tracking");
         assertThat(view.intentDiagnostics().intentCatalog().afterSalesIntents()).contains("logistics_tracking");
         assertThat(view.intentDiagnostics().heuristicBaseline().sceneCandidates()).contains(CustomerScene.AFTER_SALES);
         assertThat(view.contextDiagnostics().totalMessageCount()).isEqualTo(4L);

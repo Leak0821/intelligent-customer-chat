@@ -12,12 +12,14 @@ public record IntentNormalizationDiagnostics(
         boolean llmAttempted,
         boolean llmResponseAccepted,
         String fallbackReason,
-        List<String> guardrailActions
+        List<String> guardrailActions,
+        List<String> heuristicMatchedSignals
 ) {
     public IntentNormalizationDiagnostics {
         Objects.requireNonNull(heuristicBaseline, "heuristicBaseline must not be null");
         Objects.requireNonNull(finalResult, "finalResult must not be null");
         Objects.requireNonNull(normalizationSource, "normalizationSource must not be null");
         guardrailActions = List.copyOf(guardrailActions);
+        heuristicMatchedSignals = List.copyOf(heuristicMatchedSignals);
     }
 }

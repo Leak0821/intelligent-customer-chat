@@ -135,7 +135,8 @@ public class WorkflowAnalysisService {
                         normalizationDiagnostics.llmAttempted(),
                         normalizationDiagnostics.llmResponseAccepted(),
                         normalizationDiagnostics.fallbackReason(),
-                        normalizationDiagnostics.guardrailActions()
+                        normalizationDiagnostics.guardrailActions(),
+                        normalizationDiagnostics.heuristicMatchedSignals()
                 ),
                 normalizationResult,
                 routeResult,
@@ -164,6 +165,7 @@ public class WorkflowAnalysisService {
                 false,
                 false,
                 "trace_service_unavailable",
+                List.of(),
                 List.of()
         );
     }
