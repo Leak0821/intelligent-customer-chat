@@ -12,6 +12,9 @@ public record ReplyDraftingDiagnostics(
         boolean llmAttempted,
         boolean llmResponseAccepted,
         String fallbackReason,
+        String coverageMode,
+        List<String> coveredQuestions,
+        List<String> deferredQuestions,
         String contextMode,
         String systemPrompt,
         String userPrompt,
@@ -24,12 +27,17 @@ public record ReplyDraftingDiagnostics(
     public ReplyDraftingDiagnostics {
         Objects.requireNonNull(draftStatus, "draftStatus must not be null");
         Objects.requireNonNull(replySource, "replySource must not be null");
+        Objects.requireNonNull(coverageMode, "coverageMode must not be null");
+        Objects.requireNonNull(coveredQuestions, "coveredQuestions must not be null");
+        Objects.requireNonNull(deferredQuestions, "deferredQuestions must not be null");
         Objects.requireNonNull(contextMode, "contextMode must not be null");
         Objects.requireNonNull(contextPreview, "contextPreview must not be null");
         Objects.requireNonNull(contextStrongSignals, "contextStrongSignals must not be null");
         Objects.requireNonNull(factPreview, "factPreview must not be null");
         Objects.requireNonNull(knowledgeSnippetIds, "knowledgeSnippetIds must not be null");
         Objects.requireNonNull(knowledgeSnippetPreview, "knowledgeSnippetPreview must not be null");
+        coveredQuestions = List.copyOf(coveredQuestions);
+        deferredQuestions = List.copyOf(deferredQuestions);
         contextPreview = List.copyOf(contextPreview);
         contextStrongSignals = List.copyOf(contextStrongSignals);
         factPreview = List.copyOf(factPreview);
@@ -44,6 +52,9 @@ public record ReplyDraftingDiagnostics(
                 false,
                 false,
                 "draft_service_diagnostics_unavailable",
+                "unknown",
+                List.of(),
+                List.of(),
                 "unknown",
                 null,
                 null,

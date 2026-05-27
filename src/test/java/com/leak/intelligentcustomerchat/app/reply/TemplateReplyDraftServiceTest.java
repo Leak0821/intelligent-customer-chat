@@ -47,6 +47,7 @@ class TemplateReplyDraftServiceTest {
         assertThat(result.diagnostics().replySource()).isEqualTo("follow-up-template");
         assertThat(result.diagnostics().llmAttempted()).isFalse();
         assertThat(result.diagnostics().fallbackReason()).isEqualTo("follow_up_template_required");
+        assertThat(result.diagnostics().coverageMode()).isEqualTo("primary_only");
     }
 
     @Test
@@ -76,6 +77,9 @@ class TemplateReplyDraftServiceTest {
         assertThat(result.diagnostics().llmAttempted()).isTrue();
         assertThat(result.diagnostics().llmResponseAccepted()).isTrue();
         assertThat(result.diagnostics().contextMode()).isEqualTo("summary_only");
+        assertThat(result.diagnostics().coverageMode()).isEqualTo("primary_only");
+        assertThat(result.diagnostics().coveredQuestions()).containsExactly("What is the shipment status?");
+        assertThat(result.diagnostics().deferredQuestions()).isEmpty();
         assertThat(result.diagnostics().systemPrompt()).contains("safe and concise customer reply");
         assertThat(result.diagnostics().userPrompt()).contains("Customer email subject");
         assertThat(result.diagnostics().userPrompt()).contains("Context mode:");
@@ -132,6 +136,28 @@ class TemplateReplyDraftServiceTest {
         assertThat(result.diagnostics().contextStrongSignals()).containsExactly("tracking_number=ZX987654");
         assertThat(result.diagnostics().userPrompt()).contains("Recent conversation rounds:");
         assertThat(result.diagnostics().userPrompt()).contains("Earlier the customer asked about the same shipment progress.");
+    }
+
+    @Test
+    void shouldDeferSecondaryQuestionsInsteadOfMixingThemIntoSingleTemplateReply() {
+        TemplateReplyDraftService service = new TemplateReplyDraftService(promptConfigService(), new StubLlmClient(Optional.empty()));
+
+        ReplyDraftingResult result = service.draftWithDiagnostics(
+                WorkflowRun.start("msg-3", "thread-3"),
+                mail(),
+                normalizationResult(ProcessingDisposition.CONTINUE, List.of("Can you also confirm the estimated delivery time?")),
+                routeResult(),
+                new ContextSnapshot("customer asked for shipping progress yesterday", List.of(), List.of()),
+                successFacts(),
+                knowledgeResult()
+        );
+
+        assertThat(result.diagnostics().coverageMode()).isEqualTo("primary_with_deferred_secondary");
+        assertThat(result.diagnostics().coveredQuestions()).containsExactly("What is the shipment status?");
+        assertThat(result.diagnostics().deferredQuestions()).containsExactly("Can you also confirm the estimated delivery time?");
+        assertThat(result.diagnostics().userPrompt()).contains("Deferred question(s):");
+        assertThat(result.draft().getBody()).contains("Scope note:");
+        assertThat(result.draft().getBody()).contains("Additional questions captured for follow-up");
     }
 
     @Test
@@ -208,10 +234,16 @@ class TemplateReplyDraftServiceTest {
     }
 
     private static IntentNormalizationResult normalizationResult(ProcessingDisposition disposition) {
+        return normalizationResult(disposition, List.of());
+    }
+
+    private static IntentNormalizationResult normalizationResult(ProcessingDisposition disposition, List<String> secondaryQuestions) {
         return new IntentNormalizationResult(
-                "Customer asks for shipping status.",
+                secondaryQuestions.isEmpty()
+                        ? "Customer asks for shipping status."
+                        : "Customer asks for shipping status. Secondary questions: " + String.join("; ", secondaryQuestions),
                 "What is the shipment status?",
-                List.of(),
+                secondaryQuestions,
                 List.of(CustomerScene.AFTER_SALES),
                 List.of("logistics_tracking"),
                 List.of("order_id_or_tracking_no"),

@@ -172,6 +172,9 @@ class WorkflowAnalysisServiceTest {
                                         true,
                                         true,
                                         null,
+                                        "primary_only",
+                                        List.of("What is the tracking status?"),
+                                        List.of(),
                                         "summary_only",
                                         "Write a safe and concise customer reply.",
                                         "Customer email subject:\nNeed help",
@@ -248,6 +251,8 @@ class WorkflowAnalysisServiceTest {
         assertThat(view.replyDiagnostics().replySource()).isEqualTo("llm");
         assertThat(view.replyDiagnostics().llmAttempted()).isTrue();
         assertThat(view.replyDiagnostics().llmResponseAccepted()).isTrue();
+        assertThat(view.replyDiagnostics().coverageMode()).isEqualTo("primary_only");
+        assertThat(view.replyDiagnostics().coveredQuestions()).containsExactly("What is the tracking status?");
         assertThat(view.replyDiagnostics().contextMode()).isEqualTo("summary_only");
         assertThat(view.replyDiagnostics().systemPrompt()).contains("safe and concise customer reply");
         assertThat(view.replyDiagnostics().contextStrongSignals()).contains("tracking_number=ZX987654");

@@ -57,6 +57,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
         String subject = "Re: " + mail.subject();
         ReplyDraftStatus status = decideStatus(normalizationResult, businessFactResult);
         ContextPromptPayload contextPromptPayload = buildContextPromptPayload(contextSnapshot);
+        ReplyCoveragePlan coveragePlan = buildCoveragePlan(normalizationResult);
         ReplyBodyResult replyBodyResult = buildBody(
                 mail,
                 routeResult,
@@ -64,6 +65,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 businessFactResult,
                 knowledgeRetrieveResult,
                 contextPromptPayload,
+                coveragePlan,
                 status
         );
         String notes = "scene=%s, subIntent=%s, replySource=%s"
@@ -75,6 +77,9 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 replyBodyResult.llmAttempted(),
                 replyBodyResult.llmResponseAccepted(),
                 replyBodyResult.fallbackReason(),
+                coveragePlan.mode(),
+                coveragePlan.coveredQuestions(),
+                coveragePlan.deferredQuestions(),
                 contextPromptPayload.mode(),
                 replyBodyResult.systemPrompt(),
                 replyBodyResult.userPrompt(),
@@ -104,11 +109,15 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                                       BusinessFactResult businessFactResult,
                                       KnowledgeRetrieveResult knowledgeRetrieveResult,
                                       ContextPromptPayload contextPromptPayload,
+                                      ReplyCoveragePlan coveragePlan,
                                       ReplyDraftStatus status) {
         PromptTemplateConfig promptConfig = promptConfigService.currentPromptConfig();
         if (status == ReplyDraftStatus.FOLLOW_UP_NEEDED) {
             return new ReplyBodyResult(
-                    renderTemplate(promptConfig.followUpTemplate(), normalizationResult.primaryQuestion(), routeResult.scene().name()),
+                    appendCoverageNote(
+                            renderTemplate(promptConfig.followUpTemplate(), normalizationResult.primaryQuestion(), routeResult.scene().name()),
+                            coveragePlan
+                    ),
                     "follow-up-template",
                     false,
                     false,
@@ -120,7 +129,10 @@ public class TemplateReplyDraftService implements ReplyDraftService {
 
         if (status == ReplyDraftStatus.HUMAN_REVIEW_REQUIRED) {
             return new ReplyBodyResult(
-                    renderTemplate(promptConfig.humanReviewTemplate(), normalizationResult.primaryQuestion(), routeResult.scene().name()),
+                    appendCoverageNote(
+                            renderTemplate(promptConfig.humanReviewTemplate(), normalizationResult.primaryQuestion(), routeResult.scene().name()),
+                            coveragePlan
+                    ),
                     "human-review-template",
                     false,
                     false,
@@ -138,16 +150,17 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 businessFactResult,
                 knowledgeRetrieveResult,
                 contextPromptPayload,
+                coveragePlan,
                 promptConfig.directReplySuffix()
         );
-        String fallbackBody = buildTemplateDirectReply(
+        String fallbackBody = appendCoverageNote(buildTemplateDirectReply(
                 routeResult,
                 normalizationResult,
                 businessFactResult,
                 knowledgeRetrieveResult,
                 contextPromptPayload,
                 promptConfig.directReplySuffix()
-        );
+        ), coveragePlan);
         return llmClient.complete(systemPrompt, userPrompt)
                 .filter(value -> !value.isBlank())
                 .map(body -> new ReplyBodyResult(body, "llm", true, true, null, systemPrompt, userPrompt))
@@ -168,6 +181,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                                           BusinessFactResult businessFactResult,
                                           KnowledgeRetrieveResult knowledgeRetrieveResult,
                                           ContextPromptPayload contextPromptPayload,
+                                          ReplyCoveragePlan coveragePlan,
                                           String directReplySuffix) {
         return """
                 Customer email subject:
@@ -185,6 +199,15 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 Routed scene and intent:
                 - scene=%s
                 - subIntent=%s
+
+                Reply coverage mode:
+                %s
+
+                Covered question(s):
+                %s
+
+                Deferred question(s):
+                %s
 
                 Context mode:
                 %s
@@ -213,6 +236,9 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 normalizationResult.primaryQuestion(),
                 routeResult.scene(),
                 routeResult.subIntent(),
+                coveragePlan.mode(),
+                renderList(coveragePlan.coveredQuestions(), "none"),
+                renderList(coveragePlan.deferredQuestions(), "none"),
                 contextPromptPayload.mode(),
                 renderList(contextPromptPayload.strongSignals(), "none"),
                 contextPromptPayload.summary(),
@@ -387,6 +413,15 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 .replace("{{scene}}", scene);
     }
 
+    private ReplyCoveragePlan buildCoveragePlan(IntentNormalizationResult normalizationResult) {
+        List<String> coveredQuestions = List.of(normalizationResult.primaryQuestion());
+        List<String> deferredQuestions = normalizationResult.secondaryQuestions().stream()
+                .filter(value -> value != null && !value.isBlank())
+                .toList();
+        String mode = deferredQuestions.isEmpty() ? "primary_only" : "primary_with_deferred_secondary";
+        return new ReplyCoveragePlan(mode, coveredQuestions, deferredQuestions);
+    }
+
     private ContextPromptPayload buildContextPromptPayload(ContextSnapshot contextSnapshot) {
         if (contextSnapshot == null) {
             return new ContextPromptPayload("none", "none", List.of(), List.of(), List.of("no context available"));
@@ -449,6 +484,20 @@ public class TemplateReplyDraftService implements ReplyDraftService {
             return String.join(" ; ", contextPromptPayload.strongSignals());
         }
         return "no reusable context";
+    }
+
+    private String appendCoverageNote(String body, ReplyCoveragePlan coveragePlan) {
+        if (coveragePlan.deferredQuestions().isEmpty()) {
+            return body;
+        }
+        return body + """
+
+                
+                Scope note:
+                - This reply focuses on the primary question first.
+                - Additional questions captured for follow-up if still needed:
+                %s
+                """.formatted(renderList(coveragePlan.deferredQuestions(), "none"));
     }
 
     private String renderFacts(BusinessFactResult businessFactResult) {
@@ -539,5 +588,10 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                                         List<String> recentMessages,
                                         List<String> strongSignals,
                                         List<String> preview) {
+    }
+
+    private record ReplyCoveragePlan(String mode,
+                                     List<String> coveredQuestions,
+                                     List<String> deferredQuestions) {
     }
 }
