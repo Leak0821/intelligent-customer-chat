@@ -278,6 +278,13 @@
 - 订单状态、物流节点、售后处理进度必须来自业务事实层
 - 回复生成时应先使用业务 facts，再补充知识 snippets
 - 第一阶段不应把未治理的大量零散文档直接并入知识源
+- 第一阶段允许通过受控后台入口手工导入 `CSV / Word / PDF`
+- 导入链路应先把文件落成父文档，再按稳定语义边界切成子文档写入 ES
+- 子文档必须保留来源文件、场景、子意图和 `parent_id`，方便后续检索归因与回放
+- 父文档必须带 `knowledge_key / version / status / content_hash`
+- 子文档必须带 `knowledge_key / version / status / chunk_hash`
+- 新的 `active` 版本导入后，应自动把同 `knowledge_key` 的旧 `active` 文档整体降级为 `deprecated`
+- 默认检索只查 `active` 子文档，不把历史版本和当前版本混在一起召回
 
 参考合同：
 

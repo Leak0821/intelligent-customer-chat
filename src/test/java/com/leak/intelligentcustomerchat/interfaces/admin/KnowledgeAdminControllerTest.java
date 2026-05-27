@@ -1,5 +1,6 @@
 package com.leak.intelligentcustomerchat.interfaces.admin;
 
+import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeImportService;
 import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeDocument;
 import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeRetrieveResult;
 import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeSnippet;
@@ -25,7 +26,8 @@ class KnowledgeAdminControllerTest {
                 chunkIndexWriter,
                 new EmptyObjectProvider<>(),
                 new KnowledgeSeedCatalog(),
-                new HeuristicKnowledgeChunker()
+                new HeuristicKnowledgeChunker(),
+                command -> new KnowledgeImportService.KnowledgeImportBatchResult("batch", 0, 0, 0, 0, List.of())
         );
 
         List<KnowledgeAdminController.KnowledgeSeedPreview> previews = controller.listSeeds();

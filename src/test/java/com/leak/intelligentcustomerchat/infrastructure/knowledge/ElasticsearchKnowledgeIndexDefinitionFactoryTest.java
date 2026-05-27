@@ -33,7 +33,10 @@ class ElasticsearchKnowledgeIndexDefinitionFactoryTest {
         assertThat(definition).containsKeys("settings", "mappings");
         Map<String, Object> mappings = (Map<String, Object>) definition.get("mappings");
         Map<String, Object> propertyMap = (Map<String, Object>) mappings.get("properties");
-        assertThat(propertyMap).containsKeys("doc_type", "parent_id", "chunk_order", "title", "content", "content_vector");
+        assertThat(propertyMap).containsKeys(
+                "doc_type", "parent_id", "chunk_order", "title", "content", "content_vector",
+                "knowledge_key", "version", "status", "content_hash", "chunk_hash", "superseded_by_version", "superseded_at"
+        );
         assertThat((Map<String, Object>) propertyMap.get("content_vector"))
                 .containsEntry("type", "dense_vector")
                 .containsEntry("dims", 16)

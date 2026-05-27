@@ -23,19 +23,22 @@ public class ElasticsearchChunkIndexWriter implements ChunkIndexWriter {
     private final KnowledgeChunker knowledgeChunker;
     private final EmbeddingService embeddingService;
     private final ElasticsearchKnowledgeIndexManager indexManager;
+    private final KnowledgeContentHasher knowledgeContentHasher;
 
     public ElasticsearchChunkIndexWriter(RestClient restClient,
                                          ObjectMapper objectMapper,
                                          KnowledgeElasticsearchProperties properties,
                                          KnowledgeChunker knowledgeChunker,
                                          EmbeddingService embeddingService,
-                                         ElasticsearchKnowledgeIndexManager indexManager) {
+                                         ElasticsearchKnowledgeIndexManager indexManager,
+                                         KnowledgeContentHasher knowledgeContentHasher) {
         this.restClient = restClient;
         this.objectMapper = objectMapper;
         this.properties = properties;
         this.knowledgeChunker = knowledgeChunker;
         this.embeddingService = embeddingService;
         this.indexManager = indexManager;
+        this.knowledgeContentHasher = knowledgeContentHasher;
     }
 
     @Override
@@ -50,7 +53,7 @@ public class ElasticsearchChunkIndexWriter implements ChunkIndexWriter {
         indexed += upsertDocument(buildParentDocumentId(document), buildParentBody(document));
         List<KnowledgeChunk> chunks = knowledgeChunker.chunk(document);
         for (KnowledgeChunk chunk : chunks) {
-            indexed += upsertDocument(chunk.chunkId(), buildChunkBody(chunk));
+            indexed += upsertDocument(buildChunkDocumentId(chunk), buildChunkBody(chunk));
         }
         return indexed;
     }
@@ -77,6 +80,7 @@ public class ElasticsearchChunkIndexWriter implements ChunkIndexWriter {
         body.put(properties.titleField(), document.title());
         body.put(properties.contentField(), document.content());
         body.put(properties.vectorField(), embeddingService.embed(document.content()));
+        body.put("content_hash", knowledgeContentHasher.hashText(document.content()));
         body.putAll(document.metadata());
         return body;
     }
@@ -89,7 +93,12 @@ public class ElasticsearchChunkIndexWriter implements ChunkIndexWriter {
         body.put(properties.contentField(), chunk.content());
         body.put(properties.vectorField(), embeddingService.embed(chunk.content()));
         body.put("chunk_order", chunk.chunkOrder());
+        body.put("chunk_hash", knowledgeContentHasher.hashText(chunk.content()));
         body.putAll(chunk.metadata());
         return body;
+    }
+
+    private String buildChunkDocumentId(KnowledgeChunk chunk) {
+        return "chunk-" + chunk.parentDocumentId() + "-" + chunk.chunkOrder() + "-" + knowledgeContentHasher.shortHash(chunk.content());
     }
 }

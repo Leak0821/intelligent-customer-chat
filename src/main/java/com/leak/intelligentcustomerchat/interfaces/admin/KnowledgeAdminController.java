@@ -1,5 +1,6 @@
 package com.leak.intelligentcustomerchat.interfaces.admin;
 
+import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeImportService;
 import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeDocument;
 import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeRetrieveResult;
 import com.leak.intelligentcustomerchat.domain.knowledge.RetrievalQuery;
@@ -9,13 +10,16 @@ import com.leak.intelligentcustomerchat.infrastructure.knowledge.KnowledgeChunke
 import com.leak.intelligentcustomerchat.infrastructure.knowledge.KnowledgeRetriever;
 import com.leak.intelligentcustomerchat.infrastructure.knowledge.KnowledgeSeedCatalog;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,17 +32,20 @@ public class KnowledgeAdminController {
     private final ObjectProvider<ElasticsearchKnowledgeIndexManager> indexManagerProvider;
     private final KnowledgeSeedCatalog knowledgeSeedCatalog;
     private final KnowledgeChunker knowledgeChunker;
+    private final KnowledgeImportService knowledgeImportService;
 
     public KnowledgeAdminController(KnowledgeRetriever knowledgeRetriever,
                                     ChunkIndexWriter chunkIndexWriter,
                                     ObjectProvider<ElasticsearchKnowledgeIndexManager> indexManagerProvider,
                                     KnowledgeSeedCatalog knowledgeSeedCatalog,
-                                    KnowledgeChunker knowledgeChunker) {
+                                    KnowledgeChunker knowledgeChunker,
+                                    KnowledgeImportService knowledgeImportService) {
         this.knowledgeRetriever = knowledgeRetriever;
         this.chunkIndexWriter = chunkIndexWriter;
         this.indexManagerProvider = indexManagerProvider;
         this.knowledgeSeedCatalog = knowledgeSeedCatalog;
         this.knowledgeChunker = knowledgeChunker;
+        this.knowledgeImportService = knowledgeImportService;
     }
 
     @GetMapping("/index/status")
@@ -88,14 +95,36 @@ public class KnowledgeAdminController {
 
     @PostMapping("/index/sample")
     public IndexResult indexSample(@RequestBody SampleKnowledgeRequest request) {
+        String documentId = request.documentId() == null || request.documentId().isBlank() ? UUID.randomUUID().toString() : request.documentId();
+        Map<String, String> metadata = new java.util.LinkedHashMap<>(request.metadata() == null ? Map.of() : request.metadata());
+        metadata.putIfAbsent("knowledge_key", documentId);
+        metadata.putIfAbsent("version", "manual-v1");
+        metadata.putIfAbsent("status", "active");
         KnowledgeDocument document = new KnowledgeDocument(
-                request.documentId() == null || request.documentId().isBlank() ? UUID.randomUUID().toString() : request.documentId(),
+                documentId,
                 request.title(),
                 request.content(),
-                request.metadata()
+                metadata
         );
         int indexed = chunkIndexWriter.index(document);
         return new IndexResult(document.documentId(), indexed);
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public KnowledgeImportService.KnowledgeImportBatchResult importFiles(@RequestParam("files") MultipartFile[] files,
+                                                                         @RequestParam(required = false) String knowledgeKey,
+                                                                         @RequestParam(defaultValue = "v1") String version,
+                                                                         @RequestParam(defaultValue = "active") String status,
+                                                                         @RequestParam(defaultValue = "UNKNOWN") String scene,
+                                                                         @RequestParam(defaultValue = "general_inquiry") String subIntents,
+                                                                         @RequestParam(defaultValue = "admin-upload") String source) {
+        List<KnowledgeImportService.KnowledgeImportFile> importFiles = List.of(files).stream()
+                .filter(file -> file != null && !file.isEmpty())
+                .map(this::toImportFile)
+                .toList();
+        return knowledgeImportService.importFiles(
+                new KnowledgeImportService.KnowledgeImportCommand(importFiles, knowledgeKey, version, status, scene, subIntents, source)
+        );
     }
 
     @GetMapping("/search")
@@ -140,5 +169,17 @@ public class KnowledgeAdminController {
             int indexedDocumentCount,
             int indexedRecordCount
     ) {
+    }
+
+    private KnowledgeImportService.KnowledgeImportFile toImportFile(MultipartFile file) {
+        try {
+            return new KnowledgeImportService.KnowledgeImportFile(
+                    file.getOriginalFilename(),
+                    file.getContentType(),
+                    file.getBytes()
+            );
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("读取上传文件失败: " + file.getOriginalFilename(), ex);
+        }
     }
 }

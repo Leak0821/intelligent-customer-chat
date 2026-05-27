@@ -314,10 +314,29 @@ APP_MAIL_DISPATCH_RETRY_BACKOFF_MULTIPLIER=2
 
 ## 知识库管理接口
 
+- `GET /api/knowledge/index/status`：查看当前 ES 知识索引状态
+- `POST /api/knowledge/index/ensure`：确保知识索引已创建
 - `GET /api/knowledge/seeds`：查看内置知识样本摘要
 - `POST /api/knowledge/index/seeds`：批量灌入内置知识样本
 - `POST /api/knowledge/index/sample`：手工灌入单篇知识文档
+- `POST /api/knowledge/import`：上传 `CSV / Word / PDF`，携带 `knowledgeKey / version / status` 并按父子文档策略导入 ES
 - `GET /api/knowledge/search?q=...`：直接验证当前检索结果
+
+当前静态首页 `http://127.0.0.1:8080/` 也已经补了“知识导入 / RAG”区域，可直接完成：
+
+- 确保 ES 索引存在
+- 导入内置 knowledge seeds
+- 上传 `CSV / Word / PDF` 文件
+- 为知识设置 `knowledge_key / version / status`
+- 查看批次导入结果、文档数、chunk 数和索引记录数
+- 直接发起一次检索验证
+
+当前版本治理的最小规则是：
+
+- 同一 `knowledge_key + version` 不允许重复导入
+- 同一 `knowledge_key` 下如果 `content_hash` 相同，则视为重复内容
+- 新的 `active` 版本导入后，会自动把旧的 `active` 版本降为 `deprecated`
+- 检索默认只查 `active` 的 chunk
 
 ## 业务数据管理接口
 
