@@ -9,8 +9,10 @@ import com.leak.intelligentcustomerchat.domain.runtime.RetrievalSettingsConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Component
 public class KnowledgeRetrievalQueryBuilder {
@@ -20,14 +22,17 @@ public class KnowledgeRetrievalQueryBuilder {
                                 BusinessFactResult businessFactResult,
                                 RetrievalSettingsConfig retrievalSettings) {
         List<String> segments = new ArrayList<>();
-        addSegment(segments, normalizationResult.primaryQuestion());
-        addSegment(segments, normalizeRouteHint(routeResult.subIntent()));
+        addSegment(segments, prefixed("primary", normalizationResult.primaryQuestion()));
+        addSegment(segments, buildRewriteHint(normalizationResult));
+        addSegment(segments, buildSecondaryHint(normalizationResult.secondaryQuestions()));
+        addSegment(segments, prefixed("route", normalizeRouteHint(routeResult.subIntent())));
+        addSegment(segments, buildSignalHint(contextSnapshot));
         addSegment(segments, buildContextHint(contextSnapshot));
         addSegment(segments, buildFactHint(businessFactResult));
 
         String queryText = String.join(" | ", segments);
         if (queryText.isBlank()) {
-            queryText = routeResult.subIntent();
+            queryText = normalizeRouteHint(routeResult.subIntent());
         }
         return new RetrievalQuery(
                 queryText,
@@ -65,7 +70,60 @@ public class KnowledgeRetrievalQueryBuilder {
         if (contextSnapshot == null || contextSnapshot.threadSummary() == null || contextSnapshot.threadSummary().isBlank()) {
             return "";
         }
-        return "context " + preview(contextSnapshot.threadSummary(), 160);
+        return prefixed("context", preview(contextSnapshot.threadSummary(), 160));
+    }
+
+    private String buildRewriteHint(IntentNormalizationResult normalizationResult) {
+        if (normalizationResult == null) {
+            return "";
+        }
+        String normalizedRequest = preview(normalizationResult.normalizedRequest(), 180);
+        String primaryQuestion = preview(normalizationResult.primaryQuestion(), 120);
+        if (normalizedRequest.isBlank() || normalizedRequest.equalsIgnoreCase(primaryQuestion)) {
+            return "";
+        }
+        return prefixed("rewrite", normalizedRequest);
+    }
+
+    private String buildSecondaryHint(List<String> secondaryQuestions) {
+        if (secondaryQuestions == null || secondaryQuestions.isEmpty()) {
+            return "";
+        }
+        List<String> segments = secondaryQuestions.stream()
+                .map(value -> preview(value, 100))
+                .filter(value -> !value.isBlank())
+                .limit(2)
+                .toList();
+        if (segments.isEmpty()) {
+            return "";
+        }
+        return prefixed("secondary", String.join(" ; ", segments));
+    }
+
+    private String buildSignalHint(ContextSnapshot contextSnapshot) {
+        if (contextSnapshot == null || contextSnapshot.strongSignals().isEmpty()) {
+            return "";
+        }
+        Set<String> signalLabels = new LinkedHashSet<>();
+        for (String signal : contextSnapshot.strongSignals()) {
+            if (signal == null || signal.isBlank()) {
+                continue;
+            }
+            if (signal.startsWith("order_id=")) {
+                signalLabels.add("order identifier");
+                continue;
+            }
+            if (signal.startsWith("tracking_number=")) {
+                signalLabels.add("tracking identifier");
+                continue;
+            }
+            int separatorIndex = signal.indexOf('=');
+            signalLabels.add(separatorIndex > 0 ? signal.substring(0, separatorIndex).replace('_', ' ') : signal);
+        }
+        if (signalLabels.isEmpty()) {
+            return "";
+        }
+        return prefixed("signals", String.join(" ; ", signalLabels));
     }
 
     private String buildFactHint(BusinessFactResult businessFactResult) {
@@ -82,10 +140,20 @@ public class KnowledgeRetrievalQueryBuilder {
         if (factSegments.isEmpty()) {
             return "";
         }
-        return "facts " + String.join(" ; ", factSegments);
+        return prefixed("facts", String.join(" ; ", factSegments));
+    }
+
+    private String prefixed(String prefix, String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return prefix + " " + value.trim();
     }
 
     private String preview(String value, int maxLength) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
         String normalized = value.replaceAll("\\s+", " ").trim();
         if (normalized.length() <= maxLength) {
             return normalized;

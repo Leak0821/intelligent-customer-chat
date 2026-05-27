@@ -58,8 +58,9 @@ class DefaultKnowledgeRetrieveServiceTest {
 
         assertThat(result).isSameAs(retriever.result);
         assertThat(retriever.lastQuery).isNotNull();
-        assertThat(retriever.lastQuery.queryText()).contains("What is the refund process for my delivered order?");
-        assertThat(retriever.lastQuery.queryText()).contains("return refund warranty replacement policy process");
+        assertThat(retriever.lastQuery.queryText()).contains("primary What is the refund process for my delivered order?");
+        assertThat(retriever.lastQuery.queryText()).contains("rewrite Customer asks for refund policy after receiving the product.");
+        assertThat(retriever.lastQuery.queryText()).contains("route return refund warranty replacement policy process");
         assertThat(retriever.lastQuery.queryText()).contains("context customer received the order and wants to know next steps");
         assertThat(retriever.lastQuery.queryText()).contains("facts order status=delivered");
         assertThat(retriever.lastQuery.filters()).containsExactly("order_id=MNOP2468");

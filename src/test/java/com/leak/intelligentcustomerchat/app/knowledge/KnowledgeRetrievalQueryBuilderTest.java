@@ -24,7 +24,7 @@ class KnowledgeRetrievalQueryBuilderTest {
                 new IntentNormalizationResult(
                         "Customer wants the latest logistics update for order ABCD1234.",
                         "Where is my package now?",
-                        List.of(),
+                        List.of("Can you also confirm the current ETA?"),
                         List.of(CustomerScene.AFTER_SALES),
                         List.of("logistics_tracking"),
                         List.of("order_id_or_tracking_no"),
@@ -45,8 +45,11 @@ class KnowledgeRetrievalQueryBuilderTest {
                 new RetrievalSettingsConfig(10, true, 60)
         );
 
-        assertThat(query.queryText()).contains("Where is my package now?");
-        assertThat(query.queryText()).contains("logistics tracking delivery update shipping timeline");
+        assertThat(query.queryText()).contains("primary Where is my package now?");
+        assertThat(query.queryText()).contains("rewrite Customer wants the latest logistics update for order ABCD1234.");
+        assertThat(query.queryText()).contains("secondary Can you also confirm the current ETA?");
+        assertThat(query.queryText()).contains("route logistics tracking delivery update shipping timeline");
+        assertThat(query.queryText()).contains("signals tracking identifier");
         assertThat(query.queryText()).contains("context customer asked again after previous email");
         assertThat(query.queryText()).contains("facts current logistics status=in_transit");
         assertThat(query.filters()).containsExactly("tracking_number=ZXCV9876");
@@ -72,7 +75,7 @@ class KnowledgeRetrievalQueryBuilderTest {
                 new RetrievalSettingsConfig(5, true, 60)
         );
 
-        assertThat(query.queryText()).isEqualTo("general inquiry");
+        assertThat(query.queryText()).isEqualTo("route general inquiry");
         assertThat(query.filters()).isEmpty();
         assertThat(query.topK()).isEqualTo(5);
     }

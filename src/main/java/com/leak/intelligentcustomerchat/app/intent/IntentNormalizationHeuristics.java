@@ -6,8 +6,10 @@ import com.leak.intelligentcustomerchat.domain.intent.ProcessingDisposition;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 final class IntentNormalizationHeuristics {
@@ -23,11 +25,12 @@ final class IntentNormalizationHeuristics {
     }
 
     HeuristicAnalysis analyze(InboundMail mail) {
-        String normalizedRequest = mergeMailText(mail.subject(), mail.rawBody());
-        String lowerCaseRequest = normalizedRequest.toLowerCase(Locale.ROOT);
+        String mergedMailText = mergeMailText(mail.subject(), mail.rawBody());
+        QuestionRewrite questionRewrite = rewriteQuestions(mail.subject(), mail.rawBody(), mergedMailText);
+        String lowerCaseRequest = mergedMailText.toLowerCase(Locale.ROOT);
         List<String> matchedSignals = new ArrayList<>();
 
-        boolean hasExplicitOrderId = ORDER_ID_PATTERN.matcher(normalizedRequest).find();
+        boolean hasExplicitOrderId = ORDER_ID_PATTERN.matcher(mergedMailText).find();
         boolean prePurchasePolicyQuestion = isPrePurchasePolicyQuestion(lowerCaseRequest);
         boolean preSalesPlanningQuestion = isPreSalesPlanningQuestion(lowerCaseRequest);
         boolean clearAfterSalesIssue = isClearAfterSalesIssue(lowerCaseRequest);
@@ -143,9 +146,9 @@ final class IntentNormalizationHeuristics {
 
         return new HeuristicAnalysis(
                 new IntentNormalizationResult(
-                        normalizedRequest,
-                        normalizedRequest,
-                        List.of(),
+                        questionRewrite.normalizedRequest(),
+                        questionRewrite.primaryQuestion(),
+                        questionRewrite.secondaryQuestions(),
                         sceneCandidates,
                         subIntentCandidates,
                         requiredEntities,
@@ -162,6 +165,77 @@ final class IntentNormalizationHeuristics {
 
     String mergeMailText(String subject, String body) {
         return (subject + ". " + body).replaceAll("\\s+", " ").trim();
+    }
+
+    private QuestionRewrite rewriteQuestions(String subject, String body, String mergedMailText) {
+        List<String> actionableSegments = extractActionableSegments(body);
+        if (actionableSegments.isEmpty()) {
+            String fallback = normalizeSegment(mergedMailText);
+            return new QuestionRewrite(fallback, fallback, List.of());
+        }
+
+        String primaryQuestion = actionableSegments.get(0);
+        List<String> secondaryQuestions = actionableSegments.size() > 1
+                ? List.copyOf(actionableSegments.subList(1, Math.min(actionableSegments.size(), 4)))
+                : List.of();
+
+        if (looksLikePureGreeting(primaryQuestion)) {
+            primaryQuestion = normalizeSegment(mergeMailText(subject, body));
+            secondaryQuestions = List.of();
+        }
+
+        String normalizedRequest = secondaryQuestions.isEmpty()
+                ? primaryQuestion
+                : primaryQuestion + " Secondary questions: " + String.join("; ", secondaryQuestions);
+        return new QuestionRewrite(normalizedRequest, primaryQuestion, secondaryQuestions);
+    }
+
+    private List<String> extractActionableSegments(String body) {
+        if (body == null || body.isBlank()) {
+            return List.of();
+        }
+        String[] rawSegments = body.replace('\r', '\n').split("[\\n!?;]+");
+        Set<String> actionable = new LinkedHashSet<>();
+        for (String rawSegment : rawSegments) {
+            String segment = normalizeSegment(rawSegment);
+            if (segment.isBlank()) {
+                continue;
+            }
+            if (isGreetingOrSignoff(segment)) {
+                continue;
+            }
+            actionable.add(segment);
+        }
+        return List.copyOf(actionable);
+    }
+
+    private boolean isGreetingOrSignoff(String segment) {
+        String lowerCase = segment.toLowerCase(Locale.ROOT);
+        return looksLikePureGreeting(segment)
+                || lowerCase.startsWith("thanks")
+                || lowerCase.startsWith("thank you")
+                || lowerCase.startsWith("best regards")
+                || lowerCase.startsWith("kind regards")
+                || lowerCase.startsWith("regards")
+                || lowerCase.startsWith("sent from");
+    }
+
+    private boolean looksLikePureGreeting(String segment) {
+        String lowerCase = segment.toLowerCase(Locale.ROOT);
+        return lowerCase.equals("hello")
+                || lowerCase.equals("hi")
+                || lowerCase.equals("dear team")
+                || lowerCase.equals("dear support")
+                || lowerCase.equals("hello team")
+                || lowerCase.equals("hello support")
+                || lowerCase.equals("hi team")
+                || lowerCase.equals("hi support");
+    }
+
+    private String normalizeSegment(String value) {
+        return value.replaceAll("\\s+", " ").trim()
+                .replaceAll("^[,.:\\-\\s]+", "")
+                .replaceAll("[,.:\\-\\s]+$", "");
     }
 
     private boolean isPreSalesPlanningQuestion(String text) {
@@ -275,6 +349,13 @@ final class IntentNormalizationHeuristics {
     record HeuristicAnalysis(
             IntentNormalizationResult result,
             List<String> matchedSignals
+    ) {
+    }
+
+    private record QuestionRewrite(
+            String normalizedRequest,
+            String primaryQuestion,
+            List<String> secondaryQuestions
     ) {
     }
 }

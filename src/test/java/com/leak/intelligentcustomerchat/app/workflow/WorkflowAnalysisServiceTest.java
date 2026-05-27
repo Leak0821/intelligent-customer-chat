@@ -225,8 +225,10 @@ class WorkflowAnalysisServiceTest {
         assertThat(view.businessFactDiagnostics().factRole()).contains("latest order and logistics truth");
         assertThat(view.businessFactDiagnostics().resolvedEntities()).contains("tracking_number=ZX987654");
         assertThat(view.knowledgeDiagnostics().retrievalQuery().subIntent()).isEqualTo("logistics_tracking");
-        assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("What is the tracking status?");
-        assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("logistics tracking delivery update shipping timeline");
+        assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("primary What is the tracking status?");
+        assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("rewrite Customer wants the tracking status.");
+        assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("route logistics tracking delivery update shipping timeline");
+        assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("signals tracking identifier");
         assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("context customer asked again after previous email");
         assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("facts current logistics status=in_transit");
         assertThat(view.knowledgeDiagnostics().retrievalSource()).isEqualTo("elasticsearch-hybrid");

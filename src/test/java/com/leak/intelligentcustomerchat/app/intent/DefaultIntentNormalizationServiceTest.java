@@ -75,6 +75,33 @@ class DefaultIntentNormalizationServiceTest {
     }
 
     @Test
+    void shouldRewritePrimaryAndSecondaryQuestionsWhenLlmIsUnavailable() {
+        DefaultIntentNormalizationService service = new DefaultIntentNormalizationService(
+                promptConfigService(),
+                new StubLlmClient(Optional.empty()),
+                new ObjectMapper()
+        );
+
+        IntentNormalizationResult result = service.normalize(mail(
+                "Need help with shipping",
+                """
+                Hello team,
+
+                Can you recommend a product for a bedroom setup?
+                Is warm light available?
+
+                Thanks
+                """
+        ));
+
+        assertThat(result.primaryQuestion()).isEqualTo("Can you recommend a product for a bedroom setup");
+        assertThat(result.secondaryQuestions()).containsExactly("Is warm light available");
+        assertThat(result.normalizedRequest()).contains("Secondary questions: Is warm light available");
+        assertThat(result.sceneCandidates()).containsExactly(CustomerScene.PRE_SALES);
+        assertThat(result.subIntentCandidates()).contains("product_recommendation");
+    }
+
+    @Test
     void shouldKeepOrderIdGuardrailEvenWhenLlmAttemptsToRelaxIt() {
         String json = """
                 {
