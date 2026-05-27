@@ -47,6 +47,7 @@ public record WorkflowEvaluationSampleView(
         List<WorkflowEvaluationCountView> reviewFeedbackTagCounts,
         List<String> reviewTimeline,
         List<String> riskFlags,
+        WorkflowRiskDecisionView riskDecision,
         OffsetDateTime sampledAt
 ) {
     public WorkflowEvaluationSampleView {
@@ -77,6 +78,7 @@ public record WorkflowEvaluationSampleView(
         Objects.requireNonNull(reviewFeedbackTagCounts, "reviewFeedbackTagCounts must not be null");
         Objects.requireNonNull(reviewTimeline, "reviewTimeline must not be null");
         Objects.requireNonNull(riskFlags, "riskFlags must not be null");
+        Objects.requireNonNull(riskDecision, "riskDecision must not be null");
         Objects.requireNonNull(sampledAt, "sampledAt must not be null");
         businessFactSourceSystems = List.copyOf(businessFactSourceSystems);
         knowledgeSnippetIds = List.copyOf(knowledgeSnippetIds);

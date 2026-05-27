@@ -147,6 +147,12 @@ class WorkflowEvaluationServiceTest {
                 "draft_revised",
                 "review_resubmitted"
         );
+        assertThat(sample.riskDecision().riskLevel()).isEqualTo("HIGH");
+        assertThat(sample.riskDecision().releaseDecision()).isEqualTo("RETRY_PENDING");
+        assertThat(sample.riskDecision().sendAllowed()).isFalse();
+        assertThat(sample.riskDecision().recommendedAction()).isEqualTo("manual_review_required");
+        assertThat(sample.riskDecision().blockingReasons()).contains("dispatch_retry_pending", "review_rejected");
+        assertThat(sample.riskDecision().decisionSignals()).anyMatch(item -> item.equals("dispatch_status=RETRY_PENDING"));
         assertThat(sample.scene()).isEqualTo("AFTER_SALES");
         assertThat(sample.subIntent()).isEqualTo("LOGISTICS_TRACKING");
     }
@@ -342,6 +348,20 @@ class WorkflowEvaluationServiceTest {
                 new WorkflowEvaluationCountView("manual_review_required", 1),
                 new WorkflowEvaluationCountView("reply_template_fallback", 1),
                 new WorkflowEvaluationCountView("reply_fallback_recorded", 3)
+        );
+        assertThat(summary.riskLevels()).containsExactlyInAnyOrder(
+                new WorkflowEvaluationCountView("LOW", 1),
+                new WorkflowEvaluationCountView("MEDIUM", 1),
+                new WorkflowEvaluationCountView("HIGH", 1)
+        );
+        assertThat(summary.releaseDecisions()).containsExactlyInAnyOrder(
+                new WorkflowEvaluationCountView("HOLD_FOR_REVIEW", 2),
+                new WorkflowEvaluationCountView("NEED_CUSTOMER_FOLLOW_UP", 1)
+        );
+        assertThat(summary.recommendedActions()).containsExactlyInAnyOrder(
+                new WorkflowEvaluationCountView("await_review_decision", 1),
+                new WorkflowEvaluationCountView("manual_review_required", 1),
+                new WorkflowEvaluationCountView("request_customer_information", 1)
         );
         assertThat(filteredSummary.sampledCount()).isEqualTo(2);
         assertThat(filteredSummary.scenes()).containsExactly(new WorkflowEvaluationCountView("AFTER_SALES", 2));

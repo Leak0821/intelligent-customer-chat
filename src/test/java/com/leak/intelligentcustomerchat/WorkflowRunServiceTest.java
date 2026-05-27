@@ -124,6 +124,9 @@ class WorkflowRunServiceTest {
         assertThat(replay.evidence().businessFactRole()).contains("did not return a usable record");
         assertThat(replay.evidence().knowledgeRetrievalSource()).isNotBlank();
         assertThat(replay.evidence().replySource()).isNotBlank();
+        assertThat(replay.riskDecision().riskLevel()).isEqualTo("HIGH");
+        assertThat(replay.riskDecision().releaseDecision()).isEqualTo("HOLD_FOR_REVIEW");
+        assertThat(replay.riskDecision().recommendedAction()).isNotBlank();
         assertThat(replay.dispatches()).isEmpty();
         assertThat(replay.reviews()).isEmpty();
     }
@@ -183,6 +186,7 @@ class WorkflowRunServiceTest {
         assertThat(contextLoadedEvent.summary()).contains("reuse_context_order_id");
         var replay = workflowRunService.findReplay(secondRun.getRunId()).orElseThrow();
         assertThat(replay.evidence().businessFactStatus()).isEqualTo("SUCCESS");
+        assertThat(replay.riskDecision().releaseDecision()).isEqualTo("HOLD_FOR_REVIEW");
     }
 
     @Test

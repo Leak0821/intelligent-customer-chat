@@ -212,6 +212,9 @@ public class DemoScenarioCatalogService {
                 mapResultType(analysisView.draft().getStatus().name(), null),
                 "ANALYSIS_PREVIEW",
                 analysisView.draft().getStatus().name(),
+                mapAnalysisRiskLevel(summary.finalStatus()),
+                mapAnalysisReleaseDecision(summary.operatorDecision()),
+                "dispatch_reply".equals(summary.nextAction()),
                 summary.operatorDecision(),
                 summary.nextAction(),
                 analysisView.businessFactResult().status().name(),
@@ -302,6 +305,9 @@ public class DemoScenarioCatalogService {
                 validationView.passed() ? "校验通过" : "校验失败",
                 validationView.validatedMode().toUpperCase(Locale.ROOT),
                 defaultText(scenario.metadata().expectedDraftStatus(), "UNKNOWN"),
+                validationView.passed() ? "LOW" : "MEDIUM",
+                validationView.passed() ? "EXPECTATION_CONFIRMED" : "EXPECTATION_MISMATCH",
+                validationView.passed(),
                 validationView.passed() ? "scenario_expectation_matched" : "scenario_expectation_mismatch",
                 validationView.passed() ? "continue_demo" : "inspect_failed_checks",
                 defaultText(scenario.metadata().expectedBusinessFactStatus(), "UNKNOWN"),
@@ -330,6 +336,9 @@ public class DemoScenarioCatalogService {
                 resultType,
                 evaluation.workflowStatus(),
                 defaultText(evaluation.draftStatus(), "UNKNOWN"),
+                evaluation.riskDecision().riskLevel(),
+                evaluation.riskDecision().releaseDecision(),
+                evaluation.riskDecision().sendAllowed(),
                 operatorDecision,
                 nextAction,
                 evaluation.businessFactStatus(),
@@ -338,6 +347,26 @@ public class DemoScenarioCatalogService {
                 replyEvidence,
                 keyEvidence
         );
+    }
+
+    private String mapAnalysisRiskLevel(String finalStatus) {
+        return switch (finalStatus) {
+            case "BLOCKED" -> "CRITICAL";
+            case "HUMAN_REVIEW_REQUIRED" -> "HIGH";
+            case "FOLLOW_UP_NEEDED" -> "MEDIUM";
+            default -> "LOW";
+        };
+    }
+
+    private String mapAnalysisReleaseDecision(String operatorDecision) {
+        return switch (operatorDecision) {
+            case "blocked" -> "BLOCKED";
+            case "manual_review_required" -> "HOLD_FOR_REVIEW";
+            case "follow_up_required" -> "NEED_CUSTOMER_FOLLOW_UP";
+            case "direct_reply_ready" -> "READY_FOR_DISPATCH";
+            case "review_passed_waiting_dispatch" -> "DRAFT_READY";
+            default -> "OBSERVE";
+        };
     }
 
     private String deriveOperatorDecision(WorkflowEvaluationSampleView evaluation) {

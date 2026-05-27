@@ -101,6 +101,7 @@ curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 
 - 现在 `analysis.summary` 会先把“这是哪类邮件、为什么这么判、下一步做什么”直接提炼出来
 - 如果走 `demo/scenarios/{scenarioId}`，外层 `summary` 还能把不同 mode 的结果统一成一套讲法
+- 现在 `evaluation.riskDecision` 和 `replay.riskDecision` 还能直接告诉你“当前能不能放行、为什么不能放行、下一步该谁处理”
 - 系统不是直接生成回复，而是先做场景和子意图识别
 - 现在 analysis 结果里可以直接看到启发式基线、最终归一化结果和是否被模型改写
 - 还可以直接看到是模型生效还是启发式回退，以及为什么回退
@@ -178,6 +179,7 @@ curl "http://127.0.0.1:8080/api/workflows/evaluations/recent?limit=20&knowledgeR
 - `businessFactStatuses` 能直接看出这一批是缺编号、查无结果、冲突，还是 facts 本来就不需要
 - `knowledgeRoles / knowledgeRetrievalSources` 能快速说明知识主要在补什么、来自哪一路检索
 - `replyFallbackReasons` 能直接看出草稿阶段更多是在追问模板、人工审核模板，还是模型回退
+- `riskLevels / releaseDecisions / recommendedActions` 能快速说明最近一批样例里，多少条可继续派发、多少条卡在审核、多少条需要追问
 - 模板回退、追问、人工审核出现了多少次
 - 这个接口适合做“当前质量画像”，单条 `evaluation` 适合做个案复盘
 

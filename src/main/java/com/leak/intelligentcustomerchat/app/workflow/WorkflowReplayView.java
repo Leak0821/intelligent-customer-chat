@@ -14,6 +14,7 @@ public record WorkflowReplayView(
         List<WorkflowEvent> events,
         ReplyDraft latestDraft,
         WorkflowReplayEvidenceView evidence,
+        WorkflowRiskDecisionView riskDecision,
         List<ReplyDispatch> dispatches,
         List<ReviewRecord> reviews
 ) {
@@ -21,6 +22,7 @@ public record WorkflowReplayView(
         Objects.requireNonNull(run, "run must not be null");
         events = List.copyOf(events);
         Objects.requireNonNull(evidence, "evidence must not be null");
+        Objects.requireNonNull(riskDecision, "riskDecision must not be null");
         dispatches = List.copyOf(dispatches);
         reviews = List.copyOf(reviews);
     }

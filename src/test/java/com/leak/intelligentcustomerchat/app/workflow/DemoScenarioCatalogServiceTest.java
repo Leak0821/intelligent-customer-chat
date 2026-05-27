@@ -50,6 +50,9 @@ class DemoScenarioCatalogServiceTest {
         assertThat(executionView.summary().mode()).isEqualTo("replay");
         assertThat(executionView.summary().runId()).isNotBlank();
         assertThat(executionView.summary().scene()).isEqualTo("AFTER_SALES");
+        assertThat(executionView.summary().riskLevel()).isNotBlank();
+        assertThat(executionView.summary().releaseDecision()).isNotBlank();
+        assertThat(executionView.summary().sendAllowed()).isFalse();
         assertThat(executionView.summary().businessFactStatus()).isEqualTo("CONFLICT");
         assertThat(executionView.summary().businessEvidence()).contains("conflict");
         assertThat(executionView.summary().knowledgeEvidence()).contains("knowledge");
@@ -75,6 +78,9 @@ class DemoScenarioCatalogServiceTest {
         assertThat(executionView.scenario().scenarioId()).isEqualTo("after-sales-manual-review");
         assertThat(executionView.summary().mode()).isEqualTo("review_loop");
         assertThat(executionView.summary().resultType()).isEqualTo("人工审核闭环");
+        assertThat(executionView.summary().riskLevel()).isEqualTo("LOW");
+        assertThat(executionView.summary().releaseDecision()).isEqualTo("READY_FOR_DISPATCH");
+        assertThat(executionView.summary().sendAllowed()).isTrue();
         assertThat(executionView.summary().operatorDecision()).isEqualTo("manual_review_completed");
         assertThat(executionView.summary().nextAction()).isNotBlank();
         assertThat(executionView.summary().replyEvidence()).contains("latestReviewAction=APPROVE_SEND");
@@ -111,6 +117,9 @@ class DemoScenarioCatalogServiceTest {
 
         assertThat(executionView.mode()).isEqualTo("validate");
         assertThat(executionView.summary().mode()).isEqualTo("validate");
+        assertThat(executionView.summary().riskLevel()).isEqualTo("LOW");
+        assertThat(executionView.summary().releaseDecision()).isEqualTo("EXPECTATION_CONFIRMED");
+        assertThat(executionView.summary().sendAllowed()).isTrue();
         assertThat(executionView.summary().operatorDecision()).isEqualTo("scenario_expectation_matched");
         assertThat(executionView.summary().resultType()).isEqualTo("校验通过");
         assertThat(executionView.summary().nextAction()).isEqualTo("continue_demo");
@@ -183,6 +192,8 @@ class DemoScenarioCatalogServiceTest {
         assertThat(executionView.summary().runId()).isEqualTo("ANALYSIS_PREVIEW");
         assertThat(executionView.summary().scene()).isNotBlank();
         assertThat(executionView.summary().subIntent()).isNotBlank();
+        assertThat(executionView.summary().riskLevel()).isNotBlank();
+        assertThat(executionView.summary().releaseDecision()).isNotBlank();
         assertThat(executionView.summary().operatorDecision()).isNotBlank();
         assertThat(executionView.summary().nextAction()).isNotBlank();
         assertThat(executionView.summary().businessFactStatus()).isEqualTo("NOT_REQUIRED");

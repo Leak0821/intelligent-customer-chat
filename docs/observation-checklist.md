@@ -45,6 +45,7 @@
 - `demo/scenarios/{scenarioId}` 的 `summary` 是否已经把 mode 差异抹平，能统一说明“证明点 / 结果类型 / 下一步动作”
 - `summary` 里能否先直接说明场景、子意图、主问题、最终状态和下一步动作
 - `summary.keyEvidence` 是否已经把关键编号、知识片段、审核信号等证据提炼出来
+- `riskDecision` 里能否直接判断当前是低风险可继续推进，还是高风险必须停在审核/人工处理
 - scene 是否符合预期
 - subIntent 是否符合预期
 - heuristicBaseline 和 normalizationResult 是否有差异
@@ -67,8 +68,10 @@
 - replyDiagnostics 里是否能看到 replySource、llmAttempted、fallbackReason
 - replyDiagnostics.factPreview / knowledgeSnippetIds 是否与前面的 facts 和知识召回对得上
 - evaluation 里是否也能看到 replySource / replyFallbackReason，而不是只能在 analysis 里看
+- evaluation / replay 里是否都能直接看到 `riskDecision.riskLevel / releaseDecision / recommendedAction`
 - replay / evaluation 里是否也能直接说明 facts 与 knowledge 的角色分工，而不是只剩原始事件摘要
 - evaluation summary 里是否能直接看到 `businessFactStatuses / knowledgeRoles / knowledgeRetrievalSources / replyFallbackReasons`
+- evaluation summary 里是否也能看到 `riskLevels / releaseDecisions / recommendedActions`
 - draft 状态和 send readiness 是否合理
 
 ## 4. 如果是售后场景，重点看什么

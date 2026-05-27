@@ -12,6 +12,9 @@ public record DemoScenarioExecutionSummaryView(
         String resultType,
         String workflowStatus,
         String draftStatus,
+        String riskLevel,
+        String releaseDecision,
+        boolean sendAllowed,
         String operatorDecision,
         String nextAction,
         String businessFactStatus,
@@ -29,6 +32,8 @@ public record DemoScenarioExecutionSummaryView(
         Objects.requireNonNull(resultType, "resultType must not be null");
         Objects.requireNonNull(workflowStatus, "workflowStatus must not be null");
         Objects.requireNonNull(draftStatus, "draftStatus must not be null");
+        Objects.requireNonNull(riskLevel, "riskLevel must not be null");
+        Objects.requireNonNull(releaseDecision, "releaseDecision must not be null");
         Objects.requireNonNull(operatorDecision, "operatorDecision must not be null");
         Objects.requireNonNull(nextAction, "nextAction must not be null");
         Objects.requireNonNull(businessFactStatus, "businessFactStatus must not be null");

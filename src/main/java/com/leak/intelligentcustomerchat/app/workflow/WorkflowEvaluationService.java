@@ -141,6 +141,9 @@ public class WorkflowEvaluationService {
                 summarize(samples, WorkflowEvaluationSampleView::manualReviewOutcome),
                 summarizeExpandedCounts(samples, WorkflowEvaluationSampleView::reviewFeedbackTagCounts),
                 summarizeRiskFlags(samples),
+                summarize(samples, sample -> sample.riskDecision().riskLevel()),
+                summarize(samples, sample -> sample.riskDecision().releaseDecision()),
+                summarize(samples, sample -> sample.riskDecision().recommendedAction()),
                 OffsetDateTime.now()
         );
     }
@@ -243,6 +246,17 @@ public class WorkflowEvaluationService {
         Map<String, String> businessTokens = workflowEvidenceSummaryParser.parseTokens(businessFactsSummary);
         Map<String, String> knowledgeTokens = workflowEvidenceSummaryParser.parseTokens(knowledgeSummary);
         String businessFactStatus = workflowEvidenceSummaryParser.tokenOrDefault(businessTokens, "factStatus", "UNKNOWN");
+        List<String> riskFlags = buildRiskFlags(run, draft, latestDispatch, latestReview, reviews, businessFactsSummary, replySource, replyFallbackReason);
+        WorkflowRiskDecisionView riskDecision = WorkflowRiskDecisionResolver.resolve(
+                run.getStatus().name(),
+                draft == null ? null : draft.getStatus().name(),
+                draft == null ? null : draft.getSendReadiness().name(),
+                draft == null ? null : draft.getNextAction(),
+                latestDispatch == null ? null : latestDispatch.getStatus().name(),
+                latestReview == null ? null : latestReview.getAction().name(),
+                manualReviewOutcome,
+                riskFlags
+        );
 
         return new WorkflowEvaluationSampleView(
                 run.getRunId(),
@@ -286,7 +300,8 @@ public class WorkflowEvaluationService {
                 summarizeReviewActions(reviews),
                 summarizeReviewFeedbackTags(reviews),
                 buildReviewTimeline(reviews),
-                buildRiskFlags(run, draft, latestDispatch, latestReview, reviews, businessFactsSummary, replySource, replyFallbackReason),
+                riskFlags,
+                riskDecision,
                 OffsetDateTime.now()
         );
     }

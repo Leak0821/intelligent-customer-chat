@@ -90,6 +90,7 @@ curl http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-policy
 
 - `summary.mode / summary.demoTakeaway`
 - `summary.scene / summary.subIntent / summary.resultType`
+- `summary.riskLevel / summary.releaseDecision / summary.sendAllowed`
 - `summary.operatorDecision / summary.nextAction`
 - `summary.businessEvidence / summary.knowledgeEvidence / summary.replyEvidence`
 - `summary.keyEvidence`
@@ -164,14 +165,17 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
 - `replyDiagnostics.knowledgeSnippetIds`
 - `evaluation.replySource`
 - `evaluation.replyFallbackReason`
+- `evaluation.riskDecision.riskLevel / releaseDecision / sendAllowed / recommendedAction`
 - `replay.evidence.businessFactRole`
 - `replay.evidence.knowledgeRole`
+- `replay.riskDecision.riskLevel / releaseDecision / sendAllowed / recommendedAction`
 - `evaluation.businessFactRole`
 - `evaluation.knowledgeRole`
 - `evaluations.summary.businessFactStatuses`
 - `evaluations.summary.knowledgeRoles`
 - `evaluations.summary.knowledgeRetrievalSources`
 - `evaluations.summary.replyFallbackReasons`
+- `evaluations.summary.riskLevels / releaseDecisions / recommendedActions`
 
 3. 如果需要完整回放，继续查看
 
