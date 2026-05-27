@@ -7,6 +7,7 @@ import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftRepository;
 import com.leak.intelligentcustomerchat.domain.review.ReviewRecord;
+import com.leak.intelligentcustomerchat.domain.review.ReviewAction;
 import com.leak.intelligentcustomerchat.domain.review.ReviewRecordRepository;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEvent;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEventRepository;
@@ -85,6 +86,9 @@ public class WorkflowEvaluationService {
 
         ReplyDispatch latestDispatch = dispatches.isEmpty() ? null : dispatches.get(dispatches.size() - 1);
         ReviewRecord latestReview = reviews.isEmpty() ? null : reviews.get(reviews.size() - 1);
+        int reviewCount = reviews.size();
+        int revisionCount = countAction(reviews, ReviewAction.REVISE_DRAFT);
+        boolean resubmittedForReview = containsAction(reviews, ReviewAction.RESUBMIT_REVIEW);
 
         String normalizationSummary = findEventSummary(events, WorkflowStage.INTENT_NORMALIZED)
                 .orElse("intent normalization summary unavailable");
@@ -122,7 +126,11 @@ public class WorkflowEvaluationService {
                 latestReview == null ? null : latestReview.getAction().name(),
                 latestReview == null ? null : latestReview.getReviewer(),
                 latestReview == null ? null : latestReview.getReviewNote(),
-                buildRiskFlags(run, draft, latestDispatch, latestReview, businessFactsSummary),
+                reviewCount,
+                revisionCount,
+                resubmittedForReview,
+                buildReviewTimeline(reviews),
+                buildRiskFlags(run, draft, latestDispatch, latestReview, reviews, businessFactsSummary),
                 OffsetDateTime.now()
         );
     }
@@ -159,6 +167,7 @@ public class WorkflowEvaluationService {
                                         ReplyDraft draft,
                                         ReplyDispatch latestDispatch,
                                         ReviewRecord latestReview,
+                                        List<ReviewRecord> reviews,
                                         String businessFactsSummary) {
         List<String> riskFlags = new ArrayList<>();
         if ("BLOCKED".equals(run.getStatus().name())) {
@@ -178,6 +187,12 @@ public class WorkflowEvaluationService {
         }
         if (latestReview != null && "REJECT_SEND".equals(latestReview.getAction().name())) {
             riskFlags.add("review_rejected");
+        }
+        if (containsAction(reviews, ReviewAction.REVISE_DRAFT)) {
+            riskFlags.add("draft_revised");
+        }
+        if (containsAction(reviews, ReviewAction.RESUBMIT_REVIEW)) {
+            riskFlags.add("review_resubmitted");
         }
         if (businessFactsSummary.contains("CONFLICT")) {
             riskFlags.add("business_fact_conflict");
@@ -213,5 +228,25 @@ public class WorkflowEvaluationService {
                 "evaluation fallback body",
                 run.getCreatedAt()
         ));
+    }
+
+    private int countAction(List<ReviewRecord> reviews, ReviewAction action) {
+        return (int) reviews.stream()
+                .filter(review -> review.getAction() == action)
+                .count();
+    }
+
+    private boolean containsAction(List<ReviewRecord> reviews, ReviewAction action) {
+        return reviews.stream().anyMatch(review -> review.getAction() == action);
+    }
+
+    private List<String> buildReviewTimeline(List<ReviewRecord> reviews) {
+        return reviews.stream()
+                .map(review -> "%s by %s: %s".formatted(
+                        review.getAction().name(),
+                        review.getReviewer(),
+                        review.getReviewNote()
+                ))
+                .toList();
     }
 }

@@ -71,6 +71,8 @@ class WorkflowEvaluationServiceTest {
         dispatch.markAttemptResult(false, null, "smtp timeout", OffsetDateTime.now(), OffsetDateTime.now().plusMinutes(5));
         replyDispatchRepository.save(dispatch);
 
+        reviewRecordRepository.save(ReviewRecord.reviseDraft(run.getRunId(), draft.getDraftId(), "editor-a", "soften the compensation promise"));
+        reviewRecordRepository.save(ReviewRecord.resubmitReview(run.getRunId(), draft.getDraftId(), "editor-a", "resubmitted after manual revision"));
         reviewRecordRepository.save(ReviewRecord.rejectSend(run.getRunId(), draft.getDraftId(), "auditor-b", "promise wording needs revision"));
         mailReceiptRepository.save(MailReceipt.manual("receipt-eval-1", new InboundMail(
                 run.getMessageId(),
@@ -100,7 +102,22 @@ class WorkflowEvaluationServiceTest {
         assertThat(sample.draftStatus()).isEqualTo("HUMAN_REVIEW_REQUIRED");
         assertThat(sample.latestDispatchStatus()).isEqualTo("RETRY_PENDING");
         assertThat(sample.latestReviewAction()).isEqualTo("REJECT_SEND");
-        assertThat(sample.riskFlags()).contains("manual_review_required", "dispatch_retry_pending", "review_rejected", "business_fact_conflict");
+        assertThat(sample.reviewCount()).isEqualTo(3);
+        assertThat(sample.revisionCount()).isEqualTo(1);
+        assertThat(sample.resubmittedForReview()).isTrue();
+        assertThat(sample.reviewTimeline()).contains(
+                "REVISE_DRAFT by editor-a: soften the compensation promise",
+                "RESUBMIT_REVIEW by editor-a: resubmitted after manual revision",
+                "REJECT_SEND by auditor-b: promise wording needs revision"
+        );
+        assertThat(sample.riskFlags()).contains(
+                "manual_review_required",
+                "dispatch_retry_pending",
+                "review_rejected",
+                "business_fact_conflict",
+                "draft_revised",
+                "review_resubmitted"
+        );
         assertThat(sample.scene()).isEqualTo("AFTER_SALES");
         assertThat(sample.subIntent()).isEqualTo("LOGISTICS_TRACKING");
     }

@@ -109,6 +109,8 @@
 - 是否有 `follow_up_needed`
 - 是否有 `retry_pending`
 - 是否有 `business_conflict`
+- evaluation 里是否能看到 `reviewCount / revisionCount / resubmittedForReview`
+- reviewTimeline 是否能串起 `REVISE_DRAFT -> RESUBMIT_REVIEW -> APPROVE_SEND / REJECT_SEND`
 - blocked 样例的 `run.status` 是否为 `BLOCKED`
 
 ## 8. 快速判断一句话

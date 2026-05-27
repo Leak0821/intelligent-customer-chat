@@ -132,6 +132,13 @@ curl http://127.0.0.1:8080/api/workflows/<runId>/dispatches
 curl http://127.0.0.1:8080/api/workflows/<runId>/reviews
 ```
 
+补充观察：
+
+- `evaluation.reviewCount`
+- `evaluation.revisionCount`
+- `evaluation.resubmittedForReview`
+- `evaluation.reviewTimeline`
+
 ### 3.2 售前样例
 
 1. 提交 demo 邮件
