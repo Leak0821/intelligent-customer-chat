@@ -177,6 +177,87 @@ class WorkflowEvaluationServiceTest {
         assertThat(templateFallbackSamples.get(0).replyFallbackReason()).isEqualTo("llm_unavailable_or_empty");
     }
 
+    @Test
+    void shouldSummarizeRecentSamplesForDemoObservation() {
+        InMemoryWorkflowRunRepository workflowRunRepository = new InMemoryWorkflowRunRepository();
+        InMemoryWorkflowEventRepository workflowEventRepository = new InMemoryWorkflowEventRepository();
+        InMemoryReplyDraftRepository replyDraftRepository = new InMemoryReplyDraftRepository();
+        InMemoryReplyDispatchRepository replyDispatchRepository = new InMemoryReplyDispatchRepository();
+        InMemoryReviewRecordRepository reviewRecordRepository = new InMemoryReviewRecordRepository();
+        InMemoryMailReceiptRepository mailReceiptRepository = new InMemoryMailReceiptRepository();
+
+        WorkflowRun afterSalesRun = WorkflowRun.start("msg-summary-1", "thread-summary-1");
+        afterSalesRun.moveTo(WorkflowStage.INTENT_ROUTED, "scene=AFTER_SALES, subIntent=logistics_tracking");
+        afterSalesRun.complete("workflow completed with draft status=FOLLOW_UP_NEEDED");
+        workflowRunRepository.save(afterSalesRun);
+        workflowEventRepository.save(new WorkflowEvent("evt-s1", afterSalesRun.getRunId(), afterSalesRun.getMessageId(), WorkflowStage.INTENT_ROUTED, afterSalesRun.getStatus(), "scene=AFTER_SALES, subIntent=logistics_tracking", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-s2", afterSalesRun.getRunId(), afterSalesRun.getMessageId(), WorkflowStage.REPLY_DRAFTED, afterSalesRun.getStatus(), "draftStatus=FOLLOW_UP_NEEDED, replySource=follow-up-template, fallbackReason=follow_up_template_required", OffsetDateTime.now()));
+        replyDraftRepository.save(ReplyDraft.create(afterSalesRun.getRunId(), "subject-s1", "body-s1", ReplyDraftStatus.FOLLOW_UP_NEEDED, "missing order id"));
+        mailReceiptRepository.save(MailReceipt.manual("receipt-s1", new InboundMail(afterSalesRun.getMessageId(), afterSalesRun.getThreadId(), "s1@example.com", "subject-s1", "body-s1", OffsetDateTime.now())));
+
+        WorkflowRun preSalesRun = WorkflowRun.start("msg-summary-2", "thread-summary-2");
+        preSalesRun.moveTo(WorkflowStage.INTENT_ROUTED, "scene=PRE_SALES, subIntent=product_recommendation");
+        preSalesRun.complete("workflow completed with draft status=DRAFT_READY");
+        workflowRunRepository.save(preSalesRun);
+        workflowEventRepository.save(new WorkflowEvent("evt-s3", preSalesRun.getRunId(), preSalesRun.getMessageId(), WorkflowStage.INTENT_ROUTED, preSalesRun.getStatus(), "scene=PRE_SALES, subIntent=product_recommendation", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-s4", preSalesRun.getRunId(), preSalesRun.getMessageId(), WorkflowStage.REPLY_DRAFTED, preSalesRun.getStatus(), "draftStatus=DRAFT_READY, replySource=template, fallbackReason=llm_unavailable_or_empty", OffsetDateTime.now()));
+        replyDraftRepository.save(ReplyDraft.create(preSalesRun.getRunId(), "subject-s2", "body-s2", ReplyDraftStatus.DRAFT_READY, "ready"));
+        mailReceiptRepository.save(MailReceipt.manual("receipt-s2", new InboundMail(preSalesRun.getMessageId(), preSalesRun.getThreadId(), "s2@example.com", "subject-s2", "body-s2", OffsetDateTime.now())));
+
+        WorkflowRun reviewRun = WorkflowRun.start("msg-summary-3", "thread-summary-3");
+        reviewRun.moveTo(WorkflowStage.INTENT_ROUTED, "scene=AFTER_SALES, subIntent=return_refund");
+        reviewRun.complete("workflow completed with draft status=HUMAN_REVIEW_REQUIRED");
+        workflowRunRepository.save(reviewRun);
+        workflowEventRepository.save(new WorkflowEvent("evt-s5", reviewRun.getRunId(), reviewRun.getMessageId(), WorkflowStage.INTENT_ROUTED, reviewRun.getStatus(), "scene=AFTER_SALES, subIntent=return_refund", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-s6", reviewRun.getRunId(), reviewRun.getMessageId(), WorkflowStage.REPLY_DRAFTED, reviewRun.getStatus(), "draftStatus=HUMAN_REVIEW_REQUIRED, replySource=human-review-template, fallbackReason=human_review_template_required", OffsetDateTime.now()));
+        ReplyDraft reviewDraft = ReplyDraft.create(reviewRun.getRunId(), "subject-s3", "body-s3", ReplyDraftStatus.HUMAN_REVIEW_REQUIRED, "manual review required");
+        reviewDraft.updateSendReadiness(SendReadiness.PENDING_REVIEW, "manual_review_required", "manual review required");
+        replyDraftRepository.save(reviewDraft);
+        mailReceiptRepository.save(MailReceipt.manual("receipt-s3", new InboundMail(reviewRun.getMessageId(), reviewRun.getThreadId(), "s3@example.com", "subject-s3", "body-s3", OffsetDateTime.now())));
+
+        WorkflowEvaluationService service = new WorkflowEvaluationService(
+                workflowRunRepository,
+                workflowEventRepository,
+                replyDraftRepository,
+                replyDispatchRepository,
+                reviewRecordRepository,
+                mailReceiptRepository
+        );
+
+        WorkflowEvaluationSummaryView summary = service.summarizeRecentSamples(10, null, null, null, null, null);
+        WorkflowEvaluationSummaryView filteredSummary = service.summarizeRecentSamples(10, "AFTER_SALES", null, null, null, null);
+
+        assertThat(summary.requestedLimit()).isEqualTo(10);
+        assertThat(summary.sampledCount()).isEqualTo(3);
+        assertThat(summary.scenes()).containsExactly(
+                new WorkflowEvaluationCountView("AFTER_SALES", 2),
+                new WorkflowEvaluationCountView("PRE_SALES", 1)
+        );
+        assertThat(summary.subIntents()).containsExactly(
+                new WorkflowEvaluationCountView("LOGISTICS_TRACKING", 1),
+                new WorkflowEvaluationCountView("PRODUCT_RECOMMENDATION", 1),
+                new WorkflowEvaluationCountView("RETURN_REFUND", 1)
+        );
+        assertThat(summary.draftStatuses()).containsExactly(
+                new WorkflowEvaluationCountView("DRAFT_READY", 1),
+                new WorkflowEvaluationCountView("FOLLOW_UP_NEEDED", 1),
+                new WorkflowEvaluationCountView("HUMAN_REVIEW_REQUIRED", 1)
+        );
+        assertThat(summary.replySources()).containsExactly(
+                new WorkflowEvaluationCountView("FOLLOW-UP-TEMPLATE", 1),
+                new WorkflowEvaluationCountView("HUMAN-REVIEW-TEMPLATE", 1),
+                new WorkflowEvaluationCountView("TEMPLATE", 1)
+        );
+        assertThat(summary.riskFlags()).contains(
+                new WorkflowEvaluationCountView("follow_up_needed", 1),
+                new WorkflowEvaluationCountView("manual_review_required", 1),
+                new WorkflowEvaluationCountView("reply_template_fallback", 1),
+                new WorkflowEvaluationCountView("reply_fallback_recorded", 3)
+        );
+        assertThat(filteredSummary.sampledCount()).isEqualTo(2);
+        assertThat(filteredSummary.scenes()).containsExactly(new WorkflowEvaluationCountView("AFTER_SALES", 2));
+    }
+
     private static final class InMemoryWorkflowRunRepository implements WorkflowRunRepository {
         private final Map<String, WorkflowRun> runs = new LinkedHashMap<>();
 

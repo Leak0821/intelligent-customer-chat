@@ -15,6 +15,7 @@ import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationSampleView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationService;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationSummaryView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowReplayView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
@@ -145,6 +146,16 @@ public class WorkflowDemoController {
                                                                 @RequestParam(required = false) String draftStatus,
                                                                 @RequestParam(required = false) String riskFlag) {
         return workflowEvaluationService.listSamples(limit, scene, subIntent, workflowStatus, draftStatus, riskFlag);
+    }
+
+    @GetMapping("/evaluations/summary")
+    public WorkflowEvaluationSummaryView evaluationSummary(@RequestParam(defaultValue = "20") int limit,
+                                                           @RequestParam(required = false) String scene,
+                                                           @RequestParam(required = false) String subIntent,
+                                                           @RequestParam(required = false) String workflowStatus,
+                                                           @RequestParam(required = false) String draftStatus,
+                                                           @RequestParam(required = false) String riskFlag) {
+        return workflowEvaluationService.summarizeRecentSamples(limit, scene, subIntent, workflowStatus, draftStatus, riskFlag);
     }
 
     @GetMapping("/by-message/{messageId}/replay")

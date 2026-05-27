@@ -68,6 +68,7 @@ curl http://127.0.0.1:8080/api/workflows/demo/scenarios
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/pre-sales-recommendation?mode=analysis"
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-logistics?mode=replay"
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-manual-review?mode=review_loop"
+curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 ```
 
 ## 5. 演示时怎么跑
@@ -125,6 +126,20 @@ curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-man
 - 需要先经过审核节点
 - 审核后再进入派发记录
 - 派发失败还可以补偿重试
+
+### 5.5 用汇总视图讲“最近一批跑得怎么样”
+
+```bash
+curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
+curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20&scene=AFTER_SALES"
+```
+
+这里重点讲：
+
+- 最近一批运行里，售前 / 售后各占多少
+- 哪些子意图出现得最多
+- 模板回退、追问、人工审核出现了多少次
+- 这个接口适合做“当前质量画像”，单条 `evaluation` 适合做个案复盘
 
 ## 6. 推荐话术
 

@@ -18,8 +18,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -54,6 +57,26 @@ public class WorkflowEvaluationService {
 
     public List<WorkflowEvaluationSampleView> listRecentSamples(int limit) {
         return listSamples(limit, null, null, null, null, null);
+    }
+
+    public WorkflowEvaluationSummaryView summarizeRecentSamples(int limit,
+                                                                String scene,
+                                                                String subIntent,
+                                                                String workflowStatus,
+                                                                String draftStatus,
+                                                                String riskFlag) {
+        List<WorkflowEvaluationSampleView> samples = listSamples(limit, scene, subIntent, workflowStatus, draftStatus, riskFlag);
+        return new WorkflowEvaluationSummaryView(
+                limit,
+                samples.size(),
+                summarize(samples, WorkflowEvaluationSampleView::scene),
+                summarize(samples, WorkflowEvaluationSampleView::subIntent),
+                summarize(samples, WorkflowEvaluationSampleView::workflowStatus),
+                summarize(samples, WorkflowEvaluationSampleView::draftStatus),
+                summarize(samples, WorkflowEvaluationSampleView::replySource),
+                summarizeRiskFlags(samples),
+                OffsetDateTime.now()
+        );
     }
 
     public List<WorkflowEvaluationSampleView> listSamples(int limit,
@@ -160,6 +183,37 @@ public class WorkflowEvaluationService {
 
     private boolean containsStage(List<WorkflowEvent> events, WorkflowStage stage) {
         return events.stream().anyMatch(event -> event.stage() == stage);
+    }
+
+    private List<WorkflowEvaluationCountView> summarize(List<WorkflowEvaluationSampleView> samples,
+                                                        java.util.function.Function<WorkflowEvaluationSampleView, String> extractor) {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (WorkflowEvaluationSampleView sample : samples) {
+            String key = extractor.apply(sample);
+            if (key == null || key.isBlank()) {
+                key = "UNKNOWN";
+            }
+            counts.merge(key, 1L, Long::sum);
+        }
+        return counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder())
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .map(entry -> new WorkflowEvaluationCountView(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+    private List<WorkflowEvaluationCountView> summarizeRiskFlags(List<WorkflowEvaluationSampleView> samples) {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (WorkflowEvaluationSampleView sample : samples) {
+            for (String riskFlag : sample.riskFlags()) {
+                counts.merge(riskFlag, 1L, Long::sum);
+            }
+        }
+        return counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder())
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .map(entry -> new WorkflowEvaluationCountView(entry.getKey(), entry.getValue()))
+                .toList();
     }
 
     private Optional<String> findEventSummary(List<WorkflowEvent> events, WorkflowStage stage) {

@@ -99,10 +99,11 @@
 优先检查：
 
 1. `GET /api/workflows/evaluations/recent`
-2. `GET /api/workflows/{runId}/evaluation`
-3. `POST /api/workflows/demo/scenarios/after-sales-missing-id?mode=analysis`
-4. `POST /api/workflows/demo/scenarios/after-sales-manual-review?mode=analysis`
-5. `POST /api/workflows/demo/scenarios/system-blocked-demo?mode=replay`
+2. `GET /api/workflows/evaluations/summary`
+3. `GET /api/workflows/{runId}/evaluation`
+4. `POST /api/workflows/demo/scenarios/after-sales-missing-id?mode=analysis`
+5. `POST /api/workflows/demo/scenarios/after-sales-manual-review?mode=analysis`
+6. `POST /api/workflows/demo/scenarios/system-blocked-demo?mode=replay`
 
 重点观察：
 
@@ -110,6 +111,8 @@
 - 是否有 `follow_up_needed`
 - 是否有 `retry_pending`
 - 是否有 `business_conflict`
+- `summary` 里能否直接看出最近一批运行中，售前 / 售后各有多少条
+- `summary` 里能否直接看出模板回退、人工审核、追问分别出现了多少次
 - evaluation 里是否能看到 `reviewCount / revisionCount / resubmittedForReview`
 - reviewTimeline 是否能串起 `REVISE_DRAFT -> RESUBMIT_REVIEW -> APPROVE_SEND / REJECT_SEND`
 - blocked 样例的 `run.status` 是否为 `BLOCKED`
