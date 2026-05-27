@@ -137,6 +137,8 @@ class WorkflowDemoControllerTest {
         run.complete("workflow completed with draft status=FOLLOW_UP_NEEDED");
         workflowRunRepository.save(run);
         workflowEventRepository.save(new WorkflowEvent("evt-1", run.getRunId(), run.getMessageId(), WorkflowStage.INTENT_ROUTED, run.getStatus(), "scene=AFTER_SALES, subIntent=logistics_tracking", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-1a", run.getRunId(), run.getMessageId(), WorkflowStage.BUSINESS_FACTS_READY, run.getStatus(), "factStatus=INSUFFICIENT_INPUT, sourceSystems=local-order-catalog|local-logistics-catalog, resolvedEntityCount=0, factCount=0, missingEntityCount=2, conflictFlagCount=0", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-1b", run.getRunId(), run.getMessageId(), WorkflowStage.KNOWLEDGE_READY, run.getStatus(), "knowledgeRecallCount=2, retrievalSource=elasticsearch-hybrid, snippetIds=seed-a|seed-b", OffsetDateTime.now()));
         workflowEventRepository.save(new WorkflowEvent("evt-2", run.getRunId(), run.getMessageId(), WorkflowStage.REPLY_DRAFTED, run.getStatus(), "draftStatus=FOLLOW_UP_NEEDED, replySource=follow-up-template, fallbackReason=follow_up_template_required", OffsetDateTime.now()));
         replyDraftRepository.save(ReplyDraft.create(run.getRunId(), "subject-summary", "body-summary", ReplyDraftStatus.FOLLOW_UP_NEEDED, "missing order id"));
         mailReceiptRepository.save(MailReceipt.manual("receipt-summary", new InboundMail(
@@ -177,6 +179,9 @@ class WorkflowDemoControllerTest {
         assertThat(summary.sampledCount()).isEqualTo(1);
         assertThat(summary.scenes()).containsExactly(new com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationCountView("AFTER_SALES", 1));
         assertThat(summary.replySources()).containsExactly(new com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationCountView("FOLLOW-UP-TEMPLATE", 1));
+        assertThat(summary.businessFactStatuses()).containsExactly(new com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationCountView("INSUFFICIENT_INPUT", 1));
+        assertThat(summary.knowledgeRetrievalSources()).containsExactly(new com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationCountView("elasticsearch-hybrid", 1));
+        assertThat(summary.replyFallbackReasons()).containsExactly(new com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationCountView("follow_up_template_required", 1));
     }
 
     private static final class InMemoryWorkflowRunRepository implements WorkflowRunRepository {

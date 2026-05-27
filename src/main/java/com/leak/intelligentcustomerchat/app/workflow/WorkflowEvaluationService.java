@@ -77,6 +77,11 @@ public class WorkflowEvaluationService {
                 summarize(samples, WorkflowEvaluationSampleView::workflowStatus),
                 summarize(samples, WorkflowEvaluationSampleView::draftStatus),
                 summarize(samples, WorkflowEvaluationSampleView::replySource),
+                summarize(samples, WorkflowEvaluationSampleView::businessFactStatus),
+                summarize(samples, WorkflowEvaluationSampleView::businessFactRole),
+                summarize(samples, WorkflowEvaluationSampleView::knowledgeRole),
+                summarize(samples, WorkflowEvaluationSampleView::knowledgeRetrievalSource),
+                summarize(samples, WorkflowEvaluationSampleView::replyFallbackReason),
                 summarizeRiskFlags(samples),
                 OffsetDateTime.now()
         );
@@ -132,6 +137,7 @@ public class WorkflowEvaluationService {
         String replyFallbackReason = extractOptionalToken(replyDraftSummary, "fallbackReason");
         Map<String, String> businessTokens = workflowEvidenceSummaryParser.parseTokens(businessFactsSummary);
         Map<String, String> knowledgeTokens = workflowEvidenceSummaryParser.parseTokens(knowledgeSummary);
+        String businessFactStatus = workflowEvidenceSummaryParser.tokenOrDefault(businessTokens, "factStatus", "UNKNOWN");
 
         return new WorkflowEvaluationSampleView(
                 run.getRunId(),
@@ -145,6 +151,7 @@ public class WorkflowEvaluationService {
                 routingSummary,
                 containsStage(events, WorkflowStage.BUSINESS_FACTS_READY),
                 businessFactsSummary,
+                businessFactStatus,
                 workflowEvidenceSummaryParser.summarizeBusinessFacts(subIntent, businessFactsSummary),
                 workflowEvidenceSummaryParser.splitPipeList(businessTokens.get("sourceSystems")),
                 containsStage(events, WorkflowStage.KNOWLEDGE_READY),

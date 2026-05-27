@@ -16,6 +16,7 @@ public record WorkflowEvaluationSampleView(
         String routingSummary,
         boolean businessFactsTriggered,
         String businessFactsSummary,
+        String businessFactStatus,
         String businessFactRole,
         List<String> businessFactSourceSystems,
         boolean knowledgeTriggered,
@@ -55,6 +56,7 @@ public record WorkflowEvaluationSampleView(
         Objects.requireNonNull(subIntent, "subIntent must not be null");
         Objects.requireNonNull(routingSummary, "routingSummary must not be null");
         Objects.requireNonNull(businessFactsSummary, "businessFactsSummary must not be null");
+        Objects.requireNonNull(businessFactStatus, "businessFactStatus must not be null");
         Objects.requireNonNull(businessFactRole, "businessFactRole must not be null");
         Objects.requireNonNull(businessFactSourceSystems, "businessFactSourceSystems must not be null");
         Objects.requireNonNull(knowledgeSummary, "knowledgeSummary must not be null");

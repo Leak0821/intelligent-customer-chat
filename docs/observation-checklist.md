@@ -64,6 +64,7 @@
 - replyDiagnostics.factPreview / knowledgeSnippetIds 是否与前面的 facts 和知识召回对得上
 - evaluation 里是否也能看到 replySource / replyFallbackReason，而不是只能在 analysis 里看
 - replay / evaluation 里是否也能直接说明 facts 与 knowledge 的角色分工，而不是只剩原始事件摘要
+- evaluation summary 里是否能直接看到 `businessFactStatuses / knowledgeRoles / knowledgeRetrievalSources / replyFallbackReasons`
 - draft 状态和 send readiness 是否合理
 
 ## 4. 如果是售后场景，重点看什么

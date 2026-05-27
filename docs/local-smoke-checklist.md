@@ -143,6 +143,10 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
 - `replay.evidence.knowledgeRole`
 - `evaluation.businessFactRole`
 - `evaluation.knowledgeRole`
+- `evaluations.summary.businessFactStatuses`
+- `evaluations.summary.knowledgeRoles`
+- `evaluations.summary.knowledgeRetrievalSources`
+- `evaluations.summary.replyFallbackReasons`
 
 3. 如果需要完整回放，继续查看
 
@@ -151,6 +155,7 @@ curl http://127.0.0.1:8080/api/workflows/<runId>/replay
 curl http://127.0.0.1:8080/api/workflows/<runId>/evaluation
 curl http://127.0.0.1:8080/api/workflows/<runId>/events
 curl http://127.0.0.1:8080/api/workflows/<runId>/draft
+curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20&scene=AFTER_SALES"
 ```
 
 4. 如果要验证发送闭环，再执行

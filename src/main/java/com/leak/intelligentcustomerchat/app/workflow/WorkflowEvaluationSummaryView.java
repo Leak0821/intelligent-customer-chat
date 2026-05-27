@@ -12,6 +12,11 @@ public record WorkflowEvaluationSummaryView(
         List<WorkflowEvaluationCountView> workflowStatuses,
         List<WorkflowEvaluationCountView> draftStatuses,
         List<WorkflowEvaluationCountView> replySources,
+        List<WorkflowEvaluationCountView> businessFactStatuses,
+        List<WorkflowEvaluationCountView> businessFactRoles,
+        List<WorkflowEvaluationCountView> knowledgeRoles,
+        List<WorkflowEvaluationCountView> knowledgeRetrievalSources,
+        List<WorkflowEvaluationCountView> replyFallbackReasons,
         List<WorkflowEvaluationCountView> riskFlags,
         OffsetDateTime sampledAt
 ) {
@@ -21,6 +26,11 @@ public record WorkflowEvaluationSummaryView(
         Objects.requireNonNull(workflowStatuses, "workflowStatuses must not be null");
         Objects.requireNonNull(draftStatuses, "draftStatuses must not be null");
         Objects.requireNonNull(replySources, "replySources must not be null");
+        Objects.requireNonNull(businessFactStatuses, "businessFactStatuses must not be null");
+        Objects.requireNonNull(businessFactRoles, "businessFactRoles must not be null");
+        Objects.requireNonNull(knowledgeRoles, "knowledgeRoles must not be null");
+        Objects.requireNonNull(knowledgeRetrievalSources, "knowledgeRetrievalSources must not be null");
+        Objects.requireNonNull(replyFallbackReasons, "replyFallbackReasons must not be null");
         Objects.requireNonNull(riskFlags, "riskFlags must not be null");
         Objects.requireNonNull(sampledAt, "sampledAt must not be null");
         scenes = List.copyOf(scenes);
@@ -28,6 +38,11 @@ public record WorkflowEvaluationSummaryView(
         workflowStatuses = List.copyOf(workflowStatuses);
         draftStatuses = List.copyOf(draftStatuses);
         replySources = List.copyOf(replySources);
+        businessFactStatuses = List.copyOf(businessFactStatuses);
+        businessFactRoles = List.copyOf(businessFactRoles);
+        knowledgeRoles = List.copyOf(knowledgeRoles);
+        knowledgeRetrievalSources = List.copyOf(knowledgeRetrievalSources);
+        replyFallbackReasons = List.copyOf(replyFallbackReasons);
         riskFlags = List.copyOf(riskFlags);
     }
 }

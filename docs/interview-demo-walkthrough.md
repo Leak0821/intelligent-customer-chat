@@ -150,6 +150,9 @@ curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20&scene=AFT
 
 - 最近一批运行里，售前 / 售后各占多少
 - 哪些子意图出现得最多
+- `businessFactStatuses` 能直接看出这一批是缺编号、查无结果、冲突，还是 facts 本来就不需要
+- `knowledgeRoles / knowledgeRetrievalSources` 能快速说明知识主要在补什么、来自哪一路检索
+- `replyFallbackReasons` 能直接看出草稿阶段更多是在追问模板、人工审核模板，还是模型回退
 - 模板回退、追问、人工审核出现了多少次
 - 这个接口适合做“当前质量画像”，单条 `evaluation` 适合做个案复盘
 

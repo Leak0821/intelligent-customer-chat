@@ -101,6 +101,7 @@ class WorkflowEvaluationServiceTest {
         assertThat(sample.subject()).isEqualTo("Where is my order");
         assertThat(sample.routingSummary()).contains("AFTER_SALES");
         assertThat(sample.businessFactsTriggered()).isTrue();
+        assertThat(sample.businessFactStatus()).isEqualTo("CONFLICT");
         assertThat(sample.businessFactRole()).contains("authority check");
         assertThat(sample.businessFactSourceSystems()).containsExactly("local-order-catalog", "local-logistics-catalog");
         assertThat(sample.knowledgeTriggered()).isTrue();
@@ -200,6 +201,8 @@ class WorkflowEvaluationServiceTest {
         afterSalesRun.complete("workflow completed with draft status=FOLLOW_UP_NEEDED");
         workflowRunRepository.save(afterSalesRun);
         workflowEventRepository.save(new WorkflowEvent("evt-s1", afterSalesRun.getRunId(), afterSalesRun.getMessageId(), WorkflowStage.INTENT_ROUTED, afterSalesRun.getStatus(), "scene=AFTER_SALES, subIntent=logistics_tracking", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-s1a", afterSalesRun.getRunId(), afterSalesRun.getMessageId(), WorkflowStage.BUSINESS_FACTS_READY, afterSalesRun.getStatus(), "factStatus=INSUFFICIENT_INPUT, sourceSystems=local-order-catalog|local-logistics-catalog, resolvedEntityCount=0, factCount=0, missingEntityCount=2, conflictFlagCount=0", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-s1b", afterSalesRun.getRunId(), afterSalesRun.getMessageId(), WorkflowStage.KNOWLEDGE_READY, afterSalesRun.getStatus(), "knowledgeRecallCount=2, retrievalSource=elasticsearch-hybrid, snippetIds=seed-s1|seed-s2", OffsetDateTime.now()));
         workflowEventRepository.save(new WorkflowEvent("evt-s2", afterSalesRun.getRunId(), afterSalesRun.getMessageId(), WorkflowStage.REPLY_DRAFTED, afterSalesRun.getStatus(), "draftStatus=FOLLOW_UP_NEEDED, replySource=follow-up-template, fallbackReason=follow_up_template_required", OffsetDateTime.now()));
         replyDraftRepository.save(ReplyDraft.create(afterSalesRun.getRunId(), "subject-s1", "body-s1", ReplyDraftStatus.FOLLOW_UP_NEEDED, "missing order id"));
         mailReceiptRepository.save(MailReceipt.manual("receipt-s1", new InboundMail(afterSalesRun.getMessageId(), afterSalesRun.getThreadId(), "s1@example.com", "subject-s1", "body-s1", OffsetDateTime.now())));
@@ -209,6 +212,8 @@ class WorkflowEvaluationServiceTest {
         preSalesRun.complete("workflow completed with draft status=DRAFT_READY");
         workflowRunRepository.save(preSalesRun);
         workflowEventRepository.save(new WorkflowEvent("evt-s3", preSalesRun.getRunId(), preSalesRun.getMessageId(), WorkflowStage.INTENT_ROUTED, preSalesRun.getStatus(), "scene=PRE_SALES, subIntent=product_recommendation", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-s3a", preSalesRun.getRunId(), preSalesRun.getMessageId(), WorkflowStage.BUSINESS_FACTS_READY, preSalesRun.getStatus(), "factStatus=NOT_REQUIRED, sourceSystems=none, resolvedEntityCount=0, factCount=0, missingEntityCount=0, conflictFlagCount=0", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-s3b", preSalesRun.getRunId(), preSalesRun.getMessageId(), WorkflowStage.KNOWLEDGE_READY, preSalesRun.getStatus(), "knowledgeRecallCount=3, retrievalSource=elasticsearch-hybrid, snippetIds=seed-p1|seed-p2|seed-p3", OffsetDateTime.now()));
         workflowEventRepository.save(new WorkflowEvent("evt-s4", preSalesRun.getRunId(), preSalesRun.getMessageId(), WorkflowStage.REPLY_DRAFTED, preSalesRun.getStatus(), "draftStatus=DRAFT_READY, replySource=template, fallbackReason=llm_unavailable_or_empty", OffsetDateTime.now()));
         replyDraftRepository.save(ReplyDraft.create(preSalesRun.getRunId(), "subject-s2", "body-s2", ReplyDraftStatus.DRAFT_READY, "ready"));
         mailReceiptRepository.save(MailReceipt.manual("receipt-s2", new InboundMail(preSalesRun.getMessageId(), preSalesRun.getThreadId(), "s2@example.com", "subject-s2", "body-s2", OffsetDateTime.now())));
@@ -218,6 +223,8 @@ class WorkflowEvaluationServiceTest {
         reviewRun.complete("workflow completed with draft status=HUMAN_REVIEW_REQUIRED");
         workflowRunRepository.save(reviewRun);
         workflowEventRepository.save(new WorkflowEvent("evt-s5", reviewRun.getRunId(), reviewRun.getMessageId(), WorkflowStage.INTENT_ROUTED, reviewRun.getStatus(), "scene=AFTER_SALES, subIntent=return_refund", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-s5a", reviewRun.getRunId(), reviewRun.getMessageId(), WorkflowStage.BUSINESS_FACTS_READY, reviewRun.getStatus(), "factStatus=NO_RESULT, sourceSystems=local-order-catalog, resolvedEntityCount=1, factCount=0, missingEntityCount=0, conflictFlagCount=0", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-s5b", reviewRun.getRunId(), reviewRun.getMessageId(), WorkflowStage.KNOWLEDGE_READY, reviewRun.getStatus(), "knowledgeRecallCount=2, retrievalSource=policy-catalog, snippetIds=seed-r1|seed-r2", OffsetDateTime.now()));
         workflowEventRepository.save(new WorkflowEvent("evt-s6", reviewRun.getRunId(), reviewRun.getMessageId(), WorkflowStage.REPLY_DRAFTED, reviewRun.getStatus(), "draftStatus=HUMAN_REVIEW_REQUIRED, replySource=human-review-template, fallbackReason=human_review_template_required", OffsetDateTime.now()));
         ReplyDraft reviewDraft = ReplyDraft.create(reviewRun.getRunId(), "subject-s3", "body-s3", ReplyDraftStatus.HUMAN_REVIEW_REQUIRED, "manual review required");
         reviewDraft.updateSendReadiness(SendReadiness.PENDING_REVIEW, "manual_review_required", "manual review required");
@@ -258,6 +265,25 @@ class WorkflowEvaluationServiceTest {
                 new WorkflowEvaluationCountView("HUMAN-REVIEW-TEMPLATE", 1),
                 new WorkflowEvaluationCountView("TEMPLATE", 1)
         );
+        assertThat(summary.businessFactStatuses()).containsExactlyInAnyOrder(
+                new WorkflowEvaluationCountView("INSUFFICIENT_INPUT", 1),
+                new WorkflowEvaluationCountView("NO_RESULT", 1),
+                new WorkflowEvaluationCountView("NOT_REQUIRED", 1)
+        );
+        assertThat(summary.knowledgeRoles()).containsExactlyInAnyOrder(
+                new WorkflowEvaluationCountView("knowledge fills product and catalog guidance that business facts do not provide", 1),
+                new WorkflowEvaluationCountView("knowledge supplements general response guidance for the current route", 1),
+                new WorkflowEvaluationCountView("knowledge supplements explanation and expectation setting around the current business facts", 1)
+        );
+        assertThat(summary.knowledgeRetrievalSources()).containsExactly(
+                new WorkflowEvaluationCountView("elasticsearch-hybrid", 2),
+                new WorkflowEvaluationCountView("policy-catalog", 1)
+        );
+        assertThat(summary.replyFallbackReasons()).containsExactlyInAnyOrder(
+                new WorkflowEvaluationCountView("follow_up_template_required", 1),
+                new WorkflowEvaluationCountView("human_review_template_required", 1),
+                new WorkflowEvaluationCountView("llm_unavailable_or_empty", 1)
+        );
         assertThat(summary.riskFlags()).contains(
                 new WorkflowEvaluationCountView("follow_up_needed", 1),
                 new WorkflowEvaluationCountView("manual_review_required", 1),
@@ -266,6 +292,10 @@ class WorkflowEvaluationServiceTest {
         );
         assertThat(filteredSummary.sampledCount()).isEqualTo(2);
         assertThat(filteredSummary.scenes()).containsExactly(new WorkflowEvaluationCountView("AFTER_SALES", 2));
+        assertThat(filteredSummary.businessFactStatuses()).containsExactlyInAnyOrder(
+                new WorkflowEvaluationCountView("INSUFFICIENT_INPUT", 1),
+                new WorkflowEvaluationCountView("NO_RESULT", 1)
+        );
     }
 
     private static final class InMemoryWorkflowRunRepository implements WorkflowRunRepository {
