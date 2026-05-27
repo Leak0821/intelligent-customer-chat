@@ -26,6 +26,7 @@ class AgentRuntimeConfigServiceTest {
     void shouldFallbackToLocalRuntimeConfigWhenNacosIsDisabled() {
         assertThat(agentRuntimeConfigService.current().source()).isEqualTo("local-default");
         assertThat(promptConfigService.currentPromptConfig().followUpTemplate()).contains("please share your order number");
+        assertThat(promptConfigService.currentPromptConfig().sceneTemplateConfig().followUpTemplatesByScene()).containsKeys("PRE_SALES", "AFTER_SALES");
         assertThat(intentConfigService.currentIntentCatalog().afterSalesIntents()).contains("logistics_tracking");
         assertThat(retrievalConfigService.currentRetrievalSettings().topK()).isEqualTo(10);
     }

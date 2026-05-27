@@ -115,7 +115,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
         if (status == ReplyDraftStatus.FOLLOW_UP_NEEDED) {
             return new ReplyBodyResult(
                     appendCoverageNote(
-                            renderTemplate(promptConfig.followUpTemplate(), normalizationResult.primaryQuestion(), routeResult.scene().name()),
+                            renderTemplate(promptConfig.followUpTemplateForScene(routeResult.scene().name()), normalizationResult.primaryQuestion(), routeResult.scene().name()),
                             coveragePlan
                     ),
                     "follow-up-template",
@@ -130,7 +130,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
         if (status == ReplyDraftStatus.HUMAN_REVIEW_REQUIRED) {
             return new ReplyBodyResult(
                     appendCoverageNote(
-                            renderTemplate(promptConfig.humanReviewTemplate(), normalizationResult.primaryQuestion(), routeResult.scene().name()),
+                            renderTemplate(promptConfig.humanReviewTemplateForScene(routeResult.scene().name()), normalizationResult.primaryQuestion(), routeResult.scene().name()),
                             coveragePlan
                     ),
                     "human-review-template",
@@ -143,6 +143,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
         }
 
         String systemPrompt = promptConfig.directReplySystemPrompt();
+        String directReplySuffix = promptConfig.directReplySuffixForScene(routeResult.scene().name());
         String userPrompt = buildDirectReplyPrompt(
                 mail,
                 routeResult,
@@ -151,7 +152,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 knowledgeRetrieveResult,
                 contextPromptPayload,
                 coveragePlan,
-                promptConfig.directReplySuffix()
+                directReplySuffix
         );
         String fallbackBody = appendCoverageNote(buildTemplateDirectReply(
                 routeResult,
@@ -159,7 +160,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 businessFactResult,
                 knowledgeRetrieveResult,
                 contextPromptPayload,
-                promptConfig.directReplySuffix()
+                directReplySuffix
         ), coveragePlan);
         return llmClient.complete(systemPrompt, userPrompt)
                 .filter(value -> !value.isBlank())

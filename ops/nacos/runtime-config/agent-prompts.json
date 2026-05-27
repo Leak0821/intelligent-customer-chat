@@ -3,5 +3,20 @@
   "directReplySystemPrompt": "You are a senior email customer support agent. Write a concise, courteous, production-style reply draft based only on the supplied facts, context summary, and knowledge snippets. Do not invent refunds, shipping promises, dates, or policies that are not explicitly provided. If the evidence is partial, say what is confirmed and keep the wording careful. Return plain email body text only.",
   "followUpTemplate": "Hello,\n\nWe have reviewed your latest email. To continue, please share your order number or tracking number so we can verify the exact record for you.\n\nCurrent understanding:\n- Main request: {{primaryQuestion}}\n- Routed scene: {{scene}}\n\nOnce we receive the missing information, we will continue with the next step.\n",
   "humanReviewTemplate": "Hello,\n\nWe have reviewed your latest request and a specialist is checking the case to avoid giving you an incorrect commitment.\n\nCurrent understanding:\n- Main request: {{primaryQuestion}}\n- Routed scene: {{scene}}\n\nWe will follow up again after manual review.\n",
-  "directReplySuffix": "This draft is still running on the first production skeleton and will be refined with live tools, live facts, and RAG evidence in the next slices."
+  "directReplySuffix": "This draft is still running on the first production skeleton and will be refined with live tools, live facts, and RAG evidence in the next slices.",
+  "sceneTemplateConfig": {
+    "followUpTemplatesByScene": {
+      "PRE_SALES": "Hello,\n\nWe have reviewed your question. To recommend a suitable next step, please share a little more detail about your intended use, preferred style, or target room setup.\n\nCurrent understanding:\n- Main request: {{primaryQuestion}}\n- Routed scene: {{scene}}\n\nOnce we receive the missing detail, we will continue with a more precise recommendation.\n",
+      "AFTER_SALES": "Hello,\n\nWe have reviewed your latest email. To continue, please share your order number or tracking number so we can verify the exact record for you.\n\nCurrent understanding:\n- Main request: {{primaryQuestion}}\n- Routed scene: {{scene}}\n\nOnce we receive the missing information, we will continue with the next step.\n",
+      "UNKNOWN": "Hello,\n\nWe have reviewed your latest email. To continue safely, please share the key order, product, or account detail related to your request.\n\nCurrent understanding:\n- Main request: {{primaryQuestion}}\n- Routed scene: {{scene}}\n\nOnce we receive the missing information, we will continue with the next step.\n"
+    },
+    "humanReviewTemplatesByScene": {
+      "PRE_SALES": "Hello,\n\nWe have reviewed your request and a specialist is checking the recommendation boundary to avoid giving you an unsupported product or policy commitment.\n\nCurrent understanding:\n- Main request: {{primaryQuestion}}\n- Routed scene: {{scene}}\n\nWe will follow up again after manual review.\n",
+      "AFTER_SALES": "Hello,\n\nWe have reviewed your latest request and a specialist is checking the case to avoid giving you an incorrect commitment.\n\nCurrent understanding:\n- Main request: {{primaryQuestion}}\n- Routed scene: {{scene}}\n\nWe will follow up again after manual review.\n"
+    },
+    "directReplySuffixByScene": {
+      "PRE_SALES": "This draft is still running on the first production skeleton and will be refined with richer catalog evidence and configurable recommendation prompts in the next slices.",
+      "AFTER_SALES": "This draft is still running on the first production skeleton and will be refined with live order facts, logistics facts, and RAG evidence in the next slices."
+    }
+  }
 }

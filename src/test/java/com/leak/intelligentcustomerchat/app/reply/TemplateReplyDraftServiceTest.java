@@ -14,6 +14,7 @@ import com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeSnippet;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftStatus;
+import com.leak.intelligentcustomerchat.domain.runtime.PromptSceneTemplateConfig;
 import com.leak.intelligentcustomerchat.domain.runtime.PromptTemplateConfig;
 import com.leak.intelligentcustomerchat.domain.workflow.WorkflowRun;
 import org.junit.jupiter.api.Test;
@@ -199,6 +200,41 @@ class TemplateReplyDraftServiceTest {
         assertThat(draft.getBody()).contains("living room");
     }
 
+    @Test
+    void shouldUseSceneSpecificFollowUpTemplateForPreSalesRequests() {
+        TemplateReplyDraftService service = new TemplateReplyDraftService(promptConfigService(), new StubLlmClient(Optional.empty()));
+
+        ReplyDraft draft = service.draft(
+                WorkflowRun.start("msg-4", "thread-4"),
+                new InboundMail(
+                        "msg-4",
+                        "thread-4",
+                        "customer@example.com",
+                        "Need advice",
+                        "I need help choosing a product but I have not shared enough detail yet.",
+                        OffsetDateTime.now()
+                ),
+                new IntentNormalizationResult(
+                        "Customer needs product advice but has not shared enough preference detail.",
+                        "What product would fit my room setup?",
+                        List.of(),
+                        List.of(CustomerScene.PRE_SALES),
+                        List.of("product_recommendation"),
+                        List.of("room_context"),
+                        List.of("room_context"),
+                        ProcessingDisposition.FOLLOW_UP
+                ),
+                new IntentRouteResult(CustomerScene.PRE_SALES, "product_recommendation", ProcessingDisposition.CONTINUE, "test"),
+                new ContextSnapshot("customer asks for a recommendation", List.of(), List.of()),
+                BusinessFactResult.notRequired(),
+                KnowledgeRetrieveResult.empty()
+        );
+
+        assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.FOLLOW_UP_NEEDED);
+        assertThat(draft.getBody()).contains("preferred style");
+        assertThat(draft.getBody()).doesNotContain("order number or tracking number");
+    }
+
     private static PromptConfigService promptConfigService() {
         PromptTemplateConfig config = new PromptTemplateConfig(
                 "Return JSON only.",
@@ -217,7 +253,45 @@ class TemplateReplyDraftServiceTest {
                 Main request: {{primaryQuestion}}
                 Scene: {{scene}}
                 """,
-                "Close politely and avoid unsupported promises."
+                "Close politely and avoid unsupported promises.",
+                new PromptSceneTemplateConfig(
+                        java.util.Map.of(
+                                "PRE_SALES", """
+                                Hello,
+
+                                Please share a little more detail about your intended use, preferred style, or room setup.
+                                Main request: {{primaryQuestion}}
+                                Scene: {{scene}}
+                                """,
+                                "AFTER_SALES", """
+                                Hello,
+
+                                Please share your order number or tracking number.
+                                Main request: {{primaryQuestion}}
+                                Scene: {{scene}}
+                                """
+                        ),
+                        java.util.Map.of(
+                                "PRE_SALES", """
+                                Hello,
+
+                                A specialist is reviewing your recommendation request.
+                                Main request: {{primaryQuestion}}
+                                Scene: {{scene}}
+                                """,
+                                "AFTER_SALES", """
+                                Hello,
+
+                                A specialist is reviewing your order-related request.
+                                Main request: {{primaryQuestion}}
+                                Scene: {{scene}}
+                                """
+                        ),
+                        java.util.Map.of(
+                                "PRE_SALES", "Close politely and mention that richer recommendation evidence will be added later.",
+                                "AFTER_SALES", "Close politely and avoid unsupported promises."
+                        )
+                )
         );
         return () -> config;
     }

@@ -141,6 +141,15 @@ mvn -Dspring-boot.run.profiles=local spring-boot:run
 
 默认会把 [agent-prompts.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/nacos/runtime-config/agent-prompts.json)、[agent-intents.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/nacos/runtime-config/agent-intents.json)、[agent-retrieval.json](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/ops/nacos/runtime-config/agent-retrieval.json) 发布到本地 `Nacos` 的 `DEFAULT_GROUP`。
 
+其中 `agent-prompts.json` 已支持“基础模板 + 按场景覆写”：
+
+- `followUpTemplate / humanReviewTemplate / directReplySuffix` 仍可作为通用默认值
+- `sceneTemplateConfig.followUpTemplatesByScene`
+- `sceneTemplateConfig.humanReviewTemplatesByScene`
+- `sceneTemplateConfig.directReplySuffixByScene`
+
+当前第一版默认按 `PRE_SALES / AFTER_SALES / UNKNOWN` 做轻量区分，方便后续继续把模板调优沉淀到 `Nacos` 而不是散落在代码里。
+
 如果你要切到 `Nacos` 运行时配置，可以再打开：
 
 ```bash
