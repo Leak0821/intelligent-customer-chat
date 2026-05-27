@@ -28,6 +28,7 @@
 - `demo/scenarios/{scenarioId}` 已补充统一执行摘要，可把 `analysis / replay / review_loop / validate` 结果收敛成一层闭环说明
 - `evaluation / replay` 已补充统一的风险与放行决策视图，可直接判断风险等级、是否可放行和推荐动作
 - `evaluation summary` 已补充健康度总览卡，可直接看最近一批运行的待审核、追问、阻断和可放行分布
+- 已补充前端最小闭环 `case` 视图，前端可直接拿到当前邮件的状态、草稿、风险和可操作动作
 - 第一阶段 OpenSpec 与研究合同已进入“边实现边校正”阶段，后续重点转向真实业务适配和基础设施联调
 
 ## 文档入口
@@ -114,6 +115,7 @@ mvn -Dspring-boot.run.profiles=local spring-boot:run
 - [docs/mail-local-setup.md](./docs/mail-local-setup.md)
 - [docs/interview-demo-walkthrough.md](./docs/interview-demo-walkthrough.md)
 - [docs/current-delivery-status.md](./docs/current-delivery-status.md)
+- [docs/frontend-minimal-loop.md](./docs/frontend-minimal-loop.md)
 - [docs/integration-run-record-template.md](./docs/integration-run-record-template.md)
 - [docs/sample-integration-run-record.md](./docs/sample-integration-run-record.md)
 - [docs/observation-checklist.md](./docs/observation-checklist.md)

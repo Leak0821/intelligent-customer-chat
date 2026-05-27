@@ -13,6 +13,7 @@ import com.leak.intelligentcustomerchat.app.workflow.WorkflowQueueAdminService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowQueueItemView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowAnalysisView;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowCaseView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationSampleView;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationSummaryView;
@@ -96,6 +97,12 @@ public class WorkflowDemoController {
         return workflowAnalysisService.analyze(buildInboundMail(request));
     }
 
+    @PostMapping("/demo/case")
+    public WorkflowCaseView triggerDemoAndLoadCase(@RequestBody DemoMailRequest request) {
+        WorkflowRun run = mailIngestionService.process(buildInboundMail(request));
+        return buildWorkflowCase(run.getRunId());
+    }
+
     @GetMapping("/demo/scenarios")
     public List<DemoScenarioSummaryView> listDemoScenarios() {
         return demoScenarioCatalogService.listScenarios();
@@ -136,6 +143,11 @@ public class WorkflowDemoController {
     @GetMapping("/{runId}/evaluation")
     public WorkflowEvaluationSampleView evaluation(@PathVariable String runId) {
         return workflowEvaluationService.getSample(runId);
+    }
+
+    @GetMapping("/{runId}/case")
+    public WorkflowCaseView caseDetail(@PathVariable String runId) {
+        return buildWorkflowCase(runId);
     }
 
     @GetMapping("/evaluations/recent")
@@ -322,5 +334,11 @@ public class WorkflowDemoController {
                 request.body(),
                 OffsetDateTime.now()
         );
+    }
+
+    private WorkflowCaseView buildWorkflowCase(String runId) {
+        WorkflowEvaluationSampleView evaluation = workflowEvaluationService.getSample(runId);
+        ReplyDraft latestDraft = workflowRunService.findDraft(runId).orElse(null);
+        return WorkflowCaseView.from(evaluation, latestDraft);
     }
 }

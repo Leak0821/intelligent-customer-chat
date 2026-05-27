@@ -5,6 +5,7 @@ import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationSummaryVi
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvidenceSummaryParser;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowQueueAdminService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowQueueItemView;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceipt;
 import com.leak.intelligentcustomerchat.domain.mail.MailReceiptRepository;
@@ -200,6 +201,83 @@ class WorkflowDemoControllerTest {
         assertThat(summary.healthOverview().sampledCount()).isEqualTo(1);
         assertThat(summary.healthOverview().overviewStatus()).isEqualTo("ATTENTION_NEEDED");
         assertThat(summary.healthOverview().followUpCount()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldExposeWorkflowCaseDetail() {
+        InMemoryWorkflowRunRepository workflowRunRepository = new InMemoryWorkflowRunRepository();
+        InMemoryWorkflowEventRepository workflowEventRepository = new InMemoryWorkflowEventRepository();
+        InMemoryReplyDraftRepository replyDraftRepository = new InMemoryReplyDraftRepository();
+        InMemoryReplyDispatchRepository replyDispatchRepository = new InMemoryReplyDispatchRepository();
+        InMemoryReviewRecordRepository reviewRecordRepository = new InMemoryReviewRecordRepository();
+        InMemoryMailReceiptRepository mailReceiptRepository = new InMemoryMailReceiptRepository();
+
+        WorkflowRun run = WorkflowRun.start("msg-case", "thread-case");
+        run.moveTo(WorkflowStage.INTENT_ROUTED, "scene=AFTER_SALES, subIntent=order_status_query");
+        run.complete("workflow completed with draft status=DRAFT_READY");
+        workflowRunRepository.save(run);
+        workflowEventRepository.save(new WorkflowEvent("evt-c1", run.getRunId(), run.getMessageId(), WorkflowStage.INTENT_NORMALIZED, run.getStatus(), "primaryQuestion=where is my order", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-c2", run.getRunId(), run.getMessageId(), WorkflowStage.INTENT_ROUTED, run.getStatus(), "scene=AFTER_SALES, subIntent=order_status_query", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-c3", run.getRunId(), run.getMessageId(), WorkflowStage.BUSINESS_FACTS_READY, run.getStatus(), "factStatus=FOUND, sourceSystems=local-order-catalog, resolvedEntityCount=1, factCount=2, missingEntityCount=0, conflictFlagCount=0", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-c4", run.getRunId(), run.getMessageId(), WorkflowStage.KNOWLEDGE_READY, run.getStatus(), "knowledgeRecallCount=1, retrievalSource=elasticsearch-hybrid, snippetIds=seed-order", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-c5", run.getRunId(), run.getMessageId(), WorkflowStage.REPLY_DRAFTED, run.getStatus(), "draftStatus=DRAFT_READY, replySource=llm", OffsetDateTime.now()));
+
+        ReplyDraft draft = ReplyDraft.create(run.getRunId(), "Order update", "Your order is in transit.", ReplyDraftStatus.DRAFT_READY, "ready for review");
+        draft.updateSendReadiness(SendReadiness.PENDING_REVIEW, "await_review_decision", "awaiting review");
+        replyDraftRepository.save(draft);
+        mailReceiptRepository.save(MailReceipt.manual("receipt-case", new InboundMail(
+                run.getMessageId(),
+                run.getThreadId(),
+                "case@example.com",
+                "Order update",
+                "where is my order",
+                OffsetDateTime.now()
+        )));
+
+        WorkflowRunService workflowRunService = new WorkflowRunService(
+                workflowRunRepository,
+                workflowEventRepository,
+                replyDraftRepository,
+                replyDispatchRepository,
+                reviewRecordRepository,
+                null,
+                null,
+                workflowEvidenceSummaryParser
+        );
+        WorkflowEvaluationService workflowEvaluationService = new WorkflowEvaluationService(
+                workflowRunRepository,
+                workflowEventRepository,
+                replyDraftRepository,
+                replyDispatchRepository,
+                reviewRecordRepository,
+                mailReceiptRepository,
+                workflowEvidenceSummaryParser,
+                reviewFeedbackTagger
+        );
+
+        WorkflowDemoController controller = new WorkflowDemoController(
+                null,
+                null,
+                null,
+                workflowRunService,
+                null,
+                workflowEvaluationService,
+                null,
+                null,
+                null,
+                null
+        );
+
+        var detail = controller.caseDetail(run.getRunId());
+
+        assertThat(detail.runId()).isEqualTo(run.getRunId());
+        assertThat(detail.scene()).isEqualTo("AFTER_SALES");
+        assertThat(detail.subIntent()).isEqualTo("ORDER_STATUS_QUERY");
+        assertThat(detail.sendReadiness()).isEqualTo("PENDING_REVIEW");
+        assertThat(detail.availableActions()).containsExactly("APPROVE_SEND", "REJECT_SEND", "REVISE_DRAFT");
+        assertThat(detail.summaryMessage()).isEqualTo("系统已生成回复草稿，当前等待人工审核。");
+        assertThat(detail.draftSubject()).isEqualTo("Order update");
+        assertThat(detail.draftBody()).contains("in transit");
     }
 
     private static final class InMemoryWorkflowRunRepository implements WorkflowRunRepository {

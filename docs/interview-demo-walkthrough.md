@@ -69,6 +69,7 @@ curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/pre-sales-recom
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-logistics?mode=replay"
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-manual-review?mode=review_loop"
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-policy?mode=validate"
+curl -X POST "http://127.0.0.1:8080/api/workflows/demo/case" -H "Content-Type: application/json" -d '{"from":"demo@example.com","subject":"Where is my order?","body":"My order has not arrived yet. Please help check."}'
 curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 ```
 
@@ -181,6 +182,7 @@ curl "http://127.0.0.1:8080/api/workflows/evaluations/recent?limit=20&knowledgeR
 - `replyFallbackReasons` 能直接看出草稿阶段更多是在追问模板、人工审核模板，还是模型回退
 - `riskLevels / releaseDecisions / recommendedActions` 能快速说明最近一批样例里，多少条可继续派发、多少条卡在审核、多少条需要追问
 - `healthOverview` 适合先做一句话总览，再下钻具体风险分布
+- 如果要给前端演示“单封邮件现在该怎么处理”，优先看 `case` 视图而不是让前端自己拼多份接口
 - 模板回退、追问、人工审核出现了多少次
 - 这个接口适合做“当前质量画像”，单条 `evaluation` 适合做个案复盘
 
