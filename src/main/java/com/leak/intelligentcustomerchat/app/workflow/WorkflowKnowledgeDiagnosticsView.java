@@ -12,8 +12,12 @@ public record WorkflowKnowledgeDiagnosticsView(
         RetrievalSettingsConfig retrievalSettings,
         String retrievalSource,
         String fusionStrategy,
+        String knowledgeRole,
+        boolean factsFirstApplied,
         int recallCount,
         List<String> fusedSnippetIds,
+        List<String> knowledgePreview,
+        List<String> factGroundingSignals,
         boolean hybridDebugAvailable,
         List<KnowledgeSnippet> bm25Snippets,
         List<KnowledgeSnippet> vectorSnippets
@@ -23,7 +27,10 @@ public record WorkflowKnowledgeDiagnosticsView(
         Objects.requireNonNull(retrievalSettings, "retrievalSettings must not be null");
         Objects.requireNonNull(retrievalSource, "retrievalSource must not be null");
         Objects.requireNonNull(fusionStrategy, "fusionStrategy must not be null");
+        Objects.requireNonNull(knowledgeRole, "knowledgeRole must not be null");
         fusedSnippetIds = List.copyOf(fusedSnippetIds);
+        knowledgePreview = List.copyOf(knowledgePreview);
+        factGroundingSignals = List.copyOf(factGroundingSignals);
         bm25Snippets = List.copyOf(bm25Snippets);
         vectorSnippets = List.copyOf(vectorSnippets);
     }

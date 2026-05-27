@@ -18,6 +18,7 @@ public record WorkflowAnalysisView(
         IntentRouteResult routeResult,
         ContextSnapshot contextSnapshot,
         WorkflowContextDiagnosticsView contextDiagnostics,
+        WorkflowBusinessFactDiagnosticsView businessFactDiagnostics,
         BusinessFactResult businessFactResult,
         WorkflowKnowledgeDiagnosticsView knowledgeDiagnostics,
         KnowledgeRetrieveResult knowledgeRetrieveResult,
@@ -32,6 +33,7 @@ public record WorkflowAnalysisView(
         Objects.requireNonNull(routeResult, "routeResult must not be null");
         Objects.requireNonNull(contextSnapshot, "contextSnapshot must not be null");
         Objects.requireNonNull(contextDiagnostics, "contextDiagnostics must not be null");
+        Objects.requireNonNull(businessFactDiagnostics, "businessFactDiagnostics must not be null");
         Objects.requireNonNull(businessFactResult, "businessFactResult must not be null");
         Objects.requireNonNull(knowledgeDiagnostics, "knowledgeDiagnostics must not be null");
         Objects.requireNonNull(knowledgeRetrieveResult, "knowledgeRetrieveResult must not be null");

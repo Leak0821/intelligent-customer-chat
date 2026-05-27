@@ -20,6 +20,7 @@ import com.leak.intelligentcustomerchat.app.review.ReviewDecisionContext;
 import com.leak.intelligentcustomerchat.app.review.ReviewDecisionService;
 import com.leak.intelligentcustomerchat.config.ContextMemoryProperties;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactResult;
+import com.leak.intelligentcustomerchat.domain.business.BusinessFactStatus;
 import com.leak.intelligentcustomerchat.domain.context.ContextSnapshot;
 import com.leak.intelligentcustomerchat.domain.context.ConversationMemoryStore;
 import com.leak.intelligentcustomerchat.domain.context.ConversationSummary;
@@ -38,6 +39,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -142,8 +144,9 @@ public class WorkflowAnalysisService {
                 routeResult,
                 contextSnapshot,
                 buildContextDiagnostics(cleanedMail.threadId(), contextLoadingDiagnostics),
+                buildBusinessFactDiagnostics(routeResult, businessFactResult),
                 businessFactResult,
-                buildKnowledgeDiagnostics(retrievalQuery, knowledgeRetrieveResult),
+                buildKnowledgeDiagnostics(retrievalQuery, routeResult, businessFactResult, knowledgeRetrieveResult),
                 knowledgeRetrieveResult,
                 buildReplyDiagnostics(draftingResult.diagnostics()),
                 draft,
@@ -227,6 +230,21 @@ public class WorkflowAnalysisService {
         );
     }
 
+    private WorkflowBusinessFactDiagnosticsView buildBusinessFactDiagnostics(IntentRouteResult routeResult,
+                                                                            BusinessFactResult businessFactResult) {
+        return new WorkflowBusinessFactDiagnosticsView(
+                businessFactResult.status().name(),
+                splitSourceSystems(businessFactResult.sourceSystem()),
+                requiredFactTypes(routeResult.subIntent()),
+                inferFactRole(businessFactResult.status(), routeResult.subIntent()),
+                businessFactResult.resolvedEntities(),
+                businessFactResult.facts(),
+                businessFactResult.missingEntities(),
+                businessFactResult.conflictFlags(),
+                businessFactResult.factTimestamp()
+        );
+    }
+
     private WorkflowPersistedSummaryView toPersistedSummaryView(ConversationSummary summary) {
         return new WorkflowPersistedSummaryView(
                 summary.getSummaryId(),
@@ -238,6 +256,8 @@ public class WorkflowAnalysisService {
     }
 
     private WorkflowKnowledgeDiagnosticsView buildKnowledgeDiagnostics(RetrievalQuery retrievalQuery,
+                                                                      IntentRouteResult routeResult,
+                                                                      BusinessFactResult businessFactResult,
                                                                       KnowledgeRetrieveResult knowledgeRetrieveResult) {
         HybridSearchService hybridSearchService = hybridSearchServiceProvider.getIfAvailable();
         if (hybridSearchService == null) {
@@ -246,8 +266,12 @@ public class WorkflowAnalysisService {
                     retrievalConfigService.currentRetrievalSettings(),
                     knowledgeRetrieveResult.source(),
                     inferFusionStrategy(knowledgeRetrieveResult, false),
+                    inferKnowledgeRole(routeResult.subIntent()),
+                    factsFirstApplied(retrievalQuery),
                     knowledgeRetrieveResult.recallCount(),
                     knowledgeRetrieveResult.snippets().stream().map(com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeSnippet::id).toList(),
+                    buildKnowledgePreview(knowledgeRetrieveResult),
+                    buildFactGroundingSignals(retrievalQuery, businessFactResult, knowledgeRetrieveResult),
                     false,
                     List.of(),
                     List.of()
@@ -261,8 +285,12 @@ public class WorkflowAnalysisService {
                     retrievalConfigService.currentRetrievalSettings(),
                     knowledgeRetrieveResult.source(),
                     inferFusionStrategy(knowledgeRetrieveResult, true),
+                    inferKnowledgeRole(routeResult.subIntent()),
+                    factsFirstApplied(retrievalQuery),
                     knowledgeRetrieveResult.recallCount(),
                     knowledgeRetrieveResult.snippets().stream().map(com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeSnippet::id).toList(),
+                    buildKnowledgePreview(knowledgeRetrieveResult),
+                    buildFactGroundingSignals(retrievalQuery, businessFactResult, knowledgeRetrieveResult),
                     true,
                     hybridRetrievalResult.bm25Snippets(),
                     hybridRetrievalResult.vectorSnippets()
@@ -273,8 +301,12 @@ public class WorkflowAnalysisService {
                     retrievalConfigService.currentRetrievalSettings(),
                     knowledgeRetrieveResult.source(),
                     inferFusionStrategy(knowledgeRetrieveResult, false),
+                    inferKnowledgeRole(routeResult.subIntent()),
+                    factsFirstApplied(retrievalQuery),
                     knowledgeRetrieveResult.recallCount(),
                     knowledgeRetrieveResult.snippets().stream().map(com.leak.intelligentcustomerchat.domain.knowledge.KnowledgeSnippet::id).toList(),
+                    buildKnowledgePreview(knowledgeRetrieveResult),
+                    buildFactGroundingSignals(retrievalQuery, businessFactResult, knowledgeRetrieveResult),
                     false,
                     List.of(),
                     List.of()
@@ -290,6 +322,123 @@ public class WorkflowAnalysisService {
             return "score_sort";
         }
         return hybridDebugAvailable ? "hybrid_unknown" : "single_path";
+    }
+
+    private List<String> requiredFactTypes(String subIntent) {
+        return switch (subIntent) {
+            case "logistics_tracking" -> List.of("order", "logistics");
+            case "order_status" -> List.of("order");
+            case "after_sales_policy" -> List.of("order", "policy");
+            default -> List.of();
+        };
+    }
+
+    private String inferFactRole(BusinessFactStatus factStatus, String subIntent) {
+        if (factStatus == BusinessFactStatus.NOT_REQUIRED) {
+            return "business facts are not required for this route";
+        }
+        if (factStatus == BusinessFactStatus.INSUFFICIENT_INPUT) {
+            return "business facts are blocked until key identifiers are provided";
+        }
+        if (factStatus == BusinessFactStatus.CONFLICT) {
+            return "business facts act as an authority check and currently conflict";
+        }
+        if (factStatus == BusinessFactStatus.NO_RESULT) {
+            return "business facts were queried but did not return a usable record";
+        }
+        if (factStatus == BusinessFactStatus.TEMPORARY_FAILURE) {
+            return "business facts are required but the upstream query is temporarily unavailable";
+        }
+        return switch (subIntent) {
+            case "logistics_tracking" -> "business facts provide the latest order and logistics truth";
+            case "order_status" -> "business facts provide the current order truth";
+            case "after_sales_policy" -> "business facts provide order truth before policy guidance is applied";
+            default -> "business facts provide authoritative context for this route";
+        };
+    }
+
+    private String inferKnowledgeRole(String subIntent) {
+        return switch (subIntent) {
+            case "product_recommendation", "product_comparison", "inventory_or_shipping" ->
+                    "knowledge fills product and catalog guidance that business facts do not provide";
+            case "after_sales_policy" ->
+                    "knowledge supplements policy wording and handling guidance after business facts are checked";
+            case "logistics_tracking", "order_status" ->
+                    "knowledge supplements explanation and expectation setting around the current business facts";
+            default -> "knowledge supplements general response guidance for the current route";
+        };
+    }
+
+    private boolean factsFirstApplied(RetrievalQuery retrievalQuery) {
+        return !retrievalQuery.filters().isEmpty() && retrievalConfigService.currentRetrievalSettings().factsFirst();
+    }
+
+    private List<String> buildKnowledgePreview(KnowledgeRetrieveResult knowledgeRetrieveResult) {
+        return knowledgeRetrieveResult.snippets().stream()
+                .limit(3)
+                .map(snippet -> snippet.title() + ": " + preview(snippet.content()))
+                .toList();
+    }
+
+    private List<String> buildFactGroundingSignals(RetrievalQuery retrievalQuery,
+                                                   BusinessFactResult businessFactResult,
+                                                   KnowledgeRetrieveResult knowledgeRetrieveResult) {
+        List<String> matched = new java.util.ArrayList<>();
+        for (String filter : retrievalQuery.filters()) {
+            String normalizedFilter = normalizeSignal(filter);
+            if (normalizedFilter.isBlank()) {
+                continue;
+            }
+            boolean foundInSnippet = knowledgeRetrieveResult.snippets().stream().anyMatch(snippet ->
+                    normalizeSignal(snippet.title()).contains(normalizedFilter)
+                            || normalizeSignal(snippet.content()).contains(normalizedFilter));
+            if (foundInSnippet) {
+                matched.add("filter_grounded=" + filter);
+            }
+        }
+        for (String fact : businessFactResult.facts()) {
+            String normalizedFact = normalizeSignal(fact);
+            if (normalizedFact.isBlank()) {
+                continue;
+            }
+            boolean foundInSnippet = knowledgeRetrieveResult.snippets().stream().anyMatch(snippet ->
+                    normalizeSignal(snippet.content()).contains(normalizedFact));
+            if (foundInSnippet) {
+                matched.add("fact_grounded=" + fact);
+            }
+        }
+        return matched.stream().distinct().toList();
+    }
+
+    private List<String> splitSourceSystems(String sourceSystem) {
+        if (sourceSystem == null || sourceSystem.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(sourceSystem.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    private String preview(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        String normalized = text.replaceAll("\\s+", " ").trim();
+        return normalized.length() <= 120 ? normalized : normalized.substring(0, 120) + "...";
+    }
+
+    private String normalizeSignal(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.toLowerCase(Locale.ROOT)
+                .replace("=", " ")
+                .replace("_", " ")
+                .replaceAll("[^a-z0-9\\s-]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private WorkflowReplyDiagnosticsView buildReplyDiagnostics(ReplyDraftingDiagnostics diagnostics) {

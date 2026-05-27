@@ -100,9 +100,16 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
 - `contextDiagnostics.compressionDecision`
 - `contextDiagnostics.compressionSkipReason`
 - `contextDiagnostics.summaryResolutionSource`
+- `businessFactDiagnostics.factStatus`
+- `businessFactDiagnostics.factRole`
+- `businessFactDiagnostics.requiredFactTypes`
+- `businessFactDiagnostics.sourceSystems`
 - `knowledgeDiagnostics.retrievalQuery`
 - `knowledgeDiagnostics.retrievalSource`
 - `knowledgeDiagnostics.fusionStrategy`
+- `knowledgeDiagnostics.knowledgeRole`
+- `knowledgeDiagnostics.factsFirstApplied`
+- `knowledgeDiagnostics.factGroundingSignals`
 - `knowledgeDiagnostics.fusedSnippetIds`
 - `knowledgeDiagnostics.bm25Snippets`
 - `knowledgeDiagnostics.vectorSnippets`

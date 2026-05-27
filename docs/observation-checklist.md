@@ -52,8 +52,11 @@
 - contextDiagnostics 里是否能看到消息计数、压缩阈值和持久化摘要
 - compressionDecision / compressionSkipReason 是否解释了为什么压缩或为什么跳过
 - summaryResolutionSource 是否说明了摘要来自缓存、持久化摘要还是兜底拼装
+- businessFactDiagnostics 里是否能直接看出 facts 的角色、来源系统、缺口和冲突标记
 - knowledgeDiagnostics 里是否能看到 retrievalQuery，以及 bm25 / vector 两路召回
 - retrievalSource / fusionStrategy 是否说明了最终采用的检索通路和融合方式
+- knowledgeRole / factsFirstApplied 是否说明了知识是在补充什么，以及是否真的受 facts 约束
+- factGroundingSignals 是否能看出知识片段有没有和 facts / filters 形成有效衔接
 - fusedSnippetIds 是否和最终 knowledge 结果对得上
 - 是否触发了 business facts
 - 是否触发了 knowledge
