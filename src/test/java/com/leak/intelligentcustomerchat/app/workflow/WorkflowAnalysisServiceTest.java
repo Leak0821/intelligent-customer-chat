@@ -172,8 +172,11 @@ class WorkflowAnalysisServiceTest {
                                         true,
                                         true,
                                         null,
+                                        "summary_only",
                                         "Write a safe and concise customer reply.",
                                         "Customer email subject:\nNeed help",
+                                        List.of("summary=customer asked again after previous email", "signal=tracking_number=ZX987654"),
+                                        List.of("tracking_number=ZX987654"),
                                         List.of("current logistics status=in_transit"),
                                         List.of("fused-1"),
                                         List.of("fused content")
@@ -245,7 +248,9 @@ class WorkflowAnalysisServiceTest {
         assertThat(view.replyDiagnostics().replySource()).isEqualTo("llm");
         assertThat(view.replyDiagnostics().llmAttempted()).isTrue();
         assertThat(view.replyDiagnostics().llmResponseAccepted()).isTrue();
+        assertThat(view.replyDiagnostics().contextMode()).isEqualTo("summary_only");
         assertThat(view.replyDiagnostics().systemPrompt()).contains("safe and concise customer reply");
+        assertThat(view.replyDiagnostics().contextStrongSignals()).contains("tracking_number=ZX987654");
         assertThat(view.replyDiagnostics().factPreview()).contains("current logistics status=in_transit");
         assertThat(view.replyDiagnostics().knowledgeSnippetIds()).containsExactly("fused-1");
     }

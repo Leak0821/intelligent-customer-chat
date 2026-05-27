@@ -460,8 +460,11 @@ public class WorkflowAnalysisService {
                 diagnostics.llmAttempted(),
                 diagnostics.llmResponseAccepted(),
                 diagnostics.fallbackReason(),
+                diagnostics.contextMode(),
                 diagnostics.systemPrompt(),
                 diagnostics.userPrompt(),
+                diagnostics.contextPreview(),
+                diagnostics.contextStrongSignals(),
                 diagnostics.factPreview(),
                 diagnostics.knowledgeSnippetIds(),
                 diagnostics.knowledgeSnippetPreview()

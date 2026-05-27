@@ -75,8 +75,10 @@ class TemplateReplyDraftServiceTest {
         assertThat(result.diagnostics().replySource()).isEqualTo("llm");
         assertThat(result.diagnostics().llmAttempted()).isTrue();
         assertThat(result.diagnostics().llmResponseAccepted()).isTrue();
+        assertThat(result.diagnostics().contextMode()).isEqualTo("summary_only");
         assertThat(result.diagnostics().systemPrompt()).contains("safe and concise customer reply");
         assertThat(result.diagnostics().userPrompt()).contains("Customer email subject");
+        assertThat(result.diagnostics().userPrompt()).contains("Context mode:");
         assertThat(result.diagnostics().factPreview()).contains("order confirmed");
         assertThat(result.diagnostics().knowledgeSnippetIds()).containsExactly("k-1");
     }
@@ -99,11 +101,37 @@ class TemplateReplyDraftServiceTest {
         assertThat(draft.getStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
         assertThat(draft.getBody()).contains("Current update:");
         assertThat(draft.getBody()).contains("shipping-related information");
+        assertThat(draft.getBody()).contains("mode: summary_only");
         assertThat(draft.getReviewNotes()).contains("replySource=template");
         assertThat(result.diagnostics().replySource()).isEqualTo("template");
         assertThat(result.diagnostics().llmAttempted()).isTrue();
         assertThat(result.diagnostics().llmResponseAccepted()).isFalse();
         assertThat(result.diagnostics().fallbackReason()).isEqualTo("llm_unavailable_or_empty");
+    }
+
+    @Test
+    void shouldPreferRecentMessagesWhenOnlySyntheticSummaryExists() {
+        TemplateReplyDraftService service = new TemplateReplyDraftService(promptConfigService(), new StubLlmClient(Optional.of("ok")));
+
+        ReplyDraftingResult result = service.draftWithDiagnostics(
+                WorkflowRun.start("msg-1", "thread-1"),
+                mail(),
+                normalizationResult(ProcessingDisposition.CONTINUE),
+                routeResult(),
+                new ContextSnapshot(
+                        "thread=thread-1, latestSubject=Shipping update, route=AFTER_SALES",
+                        List.of("tracking_number=ZX987654"),
+                        List.of("Earlier the customer asked about the same shipment progress.")
+                ),
+                successFacts(),
+                knowledgeResult()
+        );
+
+        assertThat(result.diagnostics().contextMode()).isEqualTo("recent_messages_only");
+        assertThat(result.diagnostics().contextPreview()).contains("recent=Earlier the customer asked about the same shipment progress.");
+        assertThat(result.diagnostics().contextStrongSignals()).containsExactly("tracking_number=ZX987654");
+        assertThat(result.diagnostics().userPrompt()).contains("Recent conversation rounds:");
+        assertThat(result.diagnostics().userPrompt()).contains("Earlier the customer asked about the same shipment progress.");
     }
 
     @Test

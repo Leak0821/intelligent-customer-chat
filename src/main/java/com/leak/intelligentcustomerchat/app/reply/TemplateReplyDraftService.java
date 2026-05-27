@@ -20,10 +20,13 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class TemplateReplyDraftService implements ReplyDraftService {
+    private static final Pattern STRUCTURED_SIGNAL_PATTERN = Pattern.compile("^[a-z_]+=[^\\s].*$");
+
     private final PromptConfigService promptConfigService;
     private final LlmClient llmClient;
 
@@ -53,7 +56,16 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                                                     KnowledgeRetrieveResult knowledgeRetrieveResult) {
         String subject = "Re: " + mail.subject();
         ReplyDraftStatus status = decideStatus(normalizationResult, businessFactResult);
-        ReplyBodyResult replyBodyResult = buildBody(mail, routeResult, normalizationResult, businessFactResult, knowledgeRetrieveResult, contextSnapshot, status);
+        ContextPromptPayload contextPromptPayload = buildContextPromptPayload(contextSnapshot);
+        ReplyBodyResult replyBodyResult = buildBody(
+                mail,
+                routeResult,
+                normalizationResult,
+                businessFactResult,
+                knowledgeRetrieveResult,
+                contextPromptPayload,
+                status
+        );
         String notes = "scene=%s, subIntent=%s, replySource=%s"
                 .formatted(routeResult.scene(), routeResult.subIntent(), replyBodyResult.source());
         ReplyDraft draft = ReplyDraft.create(run.getRunId(), subject, replyBodyResult.body(), status, notes);
@@ -63,8 +75,11 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 replyBodyResult.llmAttempted(),
                 replyBodyResult.llmResponseAccepted(),
                 replyBodyResult.fallbackReason(),
+                contextPromptPayload.mode(),
                 replyBodyResult.systemPrompt(),
                 replyBodyResult.userPrompt(),
+                contextPromptPayload.preview(),
+                contextPromptPayload.strongSignals(),
                 List.copyOf(businessFactResult.facts()),
                 knowledgeRetrieveResult.snippets().stream().map(KnowledgeSnippet::id).toList(),
                 knowledgeRetrieveResult.snippets().stream().map(KnowledgeSnippet::content).toList()
@@ -88,7 +103,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                                       IntentNormalizationResult normalizationResult,
                                       BusinessFactResult businessFactResult,
                                       KnowledgeRetrieveResult knowledgeRetrieveResult,
-                                      ContextSnapshot contextSnapshot,
+                                      ContextPromptPayload contextPromptPayload,
                                       ReplyDraftStatus status) {
         PromptTemplateConfig promptConfig = promptConfigService.currentPromptConfig();
         if (status == ReplyDraftStatus.FOLLOW_UP_NEEDED) {
@@ -116,8 +131,23 @@ public class TemplateReplyDraftService implements ReplyDraftService {
         }
 
         String systemPrompt = promptConfig.directReplySystemPrompt();
-        String userPrompt = buildDirectReplyPrompt(mail, routeResult, normalizationResult, businessFactResult, knowledgeRetrieveResult, contextSnapshot, promptConfig.directReplySuffix());
-        String fallbackBody = buildTemplateDirectReply(routeResult, normalizationResult, businessFactResult, knowledgeRetrieveResult, contextSnapshot, promptConfig.directReplySuffix());
+        String userPrompt = buildDirectReplyPrompt(
+                mail,
+                routeResult,
+                normalizationResult,
+                businessFactResult,
+                knowledgeRetrieveResult,
+                contextPromptPayload,
+                promptConfig.directReplySuffix()
+        );
+        String fallbackBody = buildTemplateDirectReply(
+                routeResult,
+                normalizationResult,
+                businessFactResult,
+                knowledgeRetrieveResult,
+                contextPromptPayload,
+                promptConfig.directReplySuffix()
+        );
         return llmClient.complete(systemPrompt, userPrompt)
                 .filter(value -> !value.isBlank())
                 .map(body -> new ReplyBodyResult(body, "llm", true, true, null, systemPrompt, userPrompt))
@@ -137,7 +167,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                                           IntentNormalizationResult normalizationResult,
                                           BusinessFactResult businessFactResult,
                                           KnowledgeRetrieveResult knowledgeRetrieveResult,
-                                          ContextSnapshot contextSnapshot,
+                                          ContextPromptPayload contextPromptPayload,
                                           String directReplySuffix) {
         return """
                 Customer email subject:
@@ -156,7 +186,16 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 - scene=%s
                 - subIntent=%s
 
+                Context mode:
+                %s
+
+                Context strong signals:
+                %s
+
                 Context summary:
+                %s
+
+                Recent conversation rounds:
                 %s
 
                 Business facts:
@@ -174,7 +213,10 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 normalizationResult.primaryQuestion(),
                 routeResult.scene(),
                 routeResult.subIntent(),
-                contextSnapshot.threadSummary(),
+                contextPromptPayload.mode(),
+                renderList(contextPromptPayload.strongSignals(), "none"),
+                contextPromptPayload.summary(),
+                renderList(contextPromptPayload.recentMessages(), "none"),
                 renderFacts(businessFactResult),
                 renderKnowledgeSnippets(knowledgeRetrieveResult),
                 directReplySuffix
@@ -185,7 +227,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                                             IntentNormalizationResult normalizationResult,
                                             BusinessFactResult businessFactResult,
                                             KnowledgeRetrieveResult knowledgeRetrieveResult,
-                                            ContextSnapshot contextSnapshot,
+                                            ContextPromptPayload contextPromptPayload,
                                             String directReplySuffix) {
         String intentTemplate = buildIntentAwareTemplate(routeResult, normalizationResult, businessFactResult, knowledgeRetrieveResult);
         if (intentTemplate != null) {
@@ -195,10 +237,11 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                     %s
 
                     Conversation context:
+                    - mode: %s
                     - %s
 
                     %s
-                    """.formatted(intentTemplate, contextSnapshot.threadSummary(), directReplySuffix);
+                    """.formatted(intentTemplate, contextPromptPayload.mode(), summarizeContextForTemplate(contextPromptPayload), directReplySuffix);
         }
         String routeLine = routeResult.scene() == CustomerScene.PRE_SALES
                 ? "We prepared a pre-sales reply direction for your request."
@@ -224,7 +267,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                         routeResult.subIntent(),
                         businessFactResult.facts(),
                         renderKnowledgeSnippets(knowledgeRetrieveResult),
-                        contextSnapshot.threadSummary(),
+                        summarizeContextForTemplate(contextPromptPayload),
                         directReplySuffix
                 );
     }
@@ -344,6 +387,70 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 .replace("{{scene}}", scene);
     }
 
+    private ContextPromptPayload buildContextPromptPayload(ContextSnapshot contextSnapshot) {
+        if (contextSnapshot == null) {
+            return new ContextPromptPayload("none", "none", List.of(), List.of(), List.of("no context available"));
+        }
+        List<String> strongSignals = contextSnapshot.strongSignals().stream()
+                .filter(value -> value != null && !value.isBlank())
+                .toList();
+        List<String> recentMessages = contextSnapshot.optionalSignals().stream()
+                .filter(value -> value != null && !value.isBlank())
+                .filter(value -> !STRUCTURED_SIGNAL_PATTERN.matcher(value.trim()).matches())
+                .limit(3)
+                .map(value -> preview(value, 140))
+                .toList();
+        String summary = normalizeSummary(contextSnapshot.threadSummary());
+
+        String mode;
+        if (!"none".equals(summary) && !recentMessages.isEmpty()) {
+            mode = "summary_plus_recent";
+        } else if (!"none".equals(summary)) {
+            mode = "summary_only";
+        } else if (!recentMessages.isEmpty()) {
+            mode = "recent_messages_only";
+        } else if (!strongSignals.isEmpty()) {
+            mode = "signals_only";
+        } else {
+            mode = "none";
+        }
+
+        java.util.ArrayList<String> preview = new java.util.ArrayList<>();
+        if (!"none".equals(summary)) {
+            preview.add("summary=" + summary);
+        }
+        preview.addAll(recentMessages.stream().map(value -> "recent=" + value).toList());
+        preview.addAll(strongSignals.stream().map(value -> "signal=" + value).toList());
+        if (preview.isEmpty()) {
+            preview.add("no context available");
+        }
+        return new ContextPromptPayload(mode, summary, recentMessages, strongSignals, List.copyOf(preview));
+    }
+
+    private String normalizeSummary(String threadSummary) {
+        if (threadSummary == null || threadSummary.isBlank()) {
+            return "none";
+        }
+        String normalized = preview(threadSummary, 180);
+        if (normalized.startsWith("thread=") && normalized.contains("latestSubject=")) {
+            return "none";
+        }
+        return normalized;
+    }
+
+    private String summarizeContextForTemplate(ContextPromptPayload contextPromptPayload) {
+        if (!"none".equals(contextPromptPayload.summary())) {
+            return contextPromptPayload.summary();
+        }
+        if (!contextPromptPayload.recentMessages().isEmpty()) {
+            return String.join(" ; ", contextPromptPayload.recentMessages());
+        }
+        if (!contextPromptPayload.strongSignals().isEmpty()) {
+            return String.join(" ; ", contextPromptPayload.strongSignals());
+        }
+        return "no reusable context";
+    }
+
     private String renderFacts(BusinessFactResult businessFactResult) {
         if (businessFactResult.facts().isEmpty()) {
             return "[]";
@@ -388,6 +495,15 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                 .collect(Collectors.joining(" | ", "[", "]"));
     }
 
+    private String renderList(List<String> values, String fallback) {
+        if (values == null || values.isEmpty()) {
+            return fallback;
+        }
+        return values.stream()
+                .map(value -> "- " + value)
+                .collect(Collectors.joining("\n"));
+    }
+
     private String toSentenceBullet(String value) {
         String normalized = value == null ? "" : value.trim();
         if (normalized.isBlank()) {
@@ -401,6 +517,14 @@ public class TemplateReplyDraftService implements ReplyDraftService {
         return "- " + first + normalized.substring(1);
     }
 
+    private String preview(String value, int maxLength) {
+        String normalized = value == null ? "" : value.replaceAll("\\s+", " ").trim();
+        if (normalized.length() <= maxLength) {
+            return normalized;
+        }
+        return normalized.substring(0, maxLength) + "...";
+    }
+
     private record ReplyBodyResult(String body,
                                    String source,
                                    boolean llmAttempted,
@@ -408,5 +532,12 @@ public class TemplateReplyDraftService implements ReplyDraftService {
                                    String fallbackReason,
                                    String systemPrompt,
                                    String userPrompt) {
+    }
+
+    private record ContextPromptPayload(String mode,
+                                        String summary,
+                                        List<String> recentMessages,
+                                        List<String> strongSignals,
+                                        List<String> preview) {
     }
 }
