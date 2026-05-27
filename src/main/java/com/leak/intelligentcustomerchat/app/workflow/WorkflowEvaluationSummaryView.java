@@ -24,6 +24,7 @@ public record WorkflowEvaluationSummaryView(
         List<WorkflowEvaluationCountView> riskLevels,
         List<WorkflowEvaluationCountView> releaseDecisions,
         List<WorkflowEvaluationCountView> recommendedActions,
+        WorkflowHealthOverviewView healthOverview,
         OffsetDateTime sampledAt
 ) {
     public WorkflowEvaluationSummaryView {
@@ -44,6 +45,7 @@ public record WorkflowEvaluationSummaryView(
         Objects.requireNonNull(riskLevels, "riskLevels must not be null");
         Objects.requireNonNull(releaseDecisions, "releaseDecisions must not be null");
         Objects.requireNonNull(recommendedActions, "recommendedActions must not be null");
+        Objects.requireNonNull(healthOverview, "healthOverview must not be null");
         Objects.requireNonNull(sampledAt, "sampledAt must not be null");
         scenes = List.copyOf(scenes);
         subIntents = List.copyOf(subIntents);

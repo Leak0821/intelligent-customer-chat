@@ -144,6 +144,7 @@ public class WorkflowEvaluationService {
                 summarize(samples, sample -> sample.riskDecision().riskLevel()),
                 summarize(samples, sample -> sample.riskDecision().releaseDecision()),
                 summarize(samples, sample -> sample.riskDecision().recommendedAction()),
+                buildHealthOverview(samples),
                 OffsetDateTime.now()
         );
     }
@@ -371,6 +372,89 @@ public class WorkflowEvaluationService {
                         .thenComparing(Map.Entry.comparingByKey()))
                 .map(entry -> new WorkflowEvaluationCountView(entry.getKey(), entry.getValue()))
                 .toList();
+    }
+
+    private WorkflowHealthOverviewView buildHealthOverview(List<WorkflowEvaluationSampleView> samples) {
+        int sampledCount = samples.size();
+        int sendAllowedCount = countBy(samples, sample -> sample.riskDecision().sendAllowed());
+        int holdForReviewCount = countBy(samples, sample -> "HOLD_FOR_REVIEW".equals(sample.riskDecision().releaseDecision()));
+        int followUpCount = countBy(samples, sample -> "NEED_CUSTOMER_FOLLOW_UP".equals(sample.riskDecision().releaseDecision()));
+        int retryPendingCount = countBy(samples, sample -> "RETRY_PENDING".equals(sample.riskDecision().releaseDecision()));
+        int manualInterventionCount = countBy(samples, sample -> "MANUAL_INTERVENTION_REQUIRED".equals(sample.riskDecision().releaseDecision()));
+        int blockedCount = countBy(samples, sample -> "BLOCKED".equals(sample.riskDecision().releaseDecision()));
+        int lowRiskCount = countBy(samples, sample -> "LOW".equals(sample.riskDecision().riskLevel()) || "MINIMAL".equals(sample.riskDecision().riskLevel()));
+        int mediumRiskCount = countBy(samples, sample -> "MEDIUM".equals(sample.riskDecision().riskLevel()));
+        int highRiskCount = countBy(samples, sample -> "HIGH".equals(sample.riskDecision().riskLevel()));
+        int criticalRiskCount = countBy(samples, sample -> "CRITICAL".equals(sample.riskDecision().riskLevel()));
+        return new WorkflowHealthOverviewView(
+                sampledCount,
+                sendAllowedCount,
+                holdForReviewCount,
+                followUpCount,
+                retryPendingCount,
+                manualInterventionCount,
+                blockedCount,
+                lowRiskCount,
+                mediumRiskCount,
+                highRiskCount,
+                criticalRiskCount,
+                determineOverviewStatus(criticalRiskCount, highRiskCount, mediumRiskCount, retryPendingCount, blockedCount),
+                buildOverviewMessage(
+                        sampledCount,
+                        sendAllowedCount,
+                        holdForReviewCount,
+                        followUpCount,
+                        retryPendingCount,
+                        blockedCount,
+                        manualInterventionCount
+                )
+        );
+    }
+
+    private int countBy(List<WorkflowEvaluationSampleView> samples,
+                        java.util.function.Predicate<WorkflowEvaluationSampleView> predicate) {
+        return (int) samples.stream().filter(predicate).count();
+    }
+
+    private String determineOverviewStatus(int criticalRiskCount,
+                                           int highRiskCount,
+                                           int mediumRiskCount,
+                                           int retryPendingCount,
+                                           int blockedCount) {
+        if (criticalRiskCount > 0 || blockedCount > 0) {
+            return "AT_RISK";
+        }
+        if (highRiskCount > 0 || mediumRiskCount > 0 || retryPendingCount > 0) {
+            return "ATTENTION_NEEDED";
+        }
+        return "STABLE";
+    }
+
+    private String buildOverviewMessage(int sampledCount,
+                                        int sendAllowedCount,
+                                        int holdForReviewCount,
+                                        int followUpCount,
+                                        int retryPendingCount,
+                                        int blockedCount,
+                                        int manualInterventionCount) {
+        if (sampledCount == 0) {
+            return "当前没有可供统计的运行样本。";
+        }
+        return "最近 "
+                + sampledCount
+                + " 条运行中，可继续发送 "
+                + sendAllowedCount
+                + " 条，待审核 "
+                + holdForReviewCount
+                + " 条，需追问 "
+                + followUpCount
+                + " 条，重试中 "
+                + retryPendingCount
+                + " 条，阻断 "
+                + blockedCount
+                + " 条，需人工介入 "
+                + manualInterventionCount
+                + " 条。";
     }
 
     private Optional<String> findEventSummary(List<WorkflowEvent> events, WorkflowStage stage) {

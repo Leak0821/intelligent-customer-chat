@@ -197,6 +197,9 @@ class WorkflowDemoControllerTest {
         assertThat(summary.businessFactStatuses()).containsExactly(new com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationCountView("INSUFFICIENT_INPUT", 1));
         assertThat(summary.knowledgeRetrievalSources()).containsExactly(new com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationCountView("elasticsearch-hybrid", 1));
         assertThat(summary.replyFallbackReasons()).containsExactly(new com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationCountView("follow_up_template_required", 1));
+        assertThat(summary.healthOverview().sampledCount()).isEqualTo(1);
+        assertThat(summary.healthOverview().overviewStatus()).isEqualTo("ATTENTION_NEEDED");
+        assertThat(summary.healthOverview().followUpCount()).isEqualTo(1);
     }
 
     private static final class InMemoryWorkflowRunRepository implements WorkflowRunRepository {

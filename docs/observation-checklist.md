@@ -72,6 +72,7 @@
 - replay / evaluation 里是否也能直接说明 facts 与 knowledge 的角色分工，而不是只剩原始事件摘要
 - evaluation summary 里是否能直接看到 `businessFactStatuses / knowledgeRoles / knowledgeRetrievalSources / replyFallbackReasons`
 - evaluation summary 里是否也能看到 `riskLevels / releaseDecisions / recommendedActions`
+- evaluation summary 里是否先有 `healthOverview`，能一句话说明最近一批运行的整体健康度
 - draft 状态和 send readiness 是否合理
 
 ## 4. 如果是售后场景，重点看什么

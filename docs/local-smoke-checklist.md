@@ -176,6 +176,7 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
 - `evaluations.summary.knowledgeRetrievalSources`
 - `evaluations.summary.replyFallbackReasons`
 - `evaluations.summary.riskLevels / releaseDecisions / recommendedActions`
+- `evaluations.summary.healthOverview`
 
 3. 如果需要完整回放，继续查看
 

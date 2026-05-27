@@ -27,6 +27,7 @@
 - `analysis` 结果已补充顶层摘要卡片，可直接看到场景、子意图、主问题、下一步动作和关键证据
 - `demo/scenarios/{scenarioId}` 已补充统一执行摘要，可把 `analysis / replay / review_loop / validate` 结果收敛成一层闭环说明
 - `evaluation / replay` 已补充统一的风险与放行决策视图，可直接判断风险等级、是否可放行和推荐动作
+- `evaluation summary` 已补充健康度总览卡，可直接看最近一批运行的待审核、追问、阻断和可放行分布
 - 第一阶段 OpenSpec 与研究合同已进入“边实现边校正”阶段，后续重点转向真实业务适配和基础设施联调
 
 ## 文档入口

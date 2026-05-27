@@ -363,6 +363,19 @@ class WorkflowEvaluationServiceTest {
                 new WorkflowEvaluationCountView("manual_review_required", 1),
                 new WorkflowEvaluationCountView("request_customer_information", 1)
         );
+        assertThat(summary.healthOverview().sampledCount()).isEqualTo(3);
+        assertThat(summary.healthOverview().sendAllowedCount()).isEqualTo(0);
+        assertThat(summary.healthOverview().holdForReviewCount()).isEqualTo(2);
+        assertThat(summary.healthOverview().followUpCount()).isEqualTo(1);
+        assertThat(summary.healthOverview().retryPendingCount()).isEqualTo(0);
+        assertThat(summary.healthOverview().blockedCount()).isEqualTo(0);
+        assertThat(summary.healthOverview().manualInterventionCount()).isEqualTo(0);
+        assertThat(summary.healthOverview().lowRiskCount()).isEqualTo(1);
+        assertThat(summary.healthOverview().mediumRiskCount()).isEqualTo(1);
+        assertThat(summary.healthOverview().highRiskCount()).isEqualTo(1);
+        assertThat(summary.healthOverview().criticalRiskCount()).isEqualTo(0);
+        assertThat(summary.healthOverview().overviewStatus()).isEqualTo("ATTENTION_NEEDED");
+        assertThat(summary.healthOverview().overviewMessage()).contains("最近 3 条运行", "待审核 2 条", "需追问 1 条");
         assertThat(filteredSummary.sampledCount()).isEqualTo(2);
         assertThat(filteredSummary.scenes()).containsExactly(new WorkflowEvaluationCountView("AFTER_SALES", 2));
         assertThat(filteredSummary.businessFactStatuses()).containsExactlyInAnyOrder(
