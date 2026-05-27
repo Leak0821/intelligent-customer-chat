@@ -176,7 +176,8 @@
         }
 
         input,
-        textarea {
+        textarea,
+        select {
             width: 100%;
             border: 1px solid rgba(31, 47, 56, 0.14);
             border-radius: 16px;
@@ -192,9 +193,15 @@
         }
 
         input:focus,
-        textarea:focus {
+        textarea:focus,
+        select:focus {
             outline: 2px solid rgba(13, 109, 104, 0.18);
             border-color: rgba(13, 109, 104, 0.30);
+        }
+
+        input[type="file"] {
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.92);
         }
 
         .button-row,
@@ -463,6 +470,69 @@
                     <strong>正在加载内置场景...</strong>
                 </div>
             </div>
+
+            <h2 style="margin-top: 26px;">知识导入 / RAG</h2>
+            <p class="small-note">这里补的是第一版最小知识入库闭环：文件上传、语义分块、父子文档写入 ES，以及检索验证。</p>
+            <div class="field-grid">
+                <div class="inline-meta">
+                    <span class="badge" id="knowledge-index-status">索引状态: 加载中</span>
+                </div>
+                <div class="button-row">
+                    <button class="secondary" id="ensure-knowledge-index">确保索引存在</button>
+                    <button class="secondary" id="index-knowledge-seeds">导入内置知识样本</button>
+                </div>
+                <div>
+                    <label for="knowledge-key">知识主键</label>
+                    <input id="knowledge-key" type="text" placeholder="如 sales-plan-cn；留空则按文件名自动生成">
+                </div>
+                <div>
+                    <label for="knowledge-version">版本号</label>
+                    <input id="knowledge-version" type="text" value="v1" placeholder="如 2026-02">
+                </div>
+                <div>
+                    <label for="knowledge-status">生效状态</label>
+                    <select id="knowledge-status">
+                        <option value="active">active</option>
+                        <option value="deprecated">deprecated</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="knowledge-scene">场景</label>
+                    <select id="knowledge-scene">
+                        <option value="PRE_SALES">PRE_SALES</option>
+                        <option value="AFTER_SALES">AFTER_SALES</option>
+                        <option value="UNKNOWN">UNKNOWN</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="knowledge-sub-intents">子意图</label>
+                    <input id="knowledge-sub-intents" type="text" value="general_inquiry" placeholder="product_recommendation">
+                </div>
+                <div>
+                    <label for="knowledge-source">来源标记</label>
+                    <input id="knowledge-source" type="text" value="admin-upload" placeholder="admin-upload">
+                </div>
+                <div>
+                    <label for="knowledge-files">上传知识文件</label>
+                    <input id="knowledge-files" type="file" accept=".csv,.pdf,.doc,.docx" multiple>
+                </div>
+                <div class="button-row">
+                    <button class="primary" id="upload-knowledge-files">导入到 ES</button>
+                </div>
+                <div class="raw-box">
+                    <pre id="knowledge-import-result">这里会显示导入批次、knowledge_key、version、status、chunk 数和索引记录数。</pre>
+                </div>
+                <div>
+                    <label for="knowledge-query">检索验证</label>
+                    <input id="knowledge-query" type="text" placeholder="输入一个查询，验证刚导入的知识是否能召回">
+                </div>
+                <div class="button-row">
+                    <button class="secondary" id="search-knowledge-btn">验证检索</button>
+                </div>
+                <div class="raw-box">
+                    <pre id="knowledge-search-result">这里会显示检索结果摘要。</pre>
+                </div>
+            </div>
         </div>
 
         <div class="case-grid">
@@ -592,6 +662,21 @@
         body: document.getElementById("body"),
         refreshCase: document.getElementById("refresh-case"),
         scenarioGrid: document.getElementById("scenario-grid"),
+        knowledgeIndexStatus: document.getElementById("knowledge-index-status"),
+        ensureKnowledgeIndex: document.getElementById("ensure-knowledge-index"),
+        indexKnowledgeSeeds: document.getElementById("index-knowledge-seeds"),
+        knowledgeKey: document.getElementById("knowledge-key"),
+        knowledgeVersion: document.getElementById("knowledge-version"),
+        knowledgeStatus: document.getElementById("knowledge-status"),
+        knowledgeScene: document.getElementById("knowledge-scene"),
+        knowledgeSubIntents: document.getElementById("knowledge-sub-intents"),
+        knowledgeSource: document.getElementById("knowledge-source"),
+        knowledgeFiles: document.getElementById("knowledge-files"),
+        uploadKnowledgeFiles: document.getElementById("upload-knowledge-files"),
+        knowledgeImportResult: document.getElementById("knowledge-import-result"),
+        knowledgeQuery: document.getElementById("knowledge-query"),
+        searchKnowledgeBtn: document.getElementById("search-knowledge-btn"),
+        knowledgeSearchResult: document.getElementById("knowledge-search-result"),
         caseSummary: document.getElementById("case-summary"),
         caseRun: document.getElementById("case-run"),
         caseStatus: document.getElementById("case-status"),
@@ -625,6 +710,10 @@
     document.getElementById("submit-mail").addEventListener("click", submitManualCase);
     document.getElementById("refresh-case").addEventListener("click", () => loadCase(state.currentRunId, false));
     document.getElementById("clear-form").addEventListener("click", clearForm);
+    refs.ensureKnowledgeIndex.addEventListener("click", ensureKnowledgeIndex);
+    refs.indexKnowledgeSeeds.addEventListener("click", indexKnowledgeSeeds);
+    refs.uploadKnowledgeFiles.addEventListener("click", importKnowledgeFiles);
+    refs.searchKnowledgeBtn.addEventListener("click", searchKnowledge);
     refs.approveBtn.addEventListener("click", () => performAction("APPROVE_SEND"));
     refs.rejectBtn.addEventListener("click", () => performAction("REJECT_SEND"));
     refs.dispatchBtn.addEventListener("click", () => performAction("DISPATCH"));
@@ -634,7 +723,7 @@
     init();
 
     async function init() {
-        await loadScenarios();
+        await Promise.all([loadScenarios(), loadKnowledgeStatus()]);
     }
 
     async function submitManualCase() {
@@ -695,6 +784,81 @@
                 method: "POST"
             });
             hydrateCase(data);
+        });
+    }
+
+    async function loadKnowledgeStatus() {
+        try {
+            const status = await api("/api/knowledge/index/status");
+            hydrateKnowledgeStatus(status);
+        } catch (error) {
+            refs.knowledgeIndexStatus.textContent = `索引状态: ${error.message}`;
+            refs.knowledgeIndexStatus.className = "badge danger";
+        }
+    }
+
+    async function ensureKnowledgeIndex() {
+        await withButtonState(async () => {
+            const status = await api("/api/knowledge/index/ensure", {
+                method: "POST"
+            });
+            hydrateKnowledgeStatus(status);
+            refs.knowledgeImportResult.textContent = JSON.stringify(status, null, 2);
+        });
+    }
+
+    async function indexKnowledgeSeeds() {
+        await withButtonState(async () => {
+            const result = await api("/api/knowledge/index/seeds", {
+                method: "POST"
+            });
+            refs.knowledgeImportResult.textContent = JSON.stringify(result, null, 2);
+            await loadKnowledgeStatus();
+        });
+    }
+
+    async function importKnowledgeFiles() {
+        const files = Array.from(refs.knowledgeFiles.files || []);
+        if (!files.length) {
+            alert("请先选择要导入的 CSV、Word 或 PDF 文件。");
+            return;
+        }
+        await withButtonState(async () => {
+            const formData = new FormData();
+            files.forEach((file) => formData.append("files", file));
+            const knowledgeKey = refs.knowledgeKey.value.trim();
+            if (knowledgeKey) {
+                formData.append("knowledgeKey", knowledgeKey);
+            }
+            formData.append("version", refs.knowledgeVersion.value.trim() || "v1");
+            formData.append("status", refs.knowledgeStatus.value || "active");
+            formData.append("scene", refs.knowledgeScene.value || "UNKNOWN");
+            formData.append("subIntents", refs.knowledgeSubIntents.value.trim() || "general_inquiry");
+            formData.append("source", refs.knowledgeSource.value.trim() || "admin-upload");
+            const result = await api("/api/knowledge/import", {
+                method: "POST",
+                body: formData
+            });
+            refs.knowledgeImportResult.textContent = JSON.stringify(result, null, 2);
+            await loadKnowledgeStatus();
+        });
+    }
+
+    async function searchKnowledge() {
+        const query = refs.knowledgeQuery.value.trim();
+        if (!query) {
+            alert("请输入一个检索问题。");
+            return;
+        }
+        await withButtonState(async () => {
+            const params = new URLSearchParams({
+                q: query,
+                scene: refs.knowledgeScene.value || "UNKNOWN",
+                subIntent: refs.knowledgeSubIntents.value.trim() || "general_inquiry",
+                topK: "5"
+            });
+            const result = await api(`/api/knowledge/search?${params.toString()}`);
+            refs.knowledgeSearchResult.textContent = formatKnowledgeSearchResult(result);
         });
     }
 
@@ -829,6 +993,18 @@
         refs.body.value = "";
     }
 
+    function hydrateKnowledgeStatus(status) {
+        const exists = Boolean(status && status.exists);
+        const enabled = Boolean(status && status.elasticsearchEnabled);
+        if (!enabled) {
+            refs.knowledgeIndexStatus.textContent = "索引状态: ES 未启用";
+            refs.knowledgeIndexStatus.className = "badge danger";
+            return;
+        }
+        refs.knowledgeIndexStatus.textContent = `索引状态: ${status.indexName || "knowledge"} / ${exists ? "READY" : "MISSING"}`;
+        refs.knowledgeIndexStatus.className = exists ? "badge ok" : "badge warn";
+    }
+
     async function withButtonState(task) {
         toggleBusy(true);
         try {
@@ -862,11 +1038,14 @@
     }
 
     async function api(url, options = {}) {
+        const isFormData = options.body instanceof FormData;
+        const { headers = {}, ...rest } = options;
         const response = await fetch(url, {
-            headers: {
-                "Content-Type": "application/json"
+            headers: isFormData ? headers : {
+                "Content-Type": "application/json",
+                ...headers
             },
-            ...options
+            ...rest
         });
         if (!response.ok) {
             const text = await response.text();
@@ -892,6 +1071,21 @@
             `推荐动作: ${riskDecision.recommendedAction}`,
             `是否允许发送: ${riskDecision.sendAllowed ? "是" : "否"}`
         ].join(" | ");
+    }
+
+    function formatKnowledgeSearchResult(result) {
+        const snippets = (result.snippets || []).map((snippet, index) => {
+            return [
+                `#${index + 1} ${snippet.title} (${snippet.source})`,
+                `score=${snippet.score}`,
+                snippet.content
+            ].join("\n");
+        });
+        return [
+            `source: ${result.source || "-"}`,
+            `hitCount: ${result.recallCount || 0}`,
+            snippets.length ? snippets.join("\n\n") : "没有检索到结果。"
+        ].join("\n\n");
     }
 
     function formatTime(value) {

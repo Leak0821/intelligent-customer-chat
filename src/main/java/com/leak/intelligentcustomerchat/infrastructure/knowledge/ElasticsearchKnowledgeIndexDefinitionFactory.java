@@ -29,6 +29,13 @@ public class ElasticsearchKnowledgeIndexDefinitionFactory {
         propertiesMap.put(properties.docTypeField(), Map.of("type", "keyword"));
         propertiesMap.put(properties.parentIdField(), Map.of("type", "keyword"));
         propertiesMap.put("chunk_order", Map.of("type", "integer"));
+        propertiesMap.put("knowledge_key", Map.of("type", "keyword"));
+        propertiesMap.put("version", Map.of("type", "keyword"));
+        propertiesMap.put("status", Map.of("type", "keyword"));
+        propertiesMap.put("content_hash", Map.of("type", "keyword"));
+        propertiesMap.put("chunk_hash", Map.of("type", "keyword"));
+        propertiesMap.put("superseded_by_version", Map.of("type", "keyword"));
+        propertiesMap.put("superseded_at", Map.of("type", "date"));
         propertiesMap.put(properties.titleField(), textWithKeywordField());
         propertiesMap.put(properties.contentField(), Map.of("type", "text"));
         propertiesMap.put(properties.vectorField(), Map.of(

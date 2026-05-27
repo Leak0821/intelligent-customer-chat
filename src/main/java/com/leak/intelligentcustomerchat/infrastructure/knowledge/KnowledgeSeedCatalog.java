@@ -22,6 +22,9 @@ public class KnowledgeSeedCatalog {
                         回复中不要承诺不存在的规格。只能基于已知资料说明适合的使用场景、安装建议和兼容范围。
                         """,
                         Map.of(
+                                "knowledge_key", "seed-pre-sales-product-selection",
+                                "version", "builtin-v1",
+                                "status", "active",
                                 "scene", "PRE_SALES",
                                 "subIntents", "product_recommendation,general_inquiry",
                                 "source", "builtin-seed"
@@ -38,6 +41,9 @@ public class KnowledgeSeedCatalog {
                         对比回复要避免绝对化描述，尤其不要把“更亮”“更好”说成结论，除非有明确参数支撑。
                         """,
                         Map.of(
+                                "knowledge_key", "seed-pre-sales-comparison",
+                                "version", "builtin-v1",
+                                "status", "active",
                                 "scene", "PRE_SALES",
                                 "subIntents", "product_comparison,general_inquiry",
                                 "source", "builtin-seed"
@@ -54,6 +60,9 @@ public class KnowledgeSeedCatalog {
                         对跨境发货时效，要区分“订单处理时间”和“物流运输时间”，避免把两者混为一个承诺。
                         """,
                         Map.of(
+                                "knowledge_key", "seed-pre-sales-shipping-stock",
+                                "version", "builtin-v1",
+                                "status", "active",
                                 "scene", "PRE_SALES",
                                 "subIntents", "inventory_or_shipping,general_inquiry",
                                 "source", "builtin-seed"
@@ -70,6 +79,9 @@ public class KnowledgeSeedCatalog {
                         如果缺少订单号或物流号，应先追问关键编号，再继续核查。
                         """,
                         Map.of(
+                                "knowledge_key", "seed-after-sales-logistics",
+                                "version", "builtin-v1",
+                                "status", "active",
                                 "scene", "AFTER_SALES",
                                 "subIntents", "logistics_tracking,order_status",
                                 "source", "builtin-seed"
@@ -86,6 +98,9 @@ public class KnowledgeSeedCatalog {
                         政策回复里要清楚区分“可执行的标准流程”和“需要人工进一步确认的例外情况”。
                         """,
                         Map.of(
+                                "knowledge_key", "seed-after-sales-policy",
+                                "version", "builtin-v1",
+                                "status", "active",
                                 "scene", "AFTER_SALES",
                                 "subIntents", "after_sales_policy,return_refund,general_inquiry",
                                 "source", "builtin-seed"
@@ -102,6 +117,9 @@ public class KnowledgeSeedCatalog {
                         当上下文和实时查询结果冲突时，要以最新业务系统事实为准，并在回复里说明原因。
                         """,
                         Map.of(
+                                "knowledge_key", "seed-after-sales-multi-round",
+                                "version", "builtin-v1",
+                                "status", "active",
                                 "scene", "AFTER_SALES",
                                 "subIntents", "logistics_tracking,after_sales_policy,return_refund,general_inquiry",
                                 "source", "builtin-seed"

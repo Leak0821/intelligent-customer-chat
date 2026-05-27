@@ -48,11 +48,21 @@ public class ElasticsearchHybridSearchService implements HybridSearchService {
     }
 
     private List<KnowledgeSnippet> searchByBm25(RetrievalQuery query) {
-        Map<String, Object> body = Map.of(
+        Map<String, Object> body = buildBm25Body(query);
+        return executeSearch(body);
+    }
+
+    private List<KnowledgeSnippet> searchByVector(RetrievalQuery query) {
+        Map<String, Object> body = buildVectorBody(query);
+        return executeSearch(body);
+    }
+
+    Map<String, Object> buildBm25Body(RetrievalQuery query) {
+        return Map.of(
                 "size", Math.min(query.topK(), properties.topK()),
                 "query", Map.of(
                         "bool", Map.of(
-                                "filter", List.of(Map.of("term", Map.of(properties.docTypeField(), "chunk"))),
+                                "filter", buildChunkFilterClauses(),
                                 "should", List.of(
                                         Map.of("multi_match", Map.of(
                                                 "query", query.queryText(),
@@ -64,10 +74,9 @@ public class ElasticsearchHybridSearchService implements HybridSearchService {
                         )
                 )
         );
-        return executeSearch(body);
     }
 
-    private List<KnowledgeSnippet> searchByVector(RetrievalQuery query) {
+    Map<String, Object> buildVectorBody(RetrievalQuery query) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("size", Math.min(query.topK(), properties.topK()));
         body.put("knn", Map.of(
@@ -75,9 +84,16 @@ public class ElasticsearchHybridSearchService implements HybridSearchService {
                 "query_vector", embeddingService.embed(query.queryText()),
                 "k", Math.min(query.topK(), properties.topK()),
                 "num_candidates", properties.numCandidates(),
-                "filter", Map.of("term", Map.of(properties.docTypeField(), "chunk"))
+                "filter", Map.of("bool", Map.of("filter", buildChunkFilterClauses()))
         ));
-        return executeSearch(body);
+        return body;
+    }
+
+    private List<Map<String, Object>> buildChunkFilterClauses() {
+        return List.of(
+                Map.of("term", Map.of(properties.docTypeField(), "chunk")),
+                Map.of("term", Map.of("status", "active"))
+        );
     }
 
     private List<KnowledgeSnippet> executeSearch(Map<String, Object> body) {
