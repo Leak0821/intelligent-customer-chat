@@ -130,6 +130,7 @@ http://127.0.0.1:8080/
 - [docs/interview-demo-walkthrough.md](./docs/interview-demo-walkthrough.md)
 - [docs/current-delivery-status.md](./docs/current-delivery-status.md)
 - [docs/frontend-minimal-loop.md](./docs/frontend-minimal-loop.md)
+- [docs/operation-manual.md](./docs/operation-manual.md)
 - [docs/integration-run-record-template.md](./docs/integration-run-record-template.md)
 - [docs/sample-integration-run-record.md](./docs/sample-integration-run-record.md)
 - [docs/observation-checklist.md](./docs/observation-checklist.md)
