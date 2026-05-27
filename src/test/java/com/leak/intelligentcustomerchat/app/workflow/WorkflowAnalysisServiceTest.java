@@ -204,6 +204,20 @@ class WorkflowAnalysisServiceTest {
         WorkflowAnalysisView view = service.analyze(inboundMail);
 
         assertThat(view.cleanedMail()).isEqualTo(cleanedMail);
+        assertThat(view.summary().scene()).isEqualTo("AFTER_SALES");
+        assertThat(view.summary().subIntent()).isEqualTo("logistics_tracking");
+        assertThat(view.summary().disposition()).isEqualTo("CONTINUE");
+        assertThat(view.summary().finalStatus()).isEqualTo("DRAFT_READY");
+        assertThat(view.summary().operatorDecision()).isEqualTo("review_passed_waiting_dispatch");
+        assertThat(view.summary().nextAction()).isEqualTo("approve_then_dispatch");
+        assertThat(view.summary().primaryQuestion()).isEqualTo("What is the tracking status?");
+        assertThat(view.summary().intentSummary()).contains("AFTER_SALES", "logistics_tracking");
+        assertThat(view.summary().contextSummary()).contains("线程累计 4 封邮件", "摘要来源 memory_summary");
+        assertThat(view.summary().factSummary()).contains("stub-gateway", "tracking_number=ZX987654");
+        assertThat(view.summary().knowledgeSummary()).contains("elasticsearch-hybrid", "fused-1");
+        assertThat(view.summary().replySummary()).contains("llm", "DRAFT_READY");
+        assertThat(view.summary().keyEvidence()).contains("resolved_entity=tracking_number=ZX987654");
+        assertThat(view.summary().keyEvidence()).contains("knowledge_snippet=fused-1");
         assertThat(view.normalizationResult()).isEqualTo(normalizationResult);
         assertThat(view.routeResult()).isEqualTo(routeResult);
         assertThat(view.contextSnapshot()).isEqualTo(contextSnapshot);

@@ -42,6 +42,8 @@
 
 重点观察：
 
+- `summary` 里能否先直接说明场景、子意图、主问题、最终状态和下一步动作
+- `summary.keyEvidence` 是否已经把关键编号、知识片段、审核信号等证据提炼出来
 - scene 是否符合预期
 - subIntent 是否符合预期
 - heuristicBaseline 和 normalizationResult 是否有差异

@@ -13,6 +13,7 @@ import java.util.Objects;
 
 public record WorkflowAnalysisView(
         InboundMail cleanedMail,
+        WorkflowAnalysisSummaryView summary,
         WorkflowIntentDiagnosticsView intentDiagnostics,
         IntentNormalizationResult normalizationResult,
         IntentRouteResult routeResult,
@@ -28,6 +29,7 @@ public record WorkflowAnalysisView(
 ) {
     public WorkflowAnalysisView {
         Objects.requireNonNull(cleanedMail, "cleanedMail must not be null");
+        Objects.requireNonNull(summary, "summary must not be null");
         Objects.requireNonNull(intentDiagnostics, "intentDiagnostics must not be null");
         Objects.requireNonNull(normalizationResult, "normalizationResult must not be null");
         Objects.requireNonNull(routeResult, "routeResult must not be null");

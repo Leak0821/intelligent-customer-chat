@@ -120,6 +120,10 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
 
 分析结果里建议重点确认：
 
+- `summary.scene / summary.subIntent / summary.primaryQuestion`
+- `summary.operatorDecision / summary.nextAction / summary.finalStatus`
+- `summary.intentSummary / summary.contextSummary / summary.factSummary / summary.knowledgeSummary / summary.replySummary`
+- `summary.keyEvidence`
 - `intentDiagnostics.heuristicBaseline`
 - `intentDiagnostics.normalizationChangedByModel`
 - `intentDiagnostics.normalizationSource`
@@ -214,6 +218,7 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 - `preflight` 返回 `ready=true`
 - `runtime-config/prompts/preview` 能看到按 `scene` 解析后的 follow-up / human-review 模板
 - `demo` 能生成 `WorkflowRun`
+- `analysis.summary` 能先把“怎么判、为什么、下一步干什么”讲清楚
 - `analysis` 能解释回复阶段到底走了 `llm`、模板兜底还是追问模板
 - `analysis` 能返回 scene / subIntent / facts / knowledge / draft
 - `replay` 能看到事件、草稿、审核或派发信息

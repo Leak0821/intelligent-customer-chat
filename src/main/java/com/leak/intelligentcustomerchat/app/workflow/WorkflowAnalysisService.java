@@ -140,6 +140,15 @@ public class WorkflowAnalysisService {
 
         return new WorkflowAnalysisView(
                 cleanedMail,
+                buildAnalysisSummary(
+                        effectiveNormalizationResult,
+                        routeResult,
+                        contextLoadingDiagnostics,
+                        businessFactResult,
+                        knowledgeRetrieveResult,
+                        draftingResult.diagnostics(),
+                        reviewDecision
+                ),
                 new WorkflowIntentDiagnosticsView(
                         heuristicBaseline,
                         intentConfigService.currentIntentCatalog(),
@@ -162,6 +171,30 @@ public class WorkflowAnalysisService {
                 buildReplyDiagnostics(draftingResult.diagnostics(), reviewDecision),
                 draft,
                 reviewDecision
+        );
+    }
+
+    private WorkflowAnalysisSummaryView buildAnalysisSummary(IntentNormalizationResult normalizationResult,
+                                                            IntentRouteResult routeResult,
+                                                            ContextLoadingDiagnostics contextLoadingDiagnostics,
+                                                            BusinessFactResult businessFactResult,
+                                                            KnowledgeRetrieveResult knowledgeRetrieveResult,
+                                                            ReplyDraftingDiagnostics replyDiagnostics,
+                                                            ReviewDecision reviewDecision) {
+        return new WorkflowAnalysisSummaryView(
+                routeResult.scene().name(),
+                routeResult.subIntent(),
+                routeResult.disposition().name(),
+                reviewDecision.finalStatus().name(),
+                summarizeOperatorDecision(reviewDecision),
+                determineNextAction(reviewDecision),
+                preview(normalizationResult.primaryQuestion()),
+                buildIntentSummary(normalizationResult, routeResult),
+                buildContextSummary(contextLoadingDiagnostics),
+                buildFactSummary(businessFactResult),
+                buildKnowledgeSummary(knowledgeRetrieveResult),
+                buildReplySummary(replyDiagnostics, reviewDecision),
+                buildKeyEvidence(normalizationResult, businessFactResult, knowledgeRetrieveResult, replyDiagnostics, reviewDecision)
         );
     }
 
@@ -475,6 +508,127 @@ public class WorkflowAnalysisService {
                 diagnostics.knowledgeSnippetIds(),
                 diagnostics.knowledgeSnippetPreview()
         );
+    }
+
+    private String summarizeOperatorDecision(ReviewDecision reviewDecision) {
+        return switch (reviewDecision.finalStatus()) {
+            case DRAFT_READY -> reviewDecision.autoSendAllowed() ? "direct_reply_ready" : "review_passed_waiting_dispatch";
+            case FOLLOW_UP_NEEDED -> "follow_up_required";
+            case HUMAN_REVIEW_REQUIRED -> "manual_review_required";
+            case BLOCKED -> "blocked";
+        };
+    }
+
+    private String determineNextAction(ReviewDecision reviewDecision) {
+        return switch (reviewDecision.finalStatus()) {
+            case DRAFT_READY -> reviewDecision.autoSendAllowed() ? "dispatch_reply" : "approve_then_dispatch";
+            case FOLLOW_UP_NEEDED -> "send_follow_up_question";
+            case HUMAN_REVIEW_REQUIRED -> "queue_manual_review";
+            case BLOCKED -> "manual_investigation";
+        };
+    }
+
+    private String buildIntentSummary(IntentNormalizationResult normalizationResult,
+                                      IntentRouteResult routeResult) {
+        return "场景 " + routeResult.scene().name()
+                + "，子意图 " + routeResult.subIntent()
+                + "，主问题 " + preview(normalizationResult.primaryQuestion())
+                + "，当前处置 " + routeResult.disposition().name() + "。";
+    }
+
+    private String buildContextSummary(ContextLoadingDiagnostics contextLoadingDiagnostics) {
+        String compressionState = contextLoadingDiagnostics.compressionAttempted()
+                ? (contextLoadingDiagnostics.compressionSucceeded() ? "已压缩" : "尝试压缩但未成功")
+                : "未触发压缩";
+        return "线程累计 " + contextLoadingDiagnostics.totalMessageCount()
+                + " 封邮件，最近 " + contextLoadingDiagnostics.recentMessageCount()
+                + " 封参与分析，摘要来源 " + contextLoadingDiagnostics.summaryResolutionSource()
+                + "，压缩状态 " + compressionState + "。";
+    }
+
+    private String buildFactSummary(BusinessFactResult businessFactResult) {
+        return switch (businessFactResult.status()) {
+            case SUCCESS -> "业务 facts 已命中 " + preview(businessFactResult.sourceSystem())
+                    + "，解析到 " + joinPreview(businessFactResult.resolvedEntities())
+                    + "，得到 " + joinPreview(businessFactResult.facts()) + "。";
+            case NOT_REQUIRED -> "当前路由不依赖业务 facts。";
+            case INSUFFICIENT_INPUT -> "业务 facts 暂时无法查询，缺少 " + joinPreview(businessFactResult.missingEntities()) + "。";
+            case NO_RESULT -> "业务 facts 已发起查询，但未查到可用记录。";
+            case TEMPORARY_FAILURE -> "业务 facts 查询暂时失败，需要后续重试或人工介入。";
+            case CONFLICT -> "业务 facts 存在冲突，当前冲突标记为 " + joinPreview(businessFactResult.conflictFlags()) + "。";
+        };
+    }
+
+    private String buildKnowledgeSummary(KnowledgeRetrieveResult knowledgeRetrieveResult) {
+        if (knowledgeRetrieveResult.recallCount() <= 0) {
+            return "知识检索未召回有效片段。";
+        }
+        return "知识检索来源 " + knowledgeRetrieveResult.source()
+                + "，召回 " + knowledgeRetrieveResult.recallCount()
+                + " 条，首批片段 " + joinPreview(
+                        knowledgeRetrieveResult.snippets().stream()
+                                .map(snippet -> snippet.id())
+                                .limit(3)
+                                .toList()
+                ) + "。";
+    }
+
+    private String buildReplySummary(ReplyDraftingDiagnostics replyDiagnostics,
+                                     ReviewDecision reviewDecision) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("回复阶段采用 ")
+                .append(replyDiagnostics.replySource())
+                .append("，覆盖模式 ")
+                .append(replyDiagnostics.coverageMode())
+                .append("，最终状态 ")
+                .append(reviewDecision.finalStatus().name())
+                .append("。");
+        if (replyDiagnostics.fallbackReason() != null && !replyDiagnostics.fallbackReason().isBlank()) {
+            builder.append(" 回退原因 ").append(replyDiagnostics.fallbackReason()).append("。");
+        }
+        if (!reviewDecision.reviewReason().isBlank()) {
+            builder.append(" 审核说明 ").append(reviewDecision.reviewReason()).append("。");
+        }
+        return builder.toString();
+    }
+
+    private List<String> buildKeyEvidence(IntentNormalizationResult normalizationResult,
+                                          BusinessFactResult businessFactResult,
+                                          KnowledgeRetrieveResult knowledgeRetrieveResult,
+                                          ReplyDraftingDiagnostics replyDiagnostics,
+                                          ReviewDecision reviewDecision) {
+        java.util.ArrayList<String> evidence = new java.util.ArrayList<>();
+        if (normalizationResult.primaryQuestion() != null && !normalizationResult.primaryQuestion().isBlank()) {
+            evidence.add("primary_question=" + preview(normalizationResult.primaryQuestion()));
+        }
+        businessFactResult.resolvedEntities().stream()
+                .limit(2)
+                .forEach(value -> evidence.add("resolved_entity=" + value));
+        businessFactResult.missingEntities().stream()
+                .limit(2)
+                .forEach(value -> evidence.add("missing_entity=" + value));
+        knowledgeRetrieveResult.snippets().stream()
+                .limit(2)
+                .forEach(snippet -> evidence.add("knowledge_snippet=" + snippet.id()));
+        replyDiagnostics.coveredQuestions().stream()
+                .limit(2)
+                .forEach(value -> evidence.add("covered_question=" + preview(value)));
+        reviewDecision.reviewSignals().stream()
+                .limit(2)
+                .forEach(value -> evidence.add("review_signal=" + value));
+        return evidence.stream().distinct().toList();
+    }
+
+    private String joinPreview(List<String> values) {
+        List<String> normalized = values.stream()
+                .map(this::preview)
+                .filter(value -> !value.isBlank())
+                .limit(3)
+                .toList();
+        if (normalized.isEmpty()) {
+            return "无";
+        }
+        return String.join("；", normalized);
     }
 
     private List<String> mergeActions(List<String> primaryActions, List<String> secondaryActions) {
