@@ -68,7 +68,29 @@ public class WorkflowEvaluationService {
                                                                 String workflowStatus,
                                                                 String draftStatus,
                                                                 String riskFlag) {
-        List<WorkflowEvaluationSampleView> samples = listSamples(limit, scene, subIntent, workflowStatus, draftStatus, riskFlag);
+        return summarizeRecentSamples(limit, scene, subIntent, workflowStatus, draftStatus, riskFlag, null, null, null);
+    }
+
+    public WorkflowEvaluationSummaryView summarizeRecentSamples(int limit,
+                                                                String scene,
+                                                                String subIntent,
+                                                                String workflowStatus,
+                                                                String draftStatus,
+                                                                String riskFlag,
+                                                                String businessFactStatus,
+                                                                String knowledgeRetrievalSource,
+                                                                String replyFallbackReason) {
+        List<WorkflowEvaluationSampleView> samples = listSamples(
+                limit,
+                scene,
+                subIntent,
+                workflowStatus,
+                draftStatus,
+                riskFlag,
+                businessFactStatus,
+                knowledgeRetrievalSource,
+                replyFallbackReason
+        );
         return new WorkflowEvaluationSummaryView(
                 limit,
                 samples.size(),
@@ -93,6 +115,18 @@ public class WorkflowEvaluationService {
                                                           String workflowStatus,
                                                           String draftStatus,
                                                           String riskFlag) {
+        return listSamples(limit, scene, subIntent, workflowStatus, draftStatus, riskFlag, null, null, null);
+    }
+
+    public List<WorkflowEvaluationSampleView> listSamples(int limit,
+                                                          String scene,
+                                                          String subIntent,
+                                                          String workflowStatus,
+                                                          String draftStatus,
+                                                          String riskFlag,
+                                                          String businessFactStatus,
+                                                          String knowledgeRetrievalSource,
+                                                          String replyFallbackReason) {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
@@ -103,6 +137,9 @@ public class WorkflowEvaluationService {
                 .filter(sample -> matches(sample.subIntent(), subIntent))
                 .filter(sample -> matches(sample.workflowStatus(), workflowStatus))
                 .filter(sample -> matches(sample.draftStatus(), draftStatus))
+                .filter(sample -> matches(sample.businessFactStatus(), businessFactStatus))
+                .filter(sample -> matches(sample.knowledgeRetrievalSource(), knowledgeRetrievalSource))
+                .filter(sample -> matches(sample.replyFallbackReason(), replyFallbackReason))
                 .filter(sample -> matchesRiskFlag(sample.riskFlags(), riskFlag))
                 .toList();
     }

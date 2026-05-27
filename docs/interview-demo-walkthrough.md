@@ -144,6 +144,8 @@ curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 ```bash
 curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20&scene=AFTER_SALES"
+curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20&scene=AFTER_SALES&businessFactStatus=INSUFFICIENT_INPUT"
+curl "http://127.0.0.1:8080/api/workflows/evaluations/recent?limit=20&knowledgeRetrievalSource=policy-catalog"
 ```
 
 这里重点讲：

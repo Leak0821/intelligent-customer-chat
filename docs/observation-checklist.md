@@ -118,6 +118,7 @@
 - 是否有 `retry_pending`
 - 是否有 `business_conflict`
 - `summary` 里能否直接看出最近一批运行中，售前 / 售后各有多少条
+- 是否能按 `businessFactStatus / knowledgeRetrievalSource / replyFallbackReason` 继续缩小问题范围
 - `summary` 里能否直接看出模板回退、人工审核、追问分别出现了多少次
 - evaluation 里是否能看到 `reviewCount / revisionCount / resubmittedForReview`
 - reviewTimeline 是否能串起 `REVISE_DRAFT -> RESUBMIT_REVIEW -> APPROVE_SEND / REJECT_SEND`

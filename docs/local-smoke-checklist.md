@@ -156,6 +156,8 @@ curl http://127.0.0.1:8080/api/workflows/<runId>/evaluation
 curl http://127.0.0.1:8080/api/workflows/<runId>/events
 curl http://127.0.0.1:8080/api/workflows/<runId>/draft
 curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20&scene=AFTER_SALES"
+curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20&scene=AFTER_SALES&businessFactStatus=INSUFFICIENT_INPUT"
+curl "http://127.0.0.1:8080/api/workflows/evaluations/recent?limit=20&replyFallbackReason=follow_up_template_required"
 ```
 
 4. 如果要验证发送闭环，再执行

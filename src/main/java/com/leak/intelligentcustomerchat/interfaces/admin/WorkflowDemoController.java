@@ -144,8 +144,21 @@ public class WorkflowDemoController {
                                                                 @RequestParam(required = false) String subIntent,
                                                                 @RequestParam(required = false) String workflowStatus,
                                                                 @RequestParam(required = false) String draftStatus,
-                                                                @RequestParam(required = false) String riskFlag) {
-        return workflowEvaluationService.listSamples(limit, scene, subIntent, workflowStatus, draftStatus, riskFlag);
+                                                                @RequestParam(required = false) String riskFlag,
+                                                                @RequestParam(required = false) String businessFactStatus,
+                                                                @RequestParam(required = false) String knowledgeRetrievalSource,
+                                                                @RequestParam(required = false) String replyFallbackReason) {
+        return workflowEvaluationService.listSamples(
+                limit,
+                scene,
+                subIntent,
+                workflowStatus,
+                draftStatus,
+                riskFlag,
+                businessFactStatus,
+                knowledgeRetrievalSource,
+                replyFallbackReason
+        );
     }
 
     @GetMapping("/evaluations/summary")
@@ -154,8 +167,21 @@ public class WorkflowDemoController {
                                                            @RequestParam(required = false) String subIntent,
                                                            @RequestParam(required = false) String workflowStatus,
                                                            @RequestParam(required = false) String draftStatus,
-                                                           @RequestParam(required = false) String riskFlag) {
-        return workflowEvaluationService.summarizeRecentSamples(limit, scene, subIntent, workflowStatus, draftStatus, riskFlag);
+                                                           @RequestParam(required = false) String riskFlag,
+                                                           @RequestParam(required = false) String businessFactStatus,
+                                                           @RequestParam(required = false) String knowledgeRetrievalSource,
+                                                           @RequestParam(required = false) String replyFallbackReason) {
+        return workflowEvaluationService.summarizeRecentSamples(
+                limit,
+                scene,
+                subIntent,
+                workflowStatus,
+                draftStatus,
+                riskFlag,
+                businessFactStatus,
+                knowledgeRetrievalSource,
+                replyFallbackReason
+        );
     }
 
     @GetMapping("/by-message/{messageId}/replay")
