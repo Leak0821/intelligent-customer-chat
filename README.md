@@ -150,6 +150,20 @@ mvn -Dspring-boot.run.profiles=local spring-boot:run
 
 当前第一版默认按 `PRE_SALES / AFTER_SALES / UNKNOWN` 做轻量区分，方便后续继续把模板调优沉淀到 `Nacos` 而不是散落在代码里。
 
+如果你想直接看“当前场景最终会用哪套模板”，可以调用：
+
+```bash
+curl "http://127.0.0.1:8080/api/runtime-config/prompts/preview?scene=PRE_SALES&primaryQuestion=What%20product%20fits%20my%20desk%20setup%3F"
+```
+
+这个接口会返回：
+
+- 当前配置来源
+- 当前场景最终解析后的 follow-up 模板
+- 当前场景最终解析后的 human-review 模板
+- 当前场景最终解析后的 direct-reply suffix
+- 当前已经配置过覆写的场景列表
+
 如果你要切到 `Nacos` 运行时配置，可以再打开：
 
 ```bash

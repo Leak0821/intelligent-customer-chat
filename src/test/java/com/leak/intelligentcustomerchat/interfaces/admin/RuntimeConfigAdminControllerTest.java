@@ -4,6 +4,7 @@ import com.leak.intelligentcustomerchat.app.config.RuntimePreflightService;
 import com.leak.intelligentcustomerchat.app.config.RuntimePreflightStatus;
 import com.leak.intelligentcustomerchat.domain.runtime.AgentRuntimeConfigSnapshot;
 import com.leak.intelligentcustomerchat.domain.runtime.IntentCatalogConfig;
+import com.leak.intelligentcustomerchat.domain.runtime.PromptSceneTemplateConfig;
 import com.leak.intelligentcustomerchat.domain.runtime.PromptTemplateConfig;
 import com.leak.intelligentcustomerchat.domain.runtime.RetrievalSettingsConfig;
 import org.junit.jupiter.api.Test;
@@ -20,13 +21,35 @@ class RuntimeConfigAdminControllerTest {
         RuntimePreflightStatus status = new RuntimePreflightStatus("lightweight-local", true, List.of(), List.of(), List.of());
         RuntimeConfigAdminController controller = new RuntimeConfigAdminController(
                 new StubAgentRuntimeConfigService(),
+                new StubAgentRuntimeConfigService(),
                 new StubRuntimePreflightService(status)
         );
 
         assertThat(controller.preflight()).isEqualTo(status);
     }
 
-    private static final class StubAgentRuntimeConfigService implements com.leak.intelligentcustomerchat.app.config.AgentRuntimeConfigService {
+    @Test
+    void shouldPreviewSceneAwarePromptTemplates() {
+        RuntimeConfigAdminController controller = new RuntimeConfigAdminController(
+                new StubAgentRuntimeConfigService(),
+                new StubAgentRuntimeConfigService(),
+                new StubRuntimePreflightService(new RuntimePreflightStatus("lightweight-local", true, List.of(), List.of(), List.of()))
+        );
+
+        RuntimePromptPreviewView preview = controller.previewPrompt("PRE_SALES", "What product fits my desk setup?");
+
+        assertThat(preview.source()).isEqualTo("local-default");
+        assertThat(preview.scene()).isEqualTo("PRE_SALES");
+        assertThat(preview.primaryQuestion()).isEqualTo("What product fits my desk setup?");
+        assertThat(preview.followUpTemplate()).contains("preferred style");
+        assertThat(preview.followUpTemplate()).contains("What product fits my desk setup?");
+        assertThat(preview.humanReviewTemplate()).contains("recommendation request");
+        assertThat(preview.directReplySuffix()).contains("recommendation evidence");
+        assertThat(preview.availableFollowUpScenes()).contains("AFTER_SALES", "PRE_SALES");
+    }
+
+    private static final class StubAgentRuntimeConfigService implements com.leak.intelligentcustomerchat.app.config.AgentRuntimeConfigService,
+            com.leak.intelligentcustomerchat.app.config.PromptConfigService {
         @Override
         public AgentRuntimeConfigSnapshot current() {
             return snapshot("local-default");
@@ -39,12 +62,37 @@ class RuntimeConfigAdminControllerTest {
 
         private AgentRuntimeConfigSnapshot snapshot(String source) {
             return new AgentRuntimeConfigSnapshot(
-                    new PromptTemplateConfig("prompt", "direct-reply", "follow up", "review", "suffix"),
+                    new PromptTemplateConfig(
+                            "prompt",
+                            "direct-reply",
+                            "follow up {{primaryQuestion}} {{scene}}",
+                            "review {{primaryQuestion}} {{scene}}",
+                            "suffix",
+                            new PromptSceneTemplateConfig(
+                                    java.util.Map.of(
+                                            "PRE_SALES", "please share preferred style {{primaryQuestion}} {{scene}}",
+                                            "AFTER_SALES", "please share order number {{primaryQuestion}} {{scene}}"
+                                    ),
+                                    java.util.Map.of(
+                                            "PRE_SALES", "specialist reviews recommendation request {{primaryQuestion}} {{scene}}",
+                                            "AFTER_SALES", "specialist reviews order request {{primaryQuestion}} {{scene}}"
+                                    ),
+                                    java.util.Map.of(
+                                            "PRE_SALES", "recommendation evidence suffix",
+                                            "AFTER_SALES", "after sales evidence suffix"
+                                    )
+                            )
+                    ),
                     new IntentCatalogConfig(List.of("product_recommendation"), List.of("logistics_tracking")),
                     new RetrievalSettingsConfig(10, true, 60),
                     source,
                     OffsetDateTime.now()
             );
+        }
+
+        @Override
+        public PromptTemplateConfig currentPromptConfig() {
+            return current().promptTemplateConfig();
         }
     }
 

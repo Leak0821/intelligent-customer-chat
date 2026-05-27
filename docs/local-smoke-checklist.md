@@ -34,6 +34,7 @@ curl http://127.0.0.1:8080/api/runtime-config/preflight
 
 ```bash
 curl http://127.0.0.1:8080/api/runtime-config
+curl "http://127.0.0.1:8080/api/runtime-config/prompts/preview?scene=PRE_SALES&primaryQuestion=What%20product%20fits%20my%20desk%20setup%3F"
 ```
 
 3. 确认业务样本可读
@@ -211,6 +212,7 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 ## 4. 判断通过的标准
 
 - `preflight` 返回 `ready=true`
+- `runtime-config/prompts/preview` 能看到按 `scene` 解析后的 follow-up / human-review 模板
 - `demo` 能生成 `WorkflowRun`
 - `analysis` 能解释回复阶段到底走了 `llm`、模板兜底还是追问模板
 - `analysis` 能返回 scene / subIntent / facts / knowledge / draft
@@ -223,6 +225,7 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 - 先看 `preflight`
 - 再看 `mail/overview`
 - 再看 `runtime-config`
+- 如果怀疑模板没生效，再看 `runtime-config/prompts/preview`
 - 再看 `business` 和 `knowledge`
 - 最后看 `workflow/demo`
 
