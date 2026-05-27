@@ -34,6 +34,11 @@ class DemoScenarioCatalogServiceTest {
         assertThat(scenarios.get(0).title()).isEqualTo("售前推荐样例");
         assertThat(scenarios.get(4).scene()).isEqualTo("AFTER_SALES");
         assertThat(scenarios.get(9).scene()).isEqualTo("SYSTEM");
+        assertThat(scenarios.get(4).recommendedMode()).isEqualTo("replay");
+        assertThat(scenarios.get(4).demoFocus()).contains("facts-first");
+        assertThat(scenarios.get(4).expectedResultType()).isEqualTo("直接草稿");
+        assertThat(scenarios.get(6).businessEvidenceHint()).contains("订单和物流 facts");
+        assertThat(scenarios.get(7).knowledgeEvidenceHint()).contains("政策边界");
     }
 
     @Test

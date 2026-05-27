@@ -7,6 +7,11 @@ public record DemoScenarioSummaryView(
         String subIntent,
         String description,
         String from,
-        String subject
+        String subject,
+        String recommendedMode,
+        String demoFocus,
+        String expectedResultType,
+        String businessEvidenceHint,
+        String knowledgeEvidenceHint
 ) {
 }

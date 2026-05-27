@@ -71,6 +71,16 @@ curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-man
 curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 ```
 
+目录接口现在除了基本标题和主题外，还会直接返回：
+
+- `recommendedMode`
+- `demoFocus`
+- `expectedResultType`
+- `businessEvidenceHint`
+- `knowledgeEvidenceHint`
+
+如果主要讲售后链路，建议先对照 [after-sales-demo-matrix.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/docs/after-sales-demo-matrix.md) 选样例。
+
 ## 5. 演示时怎么跑
 
 ### 5.1 批量看分析结果
@@ -100,6 +110,7 @@ curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 
 - 每条样例都能看到事件流、草稿、审核和派发相关状态
 - 不是黑盒聊天，而是可复盘的工作流
+- `replay.evidence` 里现在能直接看到 facts / knowledge / reply 的角色分工
 - blocked 样例可以单独说明“这是系统级阻断演示，不代表普通客户意图”
 
 ### 5.3 单独演示发送闭环

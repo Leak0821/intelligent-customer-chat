@@ -69,6 +69,24 @@ curl -X POST http://127.0.0.1:8080/api/business/facts/preview \
 
 ## 3. 最小闭环验证
 
+在开始跑具体样例前，建议先看一眼内置目录：
+
+```bash
+curl http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-order-status
+curl http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-logistics
+curl http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-policy
+```
+
+重点看：
+
+- `recommendedMode`
+- `demoFocus`
+- `expectedResultType`
+- `businessEvidenceHint`
+- `knowledgeEvidenceHint`
+
+如果主要跑售后链路，可先对照 [after-sales-demo-matrix.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/docs/after-sales-demo-matrix.md) 选样例。
+
 ### 3.1 售后样例
 
 1. 提交 demo 邮件
@@ -121,6 +139,10 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
 - `replyDiagnostics.knowledgeSnippetIds`
 - `evaluation.replySource`
 - `evaluation.replyFallbackReason`
+- `replay.evidence.businessFactRole`
+- `replay.evidence.knowledgeRole`
+- `evaluation.businessFactRole`
+- `evaluation.knowledgeRole`
 
 3. 如果需要完整回放，继续查看
 
