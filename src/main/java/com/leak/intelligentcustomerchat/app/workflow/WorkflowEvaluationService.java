@@ -80,6 +80,32 @@ public class WorkflowEvaluationService {
                                                                 String businessFactStatus,
                                                                 String knowledgeRetrievalSource,
                                                                 String replyFallbackReason) {
+        return summarizeRecentSamples(
+                limit,
+                scene,
+                subIntent,
+                workflowStatus,
+                draftStatus,
+                riskFlag,
+                businessFactStatus,
+                null,
+                null,
+                knowledgeRetrievalSource,
+                replyFallbackReason
+        );
+    }
+
+    public WorkflowEvaluationSummaryView summarizeRecentSamples(int limit,
+                                                                String scene,
+                                                                String subIntent,
+                                                                String workflowStatus,
+                                                                String draftStatus,
+                                                                String riskFlag,
+                                                                String businessFactStatus,
+                                                                String businessFactRole,
+                                                                String knowledgeRole,
+                                                                String knowledgeRetrievalSource,
+                                                                String replyFallbackReason) {
         List<WorkflowEvaluationSampleView> samples = listSamples(
                 limit,
                 scene,
@@ -88,6 +114,8 @@ public class WorkflowEvaluationService {
                 draftStatus,
                 riskFlag,
                 businessFactStatus,
+                businessFactRole,
+                knowledgeRole,
                 knowledgeRetrievalSource,
                 replyFallbackReason
         );
@@ -127,6 +155,32 @@ public class WorkflowEvaluationService {
                                                           String businessFactStatus,
                                                           String knowledgeRetrievalSource,
                                                           String replyFallbackReason) {
+        return listSamples(
+                limit,
+                scene,
+                subIntent,
+                workflowStatus,
+                draftStatus,
+                riskFlag,
+                businessFactStatus,
+                null,
+                null,
+                knowledgeRetrievalSource,
+                replyFallbackReason
+        );
+    }
+
+    public List<WorkflowEvaluationSampleView> listSamples(int limit,
+                                                          String scene,
+                                                          String subIntent,
+                                                          String workflowStatus,
+                                                          String draftStatus,
+                                                          String riskFlag,
+                                                          String businessFactStatus,
+                                                          String businessFactRole,
+                                                          String knowledgeRole,
+                                                          String knowledgeRetrievalSource,
+                                                          String replyFallbackReason) {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be >= 1");
         }
@@ -138,6 +192,8 @@ public class WorkflowEvaluationService {
                 .filter(sample -> matches(sample.workflowStatus(), workflowStatus))
                 .filter(sample -> matches(sample.draftStatus(), draftStatus))
                 .filter(sample -> matches(sample.businessFactStatus(), businessFactStatus))
+                .filter(sample -> matches(sample.businessFactRole(), businessFactRole))
+                .filter(sample -> matches(sample.knowledgeRole(), knowledgeRole))
                 .filter(sample -> matches(sample.knowledgeRetrievalSource(), knowledgeRetrievalSource))
                 .filter(sample -> matches(sample.replyFallbackReason(), replyFallbackReason))
                 .filter(sample -> matchesRiskFlag(sample.riskFlags(), riskFlag))

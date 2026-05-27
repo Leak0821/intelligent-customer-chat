@@ -183,6 +183,8 @@ class WorkflowEvaluationServiceTest {
         List<WorkflowEvaluationSampleView> noResultFactSamples = service.listSamples(10, null, null, null, null, null, "NO_RESULT", null, null);
         List<WorkflowEvaluationSampleView> hybridKnowledgeSamples = service.listSamples(10, null, null, null, null, null, null, "elasticsearch-hybrid", null);
         List<WorkflowEvaluationSampleView> llmFallbackSamples = service.listSamples(10, null, null, null, null, null, null, null, "llm_unavailable_or_empty");
+        List<WorkflowEvaluationSampleView> factRoleSamples = service.listSamples(10, null, null, null, null, null, null, "business facts were queried but did not return a usable record", null, null, null);
+        List<WorkflowEvaluationSampleView> policyKnowledgeRoleSamples = service.listSamples(10, null, null, null, null, null, null, null, "knowledge fills product and catalog guidance that business facts do not provide", null, null);
 
         assertThat(afterSalesSamples).hasSize(1);
         assertThat(afterSalesSamples.get(0).messageId()).isEqualTo("msg-eval-2");
@@ -198,6 +200,10 @@ class WorkflowEvaluationServiceTest {
         assertThat(hybridKnowledgeSamples.get(0).knowledgeRetrievalSource()).isEqualTo("elasticsearch-hybrid");
         assertThat(llmFallbackSamples).hasSize(1);
         assertThat(llmFallbackSamples.get(0).replyFallbackReason()).isEqualTo("llm_unavailable_or_empty");
+        assertThat(factRoleSamples).hasSize(1);
+        assertThat(factRoleSamples.get(0).businessFactRole()).contains("did not return a usable record");
+        assertThat(policyKnowledgeRoleSamples).hasSize(1);
+        assertThat(policyKnowledgeRoleSamples.get(0).knowledgeRole()).contains("product and catalog guidance");
     }
 
     @Test
@@ -259,6 +265,8 @@ class WorkflowEvaluationServiceTest {
         WorkflowEvaluationSummaryView filteredByFactStatus = service.summarizeRecentSamples(10, null, null, null, null, null, "NO_RESULT", null, null);
         WorkflowEvaluationSummaryView filteredByKnowledgeSource = service.summarizeRecentSamples(10, null, null, null, null, null, null, "policy-catalog", null);
         WorkflowEvaluationSummaryView filteredByFallbackReason = service.summarizeRecentSamples(10, null, null, null, null, null, null, null, "human_review_template_required");
+        WorkflowEvaluationSummaryView filteredByFactRole = service.summarizeRecentSamples(10, null, null, null, null, null, null, "business facts were queried but did not return a usable record", null, null, null);
+        WorkflowEvaluationSummaryView filteredByKnowledgeRole = service.summarizeRecentSamples(10, null, null, null, null, null, null, null, "knowledge supplements explanation and expectation setting around the current business facts", null, null);
 
         assertThat(summary.requestedLimit()).isEqualTo(10);
         assertThat(summary.sampledCount()).isEqualTo(3);
@@ -318,6 +326,10 @@ class WorkflowEvaluationServiceTest {
         assertThat(filteredByKnowledgeSource.knowledgeRetrievalSources()).containsExactly(new WorkflowEvaluationCountView("policy-catalog", 1));
         assertThat(filteredByFallbackReason.sampledCount()).isEqualTo(1);
         assertThat(filteredByFallbackReason.replyFallbackReasons()).containsExactly(new WorkflowEvaluationCountView("human_review_template_required", 1));
+        assertThat(filteredByFactRole.sampledCount()).isEqualTo(1);
+        assertThat(filteredByFactRole.businessFactRoles()).containsExactly(new WorkflowEvaluationCountView("business facts were queried but did not return a usable record", 1));
+        assertThat(filteredByKnowledgeRole.sampledCount()).isEqualTo(1);
+        assertThat(filteredByKnowledgeRole.knowledgeRoles()).containsExactly(new WorkflowEvaluationCountView("knowledge supplements explanation and expectation setting around the current business facts", 1));
     }
 
     private static final class InMemoryWorkflowRunRepository implements WorkflowRunRepository {

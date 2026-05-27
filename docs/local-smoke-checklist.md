@@ -246,6 +246,12 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 ./scripts/fallback-paths-smoke.sh
 ```
 
+如果要快速验证“评估汇总 + 语义筛选”的复盘视图，可执行：
+
+```bash
+./scripts/evaluation-insights-smoke.sh
+```
+
 如果要演示“人工审核拒绝 -> 修改草稿 -> 重提审核 -> 放行”的反馈闭环，可执行：
 
 ```bash

@@ -173,7 +173,19 @@ class WorkflowDemoControllerTest {
                 null
         );
 
-        WorkflowEvaluationSummaryView summary = controller.evaluationSummary(20, "AFTER_SALES", null, null, null, null, "INSUFFICIENT_INPUT", "elasticsearch-hybrid", "follow_up_template_required");
+        WorkflowEvaluationSummaryView summary = controller.evaluationSummary(
+                20,
+                "AFTER_SALES",
+                null,
+                null,
+                null,
+                null,
+                "INSUFFICIENT_INPUT",
+                "business facts are blocked until key identifiers are provided",
+                "knowledge supplements explanation and expectation setting around the current business facts",
+                "elasticsearch-hybrid",
+                "follow_up_template_required"
+        );
 
         assertThat(summary.requestedLimit()).isEqualTo(20);
         assertThat(summary.sampledCount()).isEqualTo(1);

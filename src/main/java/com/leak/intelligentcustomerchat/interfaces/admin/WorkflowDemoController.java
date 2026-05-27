@@ -146,6 +146,8 @@ public class WorkflowDemoController {
                                                                 @RequestParam(required = false) String draftStatus,
                                                                 @RequestParam(required = false) String riskFlag,
                                                                 @RequestParam(required = false) String businessFactStatus,
+                                                                @RequestParam(required = false) String businessFactRole,
+                                                                @RequestParam(required = false) String knowledgeRole,
                                                                 @RequestParam(required = false) String knowledgeRetrievalSource,
                                                                 @RequestParam(required = false) String replyFallbackReason) {
         return workflowEvaluationService.listSamples(
@@ -156,6 +158,8 @@ public class WorkflowDemoController {
                 draftStatus,
                 riskFlag,
                 businessFactStatus,
+                businessFactRole,
+                knowledgeRole,
                 knowledgeRetrievalSource,
                 replyFallbackReason
         );
@@ -169,6 +173,8 @@ public class WorkflowDemoController {
                                                            @RequestParam(required = false) String draftStatus,
                                                            @RequestParam(required = false) String riskFlag,
                                                            @RequestParam(required = false) String businessFactStatus,
+                                                           @RequestParam(required = false) String businessFactRole,
+                                                           @RequestParam(required = false) String knowledgeRole,
                                                            @RequestParam(required = false) String knowledgeRetrievalSource,
                                                            @RequestParam(required = false) String replyFallbackReason) {
         return workflowEvaluationService.summarizeRecentSamples(
@@ -179,6 +185,8 @@ public class WorkflowDemoController {
                 draftStatus,
                 riskFlag,
                 businessFactStatus,
+                businessFactRole,
+                knowledgeRole,
                 knowledgeRetrievalSource,
                 replyFallbackReason
         );
