@@ -11,6 +11,7 @@ import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationDiagnostic
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationService;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationTraceService;
 import com.leak.intelligentcustomerchat.app.intent.IntentRoutingService;
+import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrievalQueryBuilder;
 import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrieveService;
 import com.leak.intelligentcustomerchat.app.mail.MailCleaner;
 import com.leak.intelligentcustomerchat.app.reply.ReplyDraftingDiagnostics;
@@ -52,6 +53,7 @@ public class WorkflowAnalysisService {
     private final IntentRoutingService intentRoutingService;
     private final ContextLoadingService contextLoadingService;
     private final BusinessFactService businessFactService;
+    private final KnowledgeRetrievalQueryBuilder knowledgeRetrievalQueryBuilder;
     private final KnowledgeRetrieveService knowledgeRetrieveService;
     private final ReplyDraftService replyDraftService;
     private final ReviewDecisionService reviewDecisionService;
@@ -70,6 +72,7 @@ public class WorkflowAnalysisService {
                                    IntentRoutingService intentRoutingService,
                                    ContextLoadingService contextLoadingService,
                                    BusinessFactService businessFactService,
+                                   KnowledgeRetrievalQueryBuilder knowledgeRetrievalQueryBuilder,
                                    KnowledgeRetrieveService knowledgeRetrieveService,
                                    ReplyDraftService replyDraftService,
                                    ReviewDecisionService reviewDecisionService,
@@ -87,6 +90,7 @@ public class WorkflowAnalysisService {
         this.intentRoutingService = intentRoutingService;
         this.contextLoadingService = contextLoadingService;
         this.businessFactService = businessFactService;
+        this.knowledgeRetrievalQueryBuilder = knowledgeRetrievalQueryBuilder;
         this.knowledgeRetrieveService = knowledgeRetrieveService;
         this.replyDraftService = replyDraftService;
         this.reviewDecisionService = reviewDecisionService;
@@ -107,8 +111,8 @@ public class WorkflowAnalysisService {
         ContextLoadingDiagnostics contextLoadingDiagnostics = diagnoseContext(cleanedMail, routeResult);
         ContextSnapshot contextSnapshot = contextLoadingDiagnostics.snapshot();
         BusinessFactResult businessFactResult = businessFactService.loadFacts(cleanedMail, normalizationResult, routeResult, contextSnapshot);
-        RetrievalQuery retrievalQuery = buildRetrievalQuery(normalizationResult, routeResult, businessFactResult);
-        KnowledgeRetrieveResult knowledgeRetrieveResult = knowledgeRetrieveService.retrieve(normalizationResult, routeResult, businessFactResult);
+        RetrievalQuery retrievalQuery = buildRetrievalQuery(normalizationResult, routeResult, contextSnapshot, businessFactResult);
+        KnowledgeRetrieveResult knowledgeRetrieveResult = knowledgeRetrieveService.retrieve(normalizationResult, routeResult, contextSnapshot, businessFactResult);
 
         // 分析视图不落正式状态机，只复用同一套草稿与审核能力，方便快速检查中间产物。
         WorkflowRun previewRun = WorkflowRun.start(cleanedMail.messageId(), cleanedMail.threadId());
@@ -194,13 +198,14 @@ public class WorkflowAnalysisService {
 
     private RetrievalQuery buildRetrievalQuery(IntentNormalizationResult normalizationResult,
                                                IntentRouteResult routeResult,
+                                               ContextSnapshot contextSnapshot,
                                                BusinessFactResult businessFactResult) {
-        return new RetrievalQuery(
-                normalizationResult.normalizedRequest(),
-                routeResult.scene().name(),
-                routeResult.subIntent(),
-                businessFactResult.resolvedEntities(),
-                retrievalConfigService.currentRetrievalSettings().topK()
+        return knowledgeRetrievalQueryBuilder.build(
+                normalizationResult,
+                routeResult,
+                contextSnapshot,
+                businessFactResult,
+                retrievalConfigService.currentRetrievalSettings()
         );
     }
 

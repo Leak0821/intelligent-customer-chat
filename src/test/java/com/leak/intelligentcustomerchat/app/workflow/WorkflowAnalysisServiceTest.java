@@ -11,6 +11,7 @@ import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationDiagnostic
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationService;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationTraceService;
 import com.leak.intelligentcustomerchat.app.intent.IntentRoutingService;
+import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrievalQueryBuilder;
 import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrieveService;
 import com.leak.intelligentcustomerchat.app.mail.MailCleaner;
 import com.leak.intelligentcustomerchat.app.reply.ReplyDraftingDiagnostics;
@@ -136,7 +137,8 @@ class WorkflowAnalysisServiceTest {
                 normalization -> routeResult,
                 (mail, route) -> contextSnapshot,
                 (mail, normalization, route, context) -> businessFactResult,
-                (normalization, route, facts) -> knowledgeRetrieveResult,
+                new KnowledgeRetrievalQueryBuilder(),
+                (normalization, route, context, facts) -> knowledgeRetrieveResult,
                 new ReplyDraftService() {
                     @Override
                     public ReplyDraft draft(WorkflowRun run,
@@ -220,6 +222,10 @@ class WorkflowAnalysisServiceTest {
         assertThat(view.businessFactDiagnostics().factRole()).contains("latest order and logistics truth");
         assertThat(view.businessFactDiagnostics().resolvedEntities()).contains("tracking_number=ZX987654");
         assertThat(view.knowledgeDiagnostics().retrievalQuery().subIntent()).isEqualTo("logistics_tracking");
+        assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("What is the tracking status?");
+        assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("logistics tracking delivery update shipping timeline");
+        assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("context customer asked again after previous email");
+        assertThat(view.knowledgeDiagnostics().retrievalQuery().queryText()).contains("facts current logistics status=in_transit");
         assertThat(view.knowledgeDiagnostics().retrievalSource()).isEqualTo("elasticsearch-hybrid");
         assertThat(view.knowledgeDiagnostics().fusionStrategy()).isEqualTo("rrf");
         assertThat(view.knowledgeDiagnostics().knowledgeRole()).contains("expectation setting");

@@ -54,6 +54,7 @@
 - summaryResolutionSource 是否说明了摘要来自缓存、持久化摘要还是兜底拼装
 - businessFactDiagnostics 里是否能直接看出 facts 的角色、来源系统、缺口和冲突标记
 - knowledgeDiagnostics 里是否能看到 retrievalQuery，以及 bm25 / vector 两路召回
+- retrievalQuery 是否已经把主问题、场景意图、上下文摘要和关键 facts 提示组装进去，而不是直接拿整段原邮件生搜
 - retrievalSource / fusionStrategy 是否说明了最终采用的检索通路和融合方式
 - knowledgeRole / factsFirstApplied 是否说明了知识是在补充什么，以及是否真的受 facts 约束
 - factGroundingSignals 是否能看出知识片段有没有和 facts / filters 形成有效衔接

@@ -515,3 +515,27 @@
 
 - validate 失败很多时候不是“测试太严格”，而是样例已经把真实链路问题照出来了
 - 只要一个子意图进入 catalog，就要同步检查路由、facts、knowledge、reply 和 demo 资产是否都认这个名字
+
+## 24. 如果 RAG query 只是直接拿原邮件全文去搜，召回质量会很飘
+
+### 现象
+
+- `analysis` 里虽然能看到 retrievalQuery
+- 但 query 本身只是原邮件或 normalizedRequest 原样透传
+- 一旦邮件正文很散、多轮上下文很多，召回结果会明显跑偏
+
+### 根因
+
+- 没有把“主问题、场景意图、上下文摘要、已命中的 facts”收敛成统一 query
+- 诊断视图和正式检索链路也容易各走一套 query 组装逻辑
+
+### 修复
+
+- 抽一层统一的 `KnowledgeRetrievalQueryBuilder`
+- 正式工作流和 `analysis` 诊断都复用同一套 query 组装
+- query 至少带上主问题、route hint、上下文摘要和 facts 提示
+
+### 经验
+
+- RAG 的可解释性不只在于“召回了哪些片段”，也在于“到底拿什么去搜”
+- 只要检索 query 在正式链路和诊断链路里不是同一个构造器，后面迟早会漂

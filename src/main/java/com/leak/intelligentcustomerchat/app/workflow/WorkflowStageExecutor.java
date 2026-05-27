@@ -98,7 +98,7 @@ public class WorkflowStageExecutor {
             advance(run, WorkflowStage.BUSINESS_FACTS_READY,
                     workflowEvidenceSummaryParser.buildBusinessFactsStageSummary(businessFactResult));
 
-            KnowledgeRetrieveResult knowledgeRetrieveResult = knowledgeRetrieveService.retrieve(normalizationResult, routeResult, businessFactResult);
+            KnowledgeRetrieveResult knowledgeRetrieveResult = knowledgeRetrieveService.retrieve(normalizationResult, routeResult, contextSnapshot, businessFactResult);
             advance(run, WorkflowStage.KNOWLEDGE_READY,
                     workflowEvidenceSummaryParser.buildKnowledgeStageSummary(knowledgeRetrieveResult));
 
