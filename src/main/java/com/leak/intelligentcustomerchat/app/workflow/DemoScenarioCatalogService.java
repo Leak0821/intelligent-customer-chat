@@ -46,6 +46,10 @@ public class DemoScenarioCatalogService {
                 .toList();
     }
 
+    public WorkflowRun runScenario(String scenarioId) {
+        return runScenario(requireScenario(scenarioId));
+    }
+
     public DemoScenarioExecutionView execute(String scenarioId, String mode) {
         DemoScenarioDefinition scenario = requireScenario(scenarioId);
         DemoScenarioMode executeMode = DemoScenarioMode.from(mode);

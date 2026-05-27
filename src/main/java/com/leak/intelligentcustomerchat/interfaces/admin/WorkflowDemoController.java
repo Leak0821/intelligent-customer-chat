@@ -119,6 +119,12 @@ public class WorkflowDemoController {
         return demoScenarioCatalogService.execute(scenarioId, mode);
     }
 
+    @PostMapping("/demo/scenarios/{scenarioId}/case")
+    public WorkflowCaseView executeDemoScenarioAsCase(@PathVariable String scenarioId) {
+        WorkflowRun run = demoScenarioCatalogService.runScenario(scenarioId);
+        return buildWorkflowCase(run.getRunId());
+    }
+
     @GetMapping
     public List<WorkflowRun> listRuns() {
         return workflowRunService.findAllRuns();

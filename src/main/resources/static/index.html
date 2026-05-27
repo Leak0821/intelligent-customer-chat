@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邮件智能客服最小闭环</title>
+    <style>
+        :root {
+            --bg: #f5efe5;
+            --panel: rgba(255, 252, 246, 0.9);
+            --panel-strong: #fffaf2;
+            --border: rgba(58, 82, 94, 0.18);
+            --text: #1f2f38;
+            --muted: #62717b;
+            --accent: #0d6d68;
+            --accent-strong: #074744;
+            --warm: #c26d3d;
+            --ok: #2d7b4f;
+            --warn: #a56a00;
+            --danger: #9f3e35;
+            --shadow: 0 22px 50px rgba(63, 48, 33, 0.10);
+            --radius: 22px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(13, 109, 104, 0.14), transparent 35%),
+                radial-gradient(circle at top right, rgba(194, 109, 61, 0.12), transparent 28%),
+                linear-gradient(180deg, #f8f2ea 0%, #f1ebe1 100%);
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(31, 47, 56, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(31, 47, 56, 0.04) 1px, transparent 1px);
+            background-size: 24px 24px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35), transparent 75%);
+        }
+
+        .shell {
+            width: min(1440px, calc(100% - 32px));
+            margin: 24px auto 40px;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .hero-card,
+        .panel,
+        .scenario-card {
+            background: var(--panel);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .hero-card {
+            padding: 28px;
+        }
+
+        .hero-card h1 {
+            margin: 0 0 10px;
+            font-family: "Iowan Old Style", "Palatino Linotype", serif;
+            font-size: clamp(2rem, 3vw, 3.3rem);
+            line-height: 1.02;
+            letter-spacing: -0.04em;
+        }
+
+        .hero-card p,
+        .hero-status p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .hero-status {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .status-banner {
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(13, 109, 104, 0.10), rgba(194, 109, 61, 0.10));
+            border: 1px solid rgba(13, 109, 104, 0.10);
+        }
+
+        .status-banner strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 1rem;
+        }
+
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(31, 47, 56, 0.10);
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .badge.ok {
+            color: var(--ok);
+            border-color: rgba(45, 123, 79, 0.18);
+        }
+
+        .badge.warn {
+            color: var(--warn);
+            border-color: rgba(165, 106, 0, 0.18);
+        }
+
+        .badge.danger {
+            color: var(--danger);
+            border-color: rgba(159, 62, 53, 0.18);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
+            gap: 18px;
+        }
+
+        .panel {
+            padding: 22px;
+        }
+
+        .panel h2 {
+            margin: 0 0 16px;
+            font-size: 1.05rem;
+        }
+
+        .panel h3 {
+            margin: 0 0 10px;
+            font-size: 0.95rem;
+        }
+
+        .field-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.86rem;
+            color: var(--muted);
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            border: 1px solid rgba(31, 47, 56, 0.14);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.84);
+            color: var(--text);
+            padding: 12px 14px;
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 132px;
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: 2px solid rgba(13, 109, 104, 0.18);
+            border-color: rgba(13, 109, 104, 0.30);
+        }
+
+        .button-row,
+        .action-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 14px;
+            padding: 11px 16px;
+            font: inherit;
+            cursor: pointer;
+            transition: transform 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: #fff;
+            box-shadow: 0 14px 24px rgba(13, 109, 104, 0.20);
+        }
+
+        .secondary {
+            background: #fff7ee;
+            color: var(--text);
+            border: 1px solid rgba(31, 47, 56, 0.10);
+        }
+
+        .warning {
+            background: #fff1de;
+            color: var(--warn);
+        }
+
+        .danger {
+            background: #fde9e5;
+            color: var(--danger);
+        }
+
+        .scenario-grid {
+            display: grid;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .scenario-card {
+            padding: 16px;
+        }
+
+        .scenario-card header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .scenario-card strong {
+            font-size: 0.98rem;
+        }
+
+        .scenario-card p {
+            margin: 0 0 12px;
+            color: var(--muted);
+            line-height: 1.5;
+            font-size: 0.92rem;
+        }
+
+        .case-grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .summary-card {
+            padding: 18px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(13, 109, 104, 0.08), rgba(255, 255, 255, 0.85));
+            border: 1px solid rgba(13, 109, 104, 0.10);
+        }
+
+        .summary-card h2 {
+            margin-bottom: 8px;
+        }
+
+        .summary-card p {
+            margin: 0;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .metric {
+            padding: 16px;
+            border-radius: 18px;
+            background: var(--panel-strong);
+            border: 1px solid rgba(31, 47, 56, 0.08);
+        }
+
+        .metric span {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .metric strong {
+            font-size: 1rem;
+            line-height: 1.35;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .detail-card {
+            padding: 18px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.84);
+            border: 1px solid rgba(31, 47, 56, 0.08);
+        }
+
+        .detail-card p,
+        .detail-card pre {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .detail-card pre {
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 0.86rem;
+        }
+
+        .composer {
+            display: grid;
+            gap: 12px;
+        }
+
+        .inline-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .small-note {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .raw-box {
+            background: #fffdf8;
+            border: 1px dashed rgba(31, 47, 56, 0.18);
+            border-radius: 18px;
+            padding: 14px;
+            max-height: 280px;
+            overflow: auto;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 1120px) {
+            .hero,
+            .layout,
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metric-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 680px) {
+            .shell {
+                width: min(100% - 20px, 1440px);
+                margin-top: 12px;
+            }
+
+            .hero-card,
+            .hero-status,
+            .panel {
+                padding: 18px;
+            }
+
+            .metric-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <section class="hero">
+        <article class="hero-card">
+            <div class="hero-meta">
+                <span class="badge">Production-minded v1</span>
+                <span class="badge">Email Agent Loop</span>
+            </div>
+            <h1>邮件智能客服最小闭环控制台</h1>
+            <p>先把一封邮件的识别、草稿、审核、发送跑通，不先做大而全后台。这个页面直接消费后端收敛后的 <code>case</code> 视图。</p>
+        </article>
+        <aside class="hero-status">
+            <div class="status-banner">
+                <strong id="hero-summary">当前还没有运行中的 case</strong>
+                <p id="hero-subtitle">先提交一封测试邮件，或运行右侧的内置场景。</p>
+            </div>
+            <div class="hero-meta">
+                <span class="badge" id="badge-scene">场景: 未开始</span>
+                <span class="badge" id="badge-risk">风险: 未开始</span>
+                <span class="badge" id="badge-action">动作: 等待输入</span>
+            </div>
+        </aside>
+    </section>
+
+    <section class="layout">
+        <div class="panel">
+            <h2>手动录入邮件</h2>
+            <div class="field-grid">
+                <div>
+                    <label for="from">发件人</label>
+                    <input id="from" type="email" value="demo@example.com" placeholder="customer@example.com">
+                </div>
+                <div>
+                    <label for="subject">邮件主题</label>
+                    <input id="subject" type="text" placeholder="Where is my order?">
+                </div>
+                <div>
+                    <label for="body">邮件正文</label>
+                    <textarea id="body" placeholder="Please help check my order status."></textarea>
+                </div>
+                <div class="button-row">
+                    <button class="primary" id="submit-mail">提交并生成 case</button>
+                    <button class="secondary" id="refresh-case" disabled>刷新当前 case</button>
+                    <button class="secondary" id="clear-form">清空输入</button>
+                </div>
+                <p class="small-note">建议前端第一版就围绕这里的 <code>case</code> 接口和下方动作按钮做联调。</p>
+            </div>
+
+            <h2 style="margin-top: 26px;">内置场景</h2>
+            <p class="small-note">直接运行仓库里的内置样例，适合快速演示售前、售后、追问、审核、阻断等路径。</p>
+            <div class="scenario-grid" id="scenario-grid">
+                <div class="scenario-card">
+                    <strong>正在加载内置场景...</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="case-grid">
+            <section class="summary-card">
+                <h2>当前 case 总览</h2>
+                <p id="case-summary">提交邮件后，这里会显示一句话处理结论。</p>
+                <div class="inline-meta" style="margin-top: 14px;">
+                    <span class="badge" id="case-run">runId: -</span>
+                    <span class="badge" id="case-status">状态: -</span>
+                    <span class="badge" id="case-dispatch">发送: -</span>
+                    <span class="badge" id="case-updated">更新时间: -</span>
+                </div>
+            </section>
+
+            <section class="metric-grid">
+                <article class="metric">
+                    <span>识别结果</span>
+                    <strong id="metric-scene">-</strong>
+                </article>
+                <article class="metric">
+                    <span>下一步动作</span>
+                    <strong id="metric-next-action">-</strong>
+                </article>
+                <article class="metric">
+                    <span>审核状态</span>
+                    <strong id="metric-review">-</strong>
+                </article>
+                <article class="metric">
+                    <span>放行决策</span>
+                    <strong id="metric-release">-</strong>
+                </article>
+            </section>
+
+            <section class="panel">
+                <h2>可操作动作</h2>
+                <div class="field-grid">
+                    <div>
+                        <label for="operator">操作人</label>
+                        <input id="operator" type="text" value="demo-admin">
+                    </div>
+                    <div>
+                        <label for="action-note">操作备注</label>
+                        <input id="action-note" type="text" value="manual action from demo page">
+                    </div>
+                    <div class="action-row">
+                        <button class="primary" id="approve-btn" disabled>审核通过</button>
+                        <button class="danger" id="reject-btn" disabled>审核驳回</button>
+                        <button class="secondary" id="dispatch-btn" disabled>执行发送</button>
+                        <button class="warning" id="retry-btn" disabled>重试发送</button>
+                    </div>
+                    <p class="small-note" id="available-actions-text">当前还没有可操作动作。</p>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>草稿编辑区</h2>
+                <div class="composer">
+                    <div>
+                        <label for="draft-subject">草稿主题</label>
+                        <input id="draft-subject" type="text" placeholder="等待生成草稿">
+                    </div>
+                    <div>
+                        <label for="draft-body">草稿正文</label>
+                        <textarea id="draft-body" placeholder="等待生成草稿"></textarea>
+                    </div>
+                    <div>
+                        <label for="draft-note">改稿说明</label>
+                        <input id="draft-note" type="text" value="edited from workflow console">
+                    </div>
+                    <label class="small-note">
+                        <input id="submit-for-review" type="checkbox" checked style="width:auto; margin-right:8px;">
+                        改稿后重新提交审核
+                    </label>
+                    <div class="button-row">
+                        <button class="secondary" id="revise-btn" disabled>保存改稿</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="detail-grid">
+                <article class="detail-card">
+                    <h3>风险结论</h3>
+                    <p id="risk-text">等待生成 case。</p>
+                    <div class="inline-meta" id="risk-flags"></div>
+                </article>
+                <article class="detail-card">
+                    <h3>证据摘要</h3>
+                    <p id="evidence-text">这里会显示意图、业务 facts、知识检索的摘要。</p>
+                </article>
+                <article class="detail-card">
+                    <h3>意图归一</h3>
+                    <pre id="normalization-summary">-</pre>
+                </article>
+                <article class="detail-card">
+                    <h3>业务 facts</h3>
+                    <pre id="facts-summary">-</pre>
+                </article>
+                <article class="detail-card">
+                    <h3>知识检索</h3>
+                    <pre id="knowledge-summary">-</pre>
+                </article>
+                <article class="detail-card">
+                    <h3>原始 JSON</h3>
+                    <div class="raw-box">
+                        <pre id="raw-json">等待生成 case。</pre>
+                    </div>
+                </article>
+            </section>
+        </div>
+    </section>
+</div>
+
+<script>
+    const state = {
+        currentRunId: null,
+        currentCase: null
+    };
+
+    const refs = {
+        heroSummary: document.getElementById("hero-summary"),
+        heroSubtitle: document.getElementById("hero-subtitle"),
+        badgeScene: document.getElementById("badge-scene"),
+        badgeRisk: document.getElementById("badge-risk"),
+        badgeAction: document.getElementById("badge-action"),
+        from: document.getElementById("from"),
+        subject: document.getElementById("subject"),
+        body: document.getElementById("body"),
+        refreshCase: document.getElementById("refresh-case"),
+        scenarioGrid: document.getElementById("scenario-grid"),
+        caseSummary: document.getElementById("case-summary"),
+        caseRun: document.getElementById("case-run"),
+        caseStatus: document.getElementById("case-status"),
+        caseDispatch: document.getElementById("case-dispatch"),
+        caseUpdated: document.getElementById("case-updated"),
+        metricScene: document.getElementById("metric-scene"),
+        metricNextAction: document.getElementById("metric-next-action"),
+        metricReview: document.getElementById("metric-review"),
+        metricRelease: document.getElementById("metric-release"),
+        operator: document.getElementById("operator"),
+        actionNote: document.getElementById("action-note"),
+        approveBtn: document.getElementById("approve-btn"),
+        rejectBtn: document.getElementById("reject-btn"),
+        dispatchBtn: document.getElementById("dispatch-btn"),
+        retryBtn: document.getElementById("retry-btn"),
+        reviseBtn: document.getElementById("revise-btn"),
+        availableActionsText: document.getElementById("available-actions-text"),
+        draftSubject: document.getElementById("draft-subject"),
+        draftBody: document.getElementById("draft-body"),
+        draftNote: document.getElementById("draft-note"),
+        submitForReview: document.getElementById("submit-for-review"),
+        riskText: document.getElementById("risk-text"),
+        riskFlags: document.getElementById("risk-flags"),
+        evidenceText: document.getElementById("evidence-text"),
+        normalizationSummary: document.getElementById("normalization-summary"),
+        factsSummary: document.getElementById("facts-summary"),
+        knowledgeSummary: document.getElementById("knowledge-summary"),
+        rawJson: document.getElementById("raw-json")
+    };
+
+    document.getElementById("submit-mail").addEventListener("click", submitManualCase);
+    document.getElementById("refresh-case").addEventListener("click", () => loadCase(state.currentRunId, false));
+    document.getElementById("clear-form").addEventListener("click", clearForm);
+    refs.approveBtn.addEventListener("click", () => performAction("APPROVE_SEND"));
+    refs.rejectBtn.addEventListener("click", () => performAction("REJECT_SEND"));
+    refs.dispatchBtn.addEventListener("click", () => performAction("DISPATCH"));
+    refs.retryBtn.addEventListener("click", () => performAction("RETRY_DISPATCH"));
+    refs.reviseBtn.addEventListener("click", () => performAction("REVISE_DRAFT"));
+
+    init();
+
+    async function init() {
+        await loadScenarios();
+    }
+
+    async function submitManualCase() {
+        const subject = refs.subject.value.trim();
+        const body = refs.body.value.trim();
+        if (!subject || !body) {
+            alert("请先填写邮件主题和正文。");
+            return;
+        }
+        await withButtonState(async () => {
+            const payload = {
+                from: refs.from.value.trim() || "demo@example.com",
+                subject,
+                body
+            };
+            const data = await api("/api/workflows/demo/case", {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            hydrateCase(data);
+        });
+    }
+
+    async function loadScenarios() {
+        try {
+            const scenarios = await api("/api/workflows/demo/scenarios");
+            refs.scenarioGrid.innerHTML = "";
+            scenarios.forEach((scenario) => {
+                const card = document.createElement("article");
+                card.className = "scenario-card";
+                card.innerHTML = `
+                    <header>
+                        <div>
+                            <strong>${escapeHtml(scenario.title)}</strong>
+                            <p>${escapeHtml(scenario.description || "暂无说明")}</p>
+                        </div>
+                        <span class="badge">${escapeHtml(scenario.scene || "UNKNOWN")}</span>
+                    </header>
+                    <div class="inline-meta">
+                        <span class="badge">${escapeHtml(scenario.subIntent || "UNKNOWN")}</span>
+                        <span class="badge">${escapeHtml(scenario.expectedResultType || "待观察")}</span>
+                    </div>
+                    <div class="button-row" style="margin-top: 12px;">
+                        <button class="secondary" data-scenario-id="${scenario.scenarioId}">运行这个样例</button>
+                    </div>
+                `;
+                card.querySelector("button").addEventListener("click", () => runScenarioCase(scenario.scenarioId));
+                refs.scenarioGrid.appendChild(card);
+            });
+        } catch (error) {
+            refs.scenarioGrid.innerHTML = `<article class="scenario-card"><strong>加载失败</strong><p>${escapeHtml(error.message)}</p></article>`;
+        }
+    }
+
+    async function runScenarioCase(scenarioId) {
+        await withButtonState(async () => {
+            const data = await api(`/api/workflows/demo/scenarios/${scenarioId}/case`, {
+                method: "POST"
+            });
+            hydrateCase(data);
+        });
+    }
+
+    async function loadCase(runId, announce) {
+        if (!runId) {
+            return;
+        }
+        try {
+            const data = await api(`/api/workflows/${runId}/case`);
+            hydrateCase(data);
+            if (announce) {
+                refs.heroSummary.textContent = "已刷新当前 case 状态";
+            }
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    async function performAction(action) {
+        if (!state.currentRunId) {
+            return;
+        }
+        const operator = refs.operator.value.trim() || "demo-admin";
+        const note = refs.actionNote.value.trim() || "manual action from demo page";
+        await withButtonState(async () => {
+            if (action === "APPROVE_SEND") {
+                await api(`/api/workflows/${state.currentRunId}/approve-send`, {
+                    method: "POST",
+                    body: JSON.stringify({ reviewer: operator, approvalNote: note })
+                });
+            } else if (action === "REJECT_SEND") {
+                await api(`/api/workflows/${state.currentRunId}/reject-send`, {
+                    method: "POST",
+                    body: JSON.stringify({ reviewer: operator, rejectNote: note })
+                });
+            } else if (action === "DISPATCH") {
+                await api(`/api/workflows/${state.currentRunId}/dispatch`, {
+                    method: "POST"
+                });
+            } else if (action === "RETRY_DISPATCH") {
+                await api(`/api/workflows/${state.currentRunId}/retry-dispatch`, {
+                    method: "POST",
+                    body: JSON.stringify({ reviewer: operator, retryReason: note })
+                });
+            } else if (action === "REVISE_DRAFT") {
+                const subject = refs.draftSubject.value.trim();
+                const body = refs.draftBody.value.trim();
+                if (!subject || !body) {
+                    alert("改稿前请确认草稿主题和正文。");
+                    return;
+                }
+                await api(`/api/workflows/${state.currentRunId}/revise-draft`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        editor: operator,
+                        subject,
+                        body,
+                        revisionNote: refs.draftNote.value.trim() || note,
+                        submitForReview: refs.submitForReview.checked
+                    })
+                });
+            }
+            await loadCase(state.currentRunId, true);
+        });
+    }
+
+    function hydrateCase(data) {
+        state.currentRunId = data.runId;
+        state.currentCase = data;
+        refs.refreshCase.disabled = false;
+
+        refs.heroSummary.textContent = data.summaryMessage || "当前 case 已生成";
+        refs.heroSubtitle.textContent = `${data.sender} · ${data.subject}`;
+        refs.badgeScene.textContent = `场景: ${data.scene} / ${data.subIntent}`;
+        refs.badgeRisk.textContent = `风险: ${data.riskDecision.riskLevel}`;
+        refs.badgeAction.textContent = `动作: ${data.nextAction || "待判断"}`;
+
+        refs.caseSummary.textContent = data.summaryMessage || "-";
+        refs.caseRun.textContent = `runId: ${data.runId}`;
+        refs.caseStatus.textContent = `状态: ${data.workflowStatus} / ${data.draftStatus || "NO_DRAFT"}`;
+        refs.caseDispatch.textContent = `发送: ${data.latestDispatchStatus || "NOT_SENT"}`;
+        refs.caseUpdated.textContent = `更新时间: ${formatTime(data.updatedAt)}`;
+
+        refs.metricScene.textContent = `${data.scene} / ${data.subIntent}`;
+        refs.metricNextAction.textContent = data.nextAction || "-";
+        refs.metricReview.textContent = data.manualReviewOutcome || data.sendReadiness || "-";
+        refs.metricRelease.textContent = `${data.riskDecision.releaseDecision} / ${data.riskDecision.sendAllowed ? "可发送" : "未放行"}`;
+
+        refs.availableActionsText.textContent = data.availableActions.length
+            ? `当前可操作动作: ${data.availableActions.join(" / ")}`
+            : "当前没有可直接执行的动作，通常代表等待客户补充信息或需要查看发送结果。";
+
+        refs.draftSubject.value = data.draftSubject || data.subject || "";
+        refs.draftBody.value = data.draftBody || "";
+
+        refs.riskText.textContent = buildRiskText(data.riskDecision);
+        refs.riskFlags.innerHTML = "";
+        const reasons = []
+            .concat(data.riskDecision.blockingReasons || [])
+            .concat(data.riskDecision.decisionSignals || []);
+        reasons.slice(0, 8).forEach((item) => {
+            const badge = document.createElement("span");
+            badge.className = badgeClassForRisk(data.riskDecision.riskLevel);
+            badge.textContent = item;
+            refs.riskFlags.appendChild(badge);
+        });
+
+        refs.evidenceText.textContent = [
+            `意图: ${data.normalizationSummary || "-"}`,
+            `facts: ${data.businessFactsSummary || "-"}`,
+            `knowledge: ${data.knowledgeSummary || "-"}`
+        ].join("\n");
+        refs.normalizationSummary.textContent = data.normalizationSummary || "-";
+        refs.factsSummary.textContent = data.businessFactsSummary || "-";
+        refs.knowledgeSummary.textContent = data.knowledgeSummary || "-";
+        refs.rawJson.textContent = JSON.stringify(data, null, 2);
+
+        syncActionButtons(data.availableActions || []);
+    }
+
+    function syncActionButtons(actions) {
+        const set = new Set(actions);
+        refs.approveBtn.disabled = !set.has("APPROVE_SEND");
+        refs.rejectBtn.disabled = !set.has("REJECT_SEND");
+        refs.dispatchBtn.disabled = !set.has("DISPATCH");
+        refs.retryBtn.disabled = !set.has("RETRY_DISPATCH");
+        refs.reviseBtn.disabled = !set.has("REVISE_DRAFT");
+    }
+
+    function clearForm() {
+        refs.subject.value = "";
+        refs.body.value = "";
+    }
+
+    async function withButtonState(task) {
+        toggleBusy(true);
+        try {
+            await task();
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            toggleBusy(false);
+        }
+    }
+
+    function toggleBusy(isBusy) {
+        document.querySelectorAll("button").forEach((button) => {
+            if (isBusy) {
+                button.dataset.wasDisabled = button.disabled ? "true" : "false";
+                button.disabled = true;
+                return;
+            }
+            if (button.dataset.wasDisabled === "false") {
+                button.disabled = false;
+            }
+            delete button.dataset.wasDisabled;
+        });
+        if (!isBusy && state.currentCase) {
+            syncActionButtons(state.currentCase.availableActions || []);
+            refs.refreshCase.disabled = false;
+        }
+        if (!isBusy && !state.currentCase) {
+            refs.refreshCase.disabled = true;
+        }
+    }
+
+    async function api(url, options = {}) {
+        const response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json"
+            },
+            ...options
+        });
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`请求失败: ${response.status} ${text || response.statusText}`);
+        }
+        return response.json();
+    }
+
+    function badgeClassForRisk(level) {
+        if (level === "LOW") {
+            return "badge ok";
+        }
+        if (level === "MEDIUM" || level === "HIGH") {
+            return "badge warn";
+        }
+        return "badge danger";
+    }
+
+    function buildRiskText(riskDecision) {
+        return [
+            `风险等级: ${riskDecision.riskLevel}`,
+            `放行决策: ${riskDecision.releaseDecision}`,
+            `推荐动作: ${riskDecision.recommendedAction}`,
+            `是否允许发送: ${riskDecision.sendAllowed ? "是" : "否"}`
+        ].join(" | ");
+    }
+
+    function formatTime(value) {
+        if (!value) {
+            return "-";
+        }
+        return new Date(value).toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll("\"", "&quot;")
+            .replaceAll("'", "&#39;");
+    }
+    </script>
+</body>
+</html>

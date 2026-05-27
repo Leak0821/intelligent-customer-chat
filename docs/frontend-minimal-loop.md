@@ -6,6 +6,14 @@
 
 当前建议不要一开始就接所有管理接口，而是先围绕一条最小闭环完成联调。
 
+如果只是先看一版已经接好的页面，启动应用后直接打开：
+
+```text
+http://127.0.0.1:8080/
+```
+
+仓库已经内置了一个最小静态控制台，直接消费下文这些接口。
+
 ## 1. 当前是否已有完整小闭环
 
 有。
@@ -25,7 +33,7 @@
 
 ## 2. 前端第一版只接哪些接口
 
-第一版建议只接下面 6 个接口。
+第一版建议只接下面 7 个接口。
 
 ### 2.1 创建并直接拿到当前 case
 
@@ -40,7 +48,7 @@ POST /api/workflows/demo/case
 
 前端最先接这个接口即可。
 
-## 2.2 刷新查看当前 case
+### 2.2 刷新查看当前 case
 
 ```bash
 GET /api/workflows/{runId}/case
@@ -53,7 +61,19 @@ GET /api/workflows/{runId}/case
 
 这个接口是当前最推荐给前端直接消费的主接口。
 
-## 2.3 审核通过
+### 2.3 运行内置场景并直接拿到 case
+
+```bash
+POST /api/workflows/demo/scenarios/{scenarioId}/case
+```
+
+用途：
+
+- 直接运行仓库里的典型售前 / 售后样例
+- 省掉前端自己组织测试正文
+- 适合演示和回归联调
+
+### 2.4 审核通过
 
 ```bash
 POST /api/workflows/{runId}/approve-send
@@ -63,7 +83,7 @@ POST /api/workflows/{runId}/approve-send
 
 - 人工确认草稿可发送
 
-## 2.4 审核拒绝
+### 2.5 审核拒绝
 
 ```bash
 POST /api/workflows/{runId}/reject-send
@@ -73,7 +93,7 @@ POST /api/workflows/{runId}/reject-send
 
 - 人工拒绝当前草稿
 
-## 2.5 改稿
+### 2.6 改稿
 
 ```bash
 POST /api/workflows/{runId}/revise-draft
@@ -84,7 +104,7 @@ POST /api/workflows/{runId}/revise-draft
 - 人工修改标题和正文
 - 可选择是否重新提交审核
 
-## 2.6 执行发送
+### 2.7 执行发送
 
 ```bash
 POST /api/workflows/{runId}/dispatch

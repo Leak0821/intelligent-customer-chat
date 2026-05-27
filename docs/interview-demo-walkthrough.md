@@ -31,6 +31,7 @@
 - `Nacos` 运行时配置样例可一键发布
 - `preflight` 可检查配置缺口
 - demo / replay / evaluation / dispatch 都有固定接口
+- `/` 已有最小静态演示页，可直接点通邮件闭环
 - 内置 demo 样例目录，可直接列出并一键执行
 
 ## 4. 推荐演示的 10 个样例
@@ -70,6 +71,7 @@ curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-log
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-manual-review?mode=review_loop"
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-policy?mode=validate"
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/case" -H "Content-Type: application/json" -d '{"from":"demo@example.com","subject":"Where is my order?","body":"My order has not arrived yet. Please help check."}'
+curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-order-status/case"
 curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 ```
 
