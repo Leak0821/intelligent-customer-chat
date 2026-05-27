@@ -1,5 +1,6 @@
 package com.leak.intelligentcustomerchat.app.business;
 
+import com.leak.intelligentcustomerchat.app.context.ContextEntitySignalExtractor;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactResult;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactStatus;
 import com.leak.intelligentcustomerchat.domain.context.ContextSnapshot;
@@ -23,7 +24,8 @@ class DefaultBusinessFactServiceTest {
     private final DefaultBusinessFactService service = new DefaultBusinessFactService(
             new StubOrderQueryGateway(businessDataCatalog),
             new StubLogisticsQueryGateway(businessDataCatalog),
-            new StubAfterSalesPolicyGateway(businessDataCatalog)
+            new StubAfterSalesPolicyGateway(businessDataCatalog),
+            new ContextEntitySignalExtractor()
     );
 
     @Test
@@ -141,5 +143,28 @@ class DefaultBusinessFactServiceTest {
 
         assertThat(result.status()).isEqualTo(BusinessFactStatus.CONFLICT);
         assertThat(result.conflictFlags()).contains("order_customer_email_mismatch");
+    }
+
+    @Test
+    void shouldReuseOrderIdentifierFromContextWhenCurrentMailOmitsIt() {
+        BusinessFactResult result = service.loadFacts(
+                new InboundMail("msg-5", "thread-5", "buyer@example.com", "Order status", "Can you check the latest order status again?", java.time.OffsetDateTime.now()),
+                new IntentNormalizationResult(
+                        "Can you check the latest order status again?",
+                        "Can you check the latest order status again?",
+                        List.of(),
+                        List.of(CustomerScene.AFTER_SALES),
+                        List.of("order_status"),
+                        List.of("order_id_or_tracking_no"),
+                        List.of("order_id_or_tracking_no"),
+                        ProcessingDisposition.CONTINUE
+                ),
+                new IntentRouteResult(CustomerScene.AFTER_SALES, "order_status", ProcessingDisposition.CONTINUE, "test"),
+                new ContextSnapshot("previous mail already confirmed order", List.of("order_id=EFGH5678"), List.of())
+        );
+
+        assertThat(result.status()).isEqualTo(BusinessFactStatus.SUCCESS);
+        assertThat(result.resolvedEntities()).contains("order_id=EFGH5678");
+        assertThat(result.facts()).anyMatch(item -> item.contains("order status=processing"));
     }
 }

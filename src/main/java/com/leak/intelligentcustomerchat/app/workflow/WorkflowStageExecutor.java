@@ -2,6 +2,8 @@ package com.leak.intelligentcustomerchat.app.workflow;
 
 import com.leak.intelligentcustomerchat.app.business.BusinessFactService;
 import com.leak.intelligentcustomerchat.app.context.ContextLoadingService;
+import com.leak.intelligentcustomerchat.app.intent.ContextAwareIntentNormalizationResult;
+import com.leak.intelligentcustomerchat.app.intent.ContextAwareIntentNormalizationService;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationService;
 import com.leak.intelligentcustomerchat.app.intent.IntentRoutingService;
 import com.leak.intelligentcustomerchat.app.knowledge.KnowledgeRetrieveService;
@@ -34,6 +36,7 @@ public class WorkflowStageExecutor {
     private final IntentNormalizationService intentNormalizationService;
     private final IntentRoutingService intentRoutingService;
     private final ContextLoadingService contextLoadingService;
+    private final ContextAwareIntentNormalizationService contextAwareIntentNormalizationService;
     private final BusinessFactService businessFactService;
     private final KnowledgeRetrieveService knowledgeRetrieveService;
     private final ReplyDraftService replyDraftService;
@@ -49,6 +52,7 @@ public class WorkflowStageExecutor {
                                  IntentNormalizationService intentNormalizationService,
                                  IntentRoutingService intentRoutingService,
                                  ContextLoadingService contextLoadingService,
+                                 ContextAwareIntentNormalizationService contextAwareIntentNormalizationService,
                                  BusinessFactService businessFactService,
                                  KnowledgeRetrieveService knowledgeRetrieveService,
                                  ReplyDraftService replyDraftService,
@@ -63,6 +67,7 @@ public class WorkflowStageExecutor {
         this.intentNormalizationService = intentNormalizationService;
         this.intentRoutingService = intentRoutingService;
         this.contextLoadingService = contextLoadingService;
+        this.contextAwareIntentNormalizationService = contextAwareIntentNormalizationService;
         this.businessFactService = businessFactService;
         this.knowledgeRetrieveService = knowledgeRetrieveService;
         this.replyDraftService = replyDraftService;
@@ -91,21 +96,27 @@ public class WorkflowStageExecutor {
                     "scene=%s, subIntent=%s".formatted(routeResult.scene(), routeResult.subIntent()));
 
             ContextSnapshot contextSnapshot = contextLoadingService.load(cleanedMail, routeResult);
+            ContextAwareIntentNormalizationResult contextAwareNormalization = contextAwareIntentNormalizationService.enrich(normalizationResult, contextSnapshot);
+            IntentNormalizationResult effectiveNormalizationResult = contextAwareNormalization.result();
             advance(run, WorkflowStage.CONTEXT_LOADED,
-                    "strongSignals=%s, optionalSignals=%s".formatted(contextSnapshot.strongSignals().size(), contextSnapshot.optionalSignals().size()));
+                    "strongSignals=%s, optionalSignals=%s, contextActions=%s".formatted(
+                            contextSnapshot.strongSignals().size(),
+                            contextSnapshot.optionalSignals().size(),
+                            contextAwareNormalization.actions().isEmpty() ? "none" : contextAwareNormalization.actions()
+                    ));
 
-            BusinessFactResult businessFactResult = businessFactService.loadFacts(cleanedMail, normalizationResult, routeResult, contextSnapshot);
+            BusinessFactResult businessFactResult = businessFactService.loadFacts(cleanedMail, effectiveNormalizationResult, routeResult, contextSnapshot);
             advance(run, WorkflowStage.BUSINESS_FACTS_READY,
                     workflowEvidenceSummaryParser.buildBusinessFactsStageSummary(businessFactResult));
 
-            KnowledgeRetrieveResult knowledgeRetrieveResult = knowledgeRetrieveService.retrieve(normalizationResult, routeResult, contextSnapshot, businessFactResult);
+            KnowledgeRetrieveResult knowledgeRetrieveResult = knowledgeRetrieveService.retrieve(effectiveNormalizationResult, routeResult, contextSnapshot, businessFactResult);
             advance(run, WorkflowStage.KNOWLEDGE_READY,
                     workflowEvidenceSummaryParser.buildKnowledgeStageSummary(knowledgeRetrieveResult));
 
             ReplyDraftingResult draftingResult = replyDraftService.draftWithDiagnostics(
                     run,
                     cleanedMail,
-                    normalizationResult,
+                    effectiveNormalizationResult,
                     routeResult,
                     contextSnapshot,
                     businessFactResult,

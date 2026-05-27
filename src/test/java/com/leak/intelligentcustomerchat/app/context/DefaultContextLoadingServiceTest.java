@@ -32,7 +32,8 @@ class DefaultContextLoadingServiceTest {
                 memoryStore,
                 summaryRepository,
                 compressionService,
-                properties
+                properties,
+                new ContextEntitySignalExtractor()
         );
 
         service.load(mail("thread-1", "first"), route());
@@ -60,7 +61,8 @@ class DefaultContextLoadingServiceTest {
                 memoryStore,
                 summaryRepository,
                 new NoopCompressionService(),
-                properties
+                properties,
+                new ContextEntitySignalExtractor()
         );
 
         ContextLoadingDiagnostics diagnostics = service.diagnose(mail("thread-2", "latest"), route());
@@ -71,6 +73,26 @@ class DefaultContextLoadingServiceTest {
         assertThat(diagnostics.summaryResolutionSource()).isEqualTo("persisted_summary");
         assertThat(diagnostics.restoredPersistedSummaryToMemory()).isTrue();
         assertThat(diagnostics.compressionSkipReason()).isEqualTo("compression_disabled");
+    }
+
+    @Test
+    void shouldPromoteHistoricalOrderAndTrackingSignalsIntoStructuredContextSnapshot() {
+        ContextMemoryProperties properties = new ContextMemoryProperties(true, false, false, 5, 3, "icc:test");
+        InMemoryConversationMemoryStore memoryStore = new InMemoryConversationMemoryStore(properties);
+        InMemoryConversationSummaryRepository summaryRepository = new InMemoryConversationSummaryRepository();
+        DefaultContextLoadingService service = new DefaultContextLoadingService(
+                memoryStore,
+                summaryRepository,
+                new NoopCompressionService(),
+                properties,
+                new ContextEntitySignalExtractor()
+        );
+
+        service.load(mail("thread-structured", "My order number is EFGH5678 and tracking number TRACK5678."), route());
+        ContextLoadingDiagnostics diagnostics = service.diagnose(mail("thread-structured", "Can you check the latest status again?"), route());
+
+        assertThat(diagnostics.snapshot().strongSignals()).containsExactlyInAnyOrder("order_id=EFGH5678", "tracking_number=TRACK5678");
+        assertThat(diagnostics.snapshot().optionalSignals()).anyMatch(value -> value.contains("My order number is EFGH5678"));
     }
 
     private static InboundMail mail(String threadId, String body) {

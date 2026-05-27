@@ -1,5 +1,7 @@
 package com.leak.intelligentcustomerchat.app.business;
 
+import com.leak.intelligentcustomerchat.app.context.ContextEntitySignalExtractor;
+import com.leak.intelligentcustomerchat.app.context.ContextEntitySignals;
 import com.leak.intelligentcustomerchat.domain.business.AfterSalesPolicyResult;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactResult;
 import com.leak.intelligentcustomerchat.domain.business.BusinessFactStatus;
@@ -20,30 +22,24 @@ import org.springframework.stereotype.Service;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 public class DefaultBusinessFactService implements BusinessFactService {
-    private static final Pattern ORDER_ID_PATTERN = Pattern.compile(
-            "\\b(?:order\\s*(?:number|no\\.?|#|id)\\s*(?:is\\s+)?[:#-]?\\s*|my\\s+order\\s+)((?=[A-Z0-9]{6,20}\\b)(?=[A-Z0-9]*\\d)[A-Z0-9]{6,20})\\b",
-            Pattern.CASE_INSENSITIVE
-    );
-    private static final Pattern TRACKING_ID_PATTERN = Pattern.compile(
-            "\\b(?:tracking\\s*(?:number|no\\.?|#|id)\\s*(?:is\\s+)?[:#-]?\\s*|my\\s+tracking\\s+)((?=[A-Z0-9]{6,24}\\b)(?=[A-Z0-9]*\\d)[A-Z0-9]{6,24})\\b",
-            Pattern.CASE_INSENSITIVE
-    );
+    private static final String ORDER_ID_ENTITY = "order_id_or_tracking_no";
 
     private final OrderQueryGateway orderQueryGateway;
     private final LogisticsQueryGateway logisticsQueryGateway;
     private final AfterSalesPolicyGateway afterSalesPolicyGateway;
+    private final ContextEntitySignalExtractor contextEntitySignalExtractor;
 
     public DefaultBusinessFactService(OrderQueryGateway orderQueryGateway,
                                       LogisticsQueryGateway logisticsQueryGateway,
-                                      AfterSalesPolicyGateway afterSalesPolicyGateway) {
+                                      AfterSalesPolicyGateway afterSalesPolicyGateway,
+                                      ContextEntitySignalExtractor contextEntitySignalExtractor) {
         this.orderQueryGateway = orderQueryGateway;
         this.logisticsQueryGateway = logisticsQueryGateway;
         this.afterSalesPolicyGateway = afterSalesPolicyGateway;
+        this.contextEntitySignalExtractor = contextEntitySignalExtractor;
     }
 
     @Override
@@ -54,17 +50,26 @@ public class DefaultBusinessFactService implements BusinessFactService {
         if (routeResult.scene() == CustomerScene.PRE_SALES || routeResult.scene() == CustomerScene.UNKNOWN) {
             return BusinessFactResult.notRequired();
         }
-        if (!normalizationResult.missingEntities().isEmpty()) {
-            return BusinessFactResult.insufficientInput(normalizationResult.missingEntities());
+        ContextEntitySignals contextEntitySignals = contextEntitySignalExtractor.extract(contextSnapshot);
+        List<String> unresolvedMissingEntities = normalizationResult.missingEntities();
+        if (contextEntitySignals.hasReusableIdentifier()) {
+            unresolvedMissingEntities = normalizationResult.missingEntities().stream()
+                    .filter(value -> !ORDER_ID_ENTITY.equals(value))
+                    .toList();
         }
+        if (!unresolvedMissingEntities.isEmpty()) {
+            return BusinessFactResult.insufficientInput(unresolvedMissingEntities);
+        }
+        String resolvedOrderId = resolveOrderId(normalizationResult.normalizedRequest(), contextEntitySignals);
+        String resolvedTrackingNumber = resolveTrackingNumber(normalizationResult.normalizedRequest(), contextEntitySignals);
 
         BusinessQueryContext queryContext = new BusinessQueryContext(
                 mail.from(),
                 mail.threadId(),
                 routeResult.scene().name(),
                 routeResult.subIntent(),
-                extractFirstMatch(ORDER_ID_PATTERN, normalizationResult.normalizedRequest()),
-                extractFirstMatch(TRACKING_ID_PATTERN, normalizationResult.normalizedRequest()),
+                resolvedOrderId,
+                resolvedTrackingNumber,
                 normalizationResult.primaryQuestion()
         );
 
@@ -224,12 +229,20 @@ public class DefaultBusinessFactService implements BusinessFactService {
         };
     }
 
-    private String extractFirstMatch(Pattern pattern, String text) {
-        Matcher matcher = pattern.matcher(text);
-        if (matcher.find()) {
-            return matcher.group(1);
+    private String resolveOrderId(String text, ContextEntitySignals contextEntitySignals) {
+        ContextEntitySignals currentTurnSignals = contextEntitySignalExtractor.extract(text, List.of(), List.of());
+        if (currentTurnSignals.orderId() != null && !currentTurnSignals.orderId().isBlank()) {
+            return currentTurnSignals.orderId();
         }
-        return null;
+        return contextEntitySignals.orderId();
+    }
+
+    private String resolveTrackingNumber(String text, ContextEntitySignals contextEntitySignals) {
+        ContextEntitySignals currentTurnSignals = contextEntitySignalExtractor.extract(text, List.of(), List.of());
+        if (currentTurnSignals.trackingNumber() != null && !currentTurnSignals.trackingNumber().isBlank()) {
+            return currentTurnSignals.trackingNumber();
+        }
+        return contextEntitySignals.trackingNumber();
     }
 
     private record GatewayFactSlice(

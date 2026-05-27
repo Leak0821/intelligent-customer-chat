@@ -7,6 +7,8 @@ import com.leak.intelligentcustomerchat.app.context.ContextLoadingDiagnostics;
 import com.leak.intelligentcustomerchat.app.context.ContextLoadingService;
 import com.leak.intelligentcustomerchat.app.context.ContextLoadingTraceService;
 import com.leak.intelligentcustomerchat.app.intent.IntentHeuristicPreviewService;
+import com.leak.intelligentcustomerchat.app.intent.ContextAwareIntentNormalizationResult;
+import com.leak.intelligentcustomerchat.app.intent.ContextAwareIntentNormalizationService;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationDiagnostics;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationService;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationTraceService;
@@ -52,6 +54,7 @@ public class WorkflowAnalysisService {
     private final ObjectProvider<ContextLoadingTraceService> contextLoadingTraceServiceProvider;
     private final IntentRoutingService intentRoutingService;
     private final ContextLoadingService contextLoadingService;
+    private final ContextAwareIntentNormalizationService contextAwareIntentNormalizationService;
     private final BusinessFactService businessFactService;
     private final KnowledgeRetrievalQueryBuilder knowledgeRetrievalQueryBuilder;
     private final KnowledgeRetrieveService knowledgeRetrieveService;
@@ -71,6 +74,7 @@ public class WorkflowAnalysisService {
                                    ObjectProvider<ContextLoadingTraceService> contextLoadingTraceServiceProvider,
                                    IntentRoutingService intentRoutingService,
                                    ContextLoadingService contextLoadingService,
+                                   ContextAwareIntentNormalizationService contextAwareIntentNormalizationService,
                                    BusinessFactService businessFactService,
                                    KnowledgeRetrievalQueryBuilder knowledgeRetrievalQueryBuilder,
                                    KnowledgeRetrieveService knowledgeRetrieveService,
@@ -89,6 +93,7 @@ public class WorkflowAnalysisService {
         this.contextLoadingTraceServiceProvider = contextLoadingTraceServiceProvider;
         this.intentRoutingService = intentRoutingService;
         this.contextLoadingService = contextLoadingService;
+        this.contextAwareIntentNormalizationService = contextAwareIntentNormalizationService;
         this.businessFactService = businessFactService;
         this.knowledgeRetrievalQueryBuilder = knowledgeRetrievalQueryBuilder;
         this.knowledgeRetrieveService = knowledgeRetrieveService;
@@ -110,16 +115,18 @@ public class WorkflowAnalysisService {
         IntentRouteResult routeResult = intentRoutingService.route(normalizationResult);
         ContextLoadingDiagnostics contextLoadingDiagnostics = diagnoseContext(cleanedMail, routeResult);
         ContextSnapshot contextSnapshot = contextLoadingDiagnostics.snapshot();
-        BusinessFactResult businessFactResult = businessFactService.loadFacts(cleanedMail, normalizationResult, routeResult, contextSnapshot);
-        RetrievalQuery retrievalQuery = buildRetrievalQuery(normalizationResult, routeResult, contextSnapshot, businessFactResult);
-        KnowledgeRetrieveResult knowledgeRetrieveResult = knowledgeRetrieveService.retrieve(normalizationResult, routeResult, contextSnapshot, businessFactResult);
+        ContextAwareIntentNormalizationResult contextAwareNormalization = contextAwareIntentNormalizationService.enrich(normalizationResult, contextSnapshot);
+        IntentNormalizationResult effectiveNormalizationResult = contextAwareNormalization.result();
+        BusinessFactResult businessFactResult = businessFactService.loadFacts(cleanedMail, effectiveNormalizationResult, routeResult, contextSnapshot);
+        RetrievalQuery retrievalQuery = buildRetrievalQuery(effectiveNormalizationResult, routeResult, contextSnapshot, businessFactResult);
+        KnowledgeRetrieveResult knowledgeRetrieveResult = knowledgeRetrieveService.retrieve(effectiveNormalizationResult, routeResult, contextSnapshot, businessFactResult);
 
         // 分析视图不落正式状态机，只复用同一套草稿与审核能力，方便快速检查中间产物。
         WorkflowRun previewRun = WorkflowRun.start(cleanedMail.messageId(), cleanedMail.threadId());
         ReplyDraftingResult draftingResult = replyDraftService.draftWithDiagnostics(
                 previewRun,
                 cleanedMail,
-                normalizationResult,
+                effectiveNormalizationResult,
                 routeResult,
                 contextSnapshot,
                 businessFactResult,
@@ -141,10 +148,10 @@ public class WorkflowAnalysisService {
                         normalizationDiagnostics.llmAttempted(),
                         normalizationDiagnostics.llmResponseAccepted(),
                         normalizationDiagnostics.fallbackReason(),
-                        normalizationDiagnostics.guardrailActions(),
+                        mergeActions(normalizationDiagnostics.guardrailActions(), contextAwareNormalization.actions()),
                         normalizationDiagnostics.heuristicMatchedSignals()
                 ),
-                normalizationResult,
+                effectiveNormalizationResult,
                 routeResult,
                 contextSnapshot,
                 buildContextDiagnostics(cleanedMail.threadId(), contextLoadingDiagnostics),
@@ -459,5 +466,12 @@ public class WorkflowAnalysisService {
                 diagnostics.knowledgeSnippetIds(),
                 diagnostics.knowledgeSnippetPreview()
         );
+    }
+
+    private List<String> mergeActions(List<String> primaryActions, List<String> secondaryActions) {
+        java.util.LinkedHashSet<String> merged = new java.util.LinkedHashSet<>();
+        merged.addAll(primaryActions);
+        merged.addAll(secondaryActions);
+        return List.copyOf(merged);
     }
 }

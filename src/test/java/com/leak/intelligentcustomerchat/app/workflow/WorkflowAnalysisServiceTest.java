@@ -4,8 +4,10 @@ import com.leak.intelligentcustomerchat.app.business.BusinessFactService;
 import com.leak.intelligentcustomerchat.app.config.IntentConfigService;
 import com.leak.intelligentcustomerchat.app.config.RetrievalConfigService;
 import com.leak.intelligentcustomerchat.app.context.ContextLoadingDiagnostics;
+import com.leak.intelligentcustomerchat.app.context.ContextEntitySignalExtractor;
 import com.leak.intelligentcustomerchat.app.context.ContextLoadingService;
 import com.leak.intelligentcustomerchat.app.context.ContextLoadingTraceService;
+import com.leak.intelligentcustomerchat.app.intent.ContextAwareIntentNormalizationService;
 import com.leak.intelligentcustomerchat.app.intent.IntentHeuristicPreviewService;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationDiagnostics;
 import com.leak.intelligentcustomerchat.app.intent.IntentNormalizationService;
@@ -136,6 +138,7 @@ class WorkflowAnalysisServiceTest {
                 )),
                 normalization -> routeResult,
                 (mail, route) -> contextSnapshot,
+                new ContextAwareIntentNormalizationService(new ContextEntitySignalExtractor()),
                 (mail, normalization, route, context) -> businessFactResult,
                 new KnowledgeRetrievalQueryBuilder(),
                 (normalization, route, context, facts) -> knowledgeRetrieveResult,

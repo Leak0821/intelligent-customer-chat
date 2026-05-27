@@ -18,15 +18,18 @@ public class DefaultContextLoadingService implements ContextLoadingService, Cont
     private final ConversationSummaryRepository conversationSummaryRepository;
     private final ContextCompressionService contextCompressionService;
     private final ContextMemoryProperties contextMemoryProperties;
+    private final ContextEntitySignalExtractor contextEntitySignalExtractor;
 
     public DefaultContextLoadingService(ConversationMemoryStore conversationMemoryStore,
                                         ConversationSummaryRepository conversationSummaryRepository,
                                         ContextCompressionService contextCompressionService,
-                                        ContextMemoryProperties contextMemoryProperties) {
+                                        ContextMemoryProperties contextMemoryProperties,
+                                        ContextEntitySignalExtractor contextEntitySignalExtractor) {
         this.conversationMemoryStore = conversationMemoryStore;
         this.conversationSummaryRepository = conversationSummaryRepository;
         this.contextCompressionService = contextCompressionService;
         this.contextMemoryProperties = contextMemoryProperties;
+        this.contextEntitySignalExtractor = contextEntitySignalExtractor;
     }
 
     @Override
@@ -40,10 +43,15 @@ public class DefaultContextLoadingService implements ContextLoadingService, Cont
         CompressionTrace compressionTrace = maybeCompress(mail.threadId());
         ContextSnapshot refreshedSnapshot = conversationMemoryStore.read(mail.threadId());
         SummaryResolution summaryResolution = resolveSummary(mail, routeResult, refreshedSnapshot);
-        ContextSnapshot snapshot = new ContextSnapshot(
+        ContextEntitySignals contextEntitySignals = contextEntitySignalExtractor.extract(
                 summaryResolution.summaryText(),
                 refreshedSnapshot.strongSignals(),
                 refreshedSnapshot.optionalSignals()
+        );
+        ContextSnapshot snapshot = new ContextSnapshot(
+                summaryResolution.summaryText(),
+                contextEntitySignals.strongSignals(),
+                mergeOptionalSignals(refreshedSnapshot.strongSignals(), refreshedSnapshot.optionalSignals())
         );
         return new ContextLoadingDiagnostics(
                 snapshot,
@@ -56,6 +64,13 @@ public class DefaultContextLoadingService implements ContextLoadingService, Cont
                 summaryResolution.source(),
                 summaryResolution.restoredPersistedSummaryToMemory()
         );
+    }
+
+    private List<String> mergeOptionalSignals(List<String> primarySignals, List<String> secondarySignals) {
+        java.util.LinkedHashSet<String> merged = new java.util.LinkedHashSet<>();
+        merged.addAll(primarySignals);
+        merged.addAll(secondarySignals);
+        return List.copyOf(merged);
     }
 
     private CompressionTrace maybeCompress(String threadId) {

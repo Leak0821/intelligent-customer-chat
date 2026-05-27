@@ -2,6 +2,8 @@ package com.leak.intelligentcustomerchat;
 
 import com.leak.intelligentcustomerchat.app.mail.MailIngestionService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
+import com.leak.intelligentcustomerchat.domain.context.ContextSnapshot;
+import com.leak.intelligentcustomerchat.domain.context.ConversationMemoryStore;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.SendReadiness;
@@ -16,13 +18,20 @@ import com.leak.intelligentcustomerchat.domain.workflow.WorkflowEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(properties = "spring.datasource.url=jdbc:h2:mem:intelligent_customer_chat_workflow_run;MODE=MYSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE")
 @ActiveProfiles("test")
 class WorkflowRunServiceTest {
     @Autowired
@@ -140,6 +149,43 @@ class WorkflowRunServiceTest {
     }
 
     @Test
+    void shouldReuseHistoricalOrderIdentifierForFollowUpMailInSameThread() {
+        InboundMail firstMail = new InboundMail(
+                "msg-thread-reuse-1",
+                "thread-reuse-1",
+                "buyer@example.com",
+                "Order status",
+                "My order number is EFGH5678 and I want to know when it will ship.",
+                OffsetDateTime.now()
+        );
+        InboundMail secondMail = new InboundMail(
+                "msg-thread-reuse-2",
+                "thread-reuse-1",
+                "buyer@example.com",
+                "Order status again",
+                "Can you check the latest order status again?",
+                OffsetDateTime.now().plusMinutes(1)
+        );
+
+        WorkflowRun firstRun = mailIngestionService.process(firstMail);
+        WorkflowRun secondRun = mailIngestionService.process(secondMail);
+        ReplyDraft secondDraft = workflowRunService.findDraft(secondRun.getRunId()).orElseThrow();
+        WorkflowEvent contextLoadedEvent = workflowRunService.findEvents(secondRun.getRunId()).stream()
+                .filter(event -> event.stage() == WorkflowStage.CONTEXT_LOADED)
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(firstRun.getStatus()).isEqualTo(WorkflowStatus.COMPLETED);
+        assertThat(secondRun.getStatus()).isEqualTo(WorkflowStatus.COMPLETED);
+        assertThat(secondDraft.getStatus()).isEqualTo(ReplyDraftStatus.DRAFT_READY);
+        assertThat(secondDraft.getSendReadiness()).isEqualTo(SendReadiness.PENDING_REVIEW);
+        assertThat(secondDraft.getBody()).doesNotContain("order number or tracking number");
+        assertThat(contextLoadedEvent.summary()).contains("reuse_context_order_id");
+        var replay = workflowRunService.findReplay(secondRun.getRunId()).orElseThrow();
+        assertThat(replay.evidence().businessFactStatus()).isEqualTo("SUCCESS");
+    }
+
+    @Test
     void shouldBlockWorkflowWhenDemoFaultScenarioIsTriggered() {
         InboundMail mail = new InboundMail(
                 "demo-blocked-runtime-001",
@@ -157,5 +203,55 @@ class WorkflowRunServiceTest {
         assertThat(run.getStatusReason()).contains("demo blocked scenario triggered");
         assertThat(workflowRunService.findDraft(run.getRunId())).isEmpty();
         assertThat(workflowRunService.findReplay(run.getRunId())).isPresent();
+    }
+
+    @TestConfiguration
+    static class TestMemoryConfig {
+        @Bean
+        @Primary
+        ConversationMemoryStore conversationMemoryStore() {
+            return new InMemoryConversationMemoryStore();
+        }
+    }
+
+    private static final class InMemoryConversationMemoryStore implements ConversationMemoryStore {
+        private final java.util.Map<String, Deque<String>> messagesByThread = new java.util.HashMap<>();
+        private final java.util.Map<String, String> summariesByThread = new java.util.HashMap<>();
+        private final java.util.Map<String, Long> messageCountsByThread = new java.util.HashMap<>();
+
+        @Override
+        public synchronized ContextSnapshot read(String threadId) {
+            List<String> recentMessages = new ArrayList<>(messagesByThread.getOrDefault(threadId, new ArrayDeque<>()));
+            return new ContextSnapshot(
+                    summariesByThread.getOrDefault(threadId, ""),
+                    List.copyOf(recentMessages),
+                    List.of()
+            );
+        }
+
+        @Override
+        public synchronized void appendCustomerMessage(String threadId, String message) {
+            Deque<String> messages = messagesByThread.computeIfAbsent(threadId, key -> new ArrayDeque<>());
+            messages.addFirst(message);
+            while (messages.size() > 10) {
+                messages.removeLast();
+            }
+            messageCountsByThread.merge(threadId, 1L, Long::sum);
+        }
+
+        @Override
+        public synchronized List<String> recentMessages(String threadId) {
+            return new ArrayList<>(messagesByThread.getOrDefault(threadId, new ArrayDeque<>()));
+        }
+
+        @Override
+        public synchronized void saveSummary(String threadId, String summary) {
+            summariesByThread.put(threadId, summary);
+        }
+
+        @Override
+        public synchronized long totalMessageCount(String threadId) {
+            return messageCountsByThread.getOrDefault(threadId, 0L);
+        }
     }
 }
