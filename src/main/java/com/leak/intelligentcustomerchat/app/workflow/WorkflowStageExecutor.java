@@ -43,6 +43,7 @@ public class WorkflowStageExecutor {
     private final WorkflowEventRecorder workflowEventRecorder;
     private final WorkflowProperties workflowProperties;
     private final WorkflowDemoFaultService workflowDemoFaultService;
+    private final WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser;
 
     public WorkflowStageExecutor(MailCleaner mailCleaner,
                                  IntentNormalizationService intentNormalizationService,
@@ -56,7 +57,8 @@ public class WorkflowStageExecutor {
                                  WorkflowRunRepository workflowRunRepository,
                                  WorkflowEventRecorder workflowEventRecorder,
                                  WorkflowProperties workflowProperties,
-                                 WorkflowDemoFaultService workflowDemoFaultService) {
+                                 WorkflowDemoFaultService workflowDemoFaultService,
+                                 WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser) {
         this.mailCleaner = mailCleaner;
         this.intentNormalizationService = intentNormalizationService;
         this.intentRoutingService = intentRoutingService;
@@ -70,6 +72,7 @@ public class WorkflowStageExecutor {
         this.workflowEventRecorder = workflowEventRecorder;
         this.workflowProperties = workflowProperties;
         this.workflowDemoFaultService = workflowDemoFaultService;
+        this.workflowEvidenceSummaryParser = workflowEvidenceSummaryParser;
     }
 
     public WorkflowRun execute(WorkflowRun run, InboundMail inboundMail) {
@@ -93,11 +96,11 @@ public class WorkflowStageExecutor {
 
             BusinessFactResult businessFactResult = businessFactService.loadFacts(cleanedMail, normalizationResult, routeResult, contextSnapshot);
             advance(run, WorkflowStage.BUSINESS_FACTS_READY,
-                    "factStatus=%s, facts=%s".formatted(businessFactResult.status(), businessFactResult.facts().size()));
+                    workflowEvidenceSummaryParser.buildBusinessFactsStageSummary(businessFactResult));
 
             KnowledgeRetrieveResult knowledgeRetrieveResult = knowledgeRetrieveService.retrieve(normalizationResult, routeResult, businessFactResult);
             advance(run, WorkflowStage.KNOWLEDGE_READY,
-                    "knowledgeRecallCount=%s".formatted(knowledgeRetrieveResult.recallCount()));
+                    workflowEvidenceSummaryParser.buildKnowledgeStageSummary(knowledgeRetrieveResult));
 
             ReplyDraftingResult draftingResult = replyDraftService.draftWithDiagnostics(
                     run,

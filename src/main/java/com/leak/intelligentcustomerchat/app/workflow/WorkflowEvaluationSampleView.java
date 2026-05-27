@@ -16,8 +16,14 @@ public record WorkflowEvaluationSampleView(
         String routingSummary,
         boolean businessFactsTriggered,
         String businessFactsSummary,
+        String businessFactRole,
+        List<String> businessFactSourceSystems,
         boolean knowledgeTriggered,
         String knowledgeSummary,
+        String knowledgeRole,
+        String knowledgeRetrievalSource,
+        Integer knowledgeRecallCount,
+        List<String> knowledgeSnippetIds,
         String workflowStatus,
         String workflowStage,
         String workflowReason,
@@ -49,7 +55,12 @@ public record WorkflowEvaluationSampleView(
         Objects.requireNonNull(subIntent, "subIntent must not be null");
         Objects.requireNonNull(routingSummary, "routingSummary must not be null");
         Objects.requireNonNull(businessFactsSummary, "businessFactsSummary must not be null");
+        Objects.requireNonNull(businessFactRole, "businessFactRole must not be null");
+        Objects.requireNonNull(businessFactSourceSystems, "businessFactSourceSystems must not be null");
         Objects.requireNonNull(knowledgeSummary, "knowledgeSummary must not be null");
+        Objects.requireNonNull(knowledgeRole, "knowledgeRole must not be null");
+        Objects.requireNonNull(knowledgeRetrievalSource, "knowledgeRetrievalSource must not be null");
+        Objects.requireNonNull(knowledgeSnippetIds, "knowledgeSnippetIds must not be null");
         Objects.requireNonNull(workflowStatus, "workflowStatus must not be null");
         Objects.requireNonNull(workflowStage, "workflowStage must not be null");
         Objects.requireNonNull(workflowReason, "workflowReason must not be null");
@@ -57,6 +68,8 @@ public record WorkflowEvaluationSampleView(
         Objects.requireNonNull(reviewTimeline, "reviewTimeline must not be null");
         Objects.requireNonNull(riskFlags, "riskFlags must not be null");
         Objects.requireNonNull(sampledAt, "sampledAt must not be null");
+        businessFactSourceSystems = List.copyOf(businessFactSourceSystems);
+        knowledgeSnippetIds = List.copyOf(knowledgeSnippetIds);
         reviewTimeline = List.copyOf(reviewTimeline);
         riskFlags = List.copyOf(riskFlags);
     }

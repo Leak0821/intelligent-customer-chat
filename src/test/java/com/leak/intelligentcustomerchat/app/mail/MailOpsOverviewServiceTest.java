@@ -1,6 +1,7 @@
 package com.leak.intelligentcustomerchat.app.mail;
 
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowRunService;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvidenceSummaryParser;
 import com.leak.intelligentcustomerchat.config.MailProperties;
 import com.leak.intelligentcustomerchat.config.XxlJobProperties;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
@@ -110,7 +111,7 @@ class MailOpsOverviewServiceTest {
 
     private static final class StubWorkflowRunService extends WorkflowRunService {
         private StubWorkflowRunService() {
-            super(null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, new WorkflowEvidenceSummaryParser());
         }
 
         @Override

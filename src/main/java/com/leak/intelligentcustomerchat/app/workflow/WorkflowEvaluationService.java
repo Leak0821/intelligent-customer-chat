@@ -34,19 +34,22 @@ public class WorkflowEvaluationService {
     private final ReplyDispatchRepository replyDispatchRepository;
     private final ReviewRecordRepository reviewRecordRepository;
     private final MailReceiptRepository mailReceiptRepository;
+    private final WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser;
 
     public WorkflowEvaluationService(WorkflowRunRepository workflowRunRepository,
                                      WorkflowEventRepository workflowEventRepository,
                                      ReplyDraftRepository replyDraftRepository,
                                      ReplyDispatchRepository replyDispatchRepository,
                                      ReviewRecordRepository reviewRecordRepository,
-                                     MailReceiptRepository mailReceiptRepository) {
+                                     MailReceiptRepository mailReceiptRepository,
+                                     WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser) {
         this.workflowRunRepository = workflowRunRepository;
         this.workflowEventRepository = workflowEventRepository;
         this.replyDraftRepository = replyDraftRepository;
         this.replyDispatchRepository = replyDispatchRepository;
         this.reviewRecordRepository = reviewRecordRepository;
         this.mailReceiptRepository = mailReceiptRepository;
+        this.workflowEvidenceSummaryParser = workflowEvidenceSummaryParser;
     }
 
     public WorkflowEvaluationSampleView getSample(String runId) {
@@ -127,6 +130,8 @@ public class WorkflowEvaluationService {
         String subIntent = extractToken(routingSummary, "subIntent");
         String replySource = extractToken(replyDraftSummary, "replySource");
         String replyFallbackReason = extractOptionalToken(replyDraftSummary, "fallbackReason");
+        Map<String, String> businessTokens = workflowEvidenceSummaryParser.parseTokens(businessFactsSummary);
+        Map<String, String> knowledgeTokens = workflowEvidenceSummaryParser.parseTokens(knowledgeSummary);
 
         return new WorkflowEvaluationSampleView(
                 run.getRunId(),
@@ -140,8 +145,14 @@ public class WorkflowEvaluationService {
                 routingSummary,
                 containsStage(events, WorkflowStage.BUSINESS_FACTS_READY),
                 businessFactsSummary,
+                workflowEvidenceSummaryParser.summarizeBusinessFacts(subIntent, businessFactsSummary),
+                workflowEvidenceSummaryParser.splitPipeList(businessTokens.get("sourceSystems")),
                 containsStage(events, WorkflowStage.KNOWLEDGE_READY),
                 knowledgeSummary,
+                workflowEvidenceSummaryParser.summarizeKnowledgeRole(subIntent),
+                workflowEvidenceSummaryParser.tokenOrDefault(knowledgeTokens, "retrievalSource", "unknown"),
+                workflowEvidenceSummaryParser.parseInt(knowledgeTokens.get("knowledgeRecallCount"), 0),
+                workflowEvidenceSummaryParser.splitPipeList(knowledgeTokens.get("snippetIds")),
                 run.getStatus().name(),
                 run.getStage().name(),
                 run.getStatusReason(),

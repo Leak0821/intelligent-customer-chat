@@ -48,6 +48,10 @@ class DemoScenarioCatalogServiceTest {
         assertThat(replayView.run().getRunId()).isNotBlank();
         assertThat(replayView.latestDraft()).isNotNull();
         assertThat(replayView.events()).isNotEmpty();
+        assertThat(replayView.evidence().businessFactStatus()).isEqualTo("CONFLICT");
+        assertThat(replayView.evidence().businessFactRole()).contains("authority check");
+        assertThat(replayView.evidence().knowledgeRole()).contains("expectation setting");
+        assertThat(replayView.evidence().knowledgeRecallCount()).isGreaterThanOrEqualTo(1);
     }
 
     @Test
@@ -68,6 +72,8 @@ class DemoScenarioCatalogServiceTest {
         assertThat(reviewLoopView.evaluation().reviewCount()).isEqualTo(4);
         assertThat(reviewLoopView.evaluation().revisionCount()).isEqualTo(1);
         assertThat(reviewLoopView.evaluation().resubmittedForReview()).isTrue();
+        assertThat(reviewLoopView.evaluation().businessFactRole()).contains("did not return a usable record");
+        assertThat(reviewLoopView.evaluation().knowledgeRole()).contains("policy wording");
         assertThat(reviewLoopView.evaluation().reviewTimeline()).anyMatch(item -> item.startsWith("APPROVE_SEND by demo-auditor-2"));
         assertThat(reviewLoopView.replay().latestDraft()).isNotNull();
     }

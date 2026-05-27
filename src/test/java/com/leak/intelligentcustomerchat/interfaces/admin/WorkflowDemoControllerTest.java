@@ -2,6 +2,7 @@ package com.leak.intelligentcustomerchat.interfaces.admin;
 
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvaluationSummaryView;
+import com.leak.intelligentcustomerchat.app.workflow.WorkflowEvidenceSummaryParser;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowQueueAdminService;
 import com.leak.intelligentcustomerchat.app.workflow.WorkflowQueueItemView;
 import com.leak.intelligentcustomerchat.domain.mail.InboundMail;
@@ -35,6 +36,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class WorkflowDemoControllerTest {
+    private final WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser = new WorkflowEvidenceSummaryParser();
 
     @Test
     void shouldExposeReviewAndDispatchQueues() {
@@ -152,7 +154,8 @@ class WorkflowDemoControllerTest {
                 replyDraftRepository,
                 replyDispatchRepository,
                 reviewRecordRepository,
-                mailReceiptRepository
+                mailReceiptRepository,
+                workflowEvidenceSummaryParser
         );
 
         WorkflowDemoController controller = new WorkflowDemoController(

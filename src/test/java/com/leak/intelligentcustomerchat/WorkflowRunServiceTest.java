@@ -111,6 +111,10 @@ class WorkflowRunServiceTest {
         assertThat(replay.events()).isNotEmpty();
         assertThat(replay.events().get(0).createdAt()).isBeforeOrEqualTo(replay.events().get(replay.events().size() - 1).createdAt());
         assertThat(replay.latestDraft()).isNotNull();
+        assertThat(replay.evidence().businessFactStatus()).isEqualTo("NO_RESULT");
+        assertThat(replay.evidence().businessFactRole()).contains("did not return a usable record");
+        assertThat(replay.evidence().knowledgeRetrievalSource()).isNotBlank();
+        assertThat(replay.evidence().replySource()).isNotBlank();
         assertThat(replay.dispatches()).isEmpty();
         assertThat(replay.reviews()).isEmpty();
     }

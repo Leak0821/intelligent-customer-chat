@@ -30,6 +30,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class WorkflowEvaluationServiceTest {
+    private final WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser = new WorkflowEvidenceSummaryParser();
 
     @Test
     void shouldBuildEvaluationSampleFromWorkflowArtifacts() {
@@ -43,15 +44,15 @@ class WorkflowEvaluationServiceTest {
         WorkflowRun run = WorkflowRun.start("msg-eval-1", "thread-eval-1");
         run.moveTo(WorkflowStage.INTENT_NORMALIZED, "disposition=CONTINUE, missing=[]");
         run.moveTo(WorkflowStage.INTENT_ROUTED, "scene=AFTER_SALES, subIntent=logistics_tracking");
-        run.moveTo(WorkflowStage.BUSINESS_FACTS_READY, "factStatus=CONFLICT, facts=1");
-        run.moveTo(WorkflowStage.KNOWLEDGE_READY, "knowledgeRecallCount=3");
+        run.moveTo(WorkflowStage.BUSINESS_FACTS_READY, "factStatus=CONFLICT, sourceSystems=local-order-catalog|local-logistics-catalog, resolvedEntityCount=1, factCount=1, missingEntityCount=0, conflictFlagCount=1");
+        run.moveTo(WorkflowStage.KNOWLEDGE_READY, "knowledgeRecallCount=3, retrievalSource=elasticsearch-hybrid, snippetIds=seed-1|seed-2|seed-3");
         run.complete("workflow completed with draft status=HUMAN_REVIEW_REQUIRED");
         workflowRunRepository.save(run);
 
         workflowEventRepository.save(new WorkflowEvent("evt-1", run.getRunId(), run.getMessageId(), WorkflowStage.INTENT_NORMALIZED, run.getStatus(), "disposition=CONTINUE, missing=[]", OffsetDateTime.now()));
         workflowEventRepository.save(new WorkflowEvent("evt-2", run.getRunId(), run.getMessageId(), WorkflowStage.INTENT_ROUTED, run.getStatus(), "scene=AFTER_SALES, subIntent=logistics_tracking", OffsetDateTime.now()));
-        workflowEventRepository.save(new WorkflowEvent("evt-3", run.getRunId(), run.getMessageId(), WorkflowStage.BUSINESS_FACTS_READY, run.getStatus(), "factStatus=CONFLICT, facts=1", OffsetDateTime.now()));
-        workflowEventRepository.save(new WorkflowEvent("evt-4", run.getRunId(), run.getMessageId(), WorkflowStage.KNOWLEDGE_READY, run.getStatus(), "knowledgeRecallCount=3", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-3", run.getRunId(), run.getMessageId(), WorkflowStage.BUSINESS_FACTS_READY, run.getStatus(), "factStatus=CONFLICT, sourceSystems=local-order-catalog|local-logistics-catalog, resolvedEntityCount=1, factCount=1, missingEntityCount=0, conflictFlagCount=1", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-4", run.getRunId(), run.getMessageId(), WorkflowStage.KNOWLEDGE_READY, run.getStatus(), "knowledgeRecallCount=3, retrievalSource=elasticsearch-hybrid, snippetIds=seed-1|seed-2|seed-3", OffsetDateTime.now()));
         workflowEventRepository.save(new WorkflowEvent("evt-5", run.getRunId(), run.getMessageId(), WorkflowStage.REPLY_DRAFTED, run.getStatus(), "draftStatus=HUMAN_REVIEW_REQUIRED, replySource=human-review-template, fallbackReason=human_review_template_required", OffsetDateTime.now()));
 
         ReplyDraft draft = ReplyDraft.create(run.getRunId(), "Re: Where is my order", "Please allow us to check.", ReplyDraftStatus.HUMAN_REVIEW_REQUIRED, "manual review required");
@@ -90,7 +91,8 @@ class WorkflowEvaluationServiceTest {
                 replyDraftRepository,
                 replyDispatchRepository,
                 reviewRecordRepository,
-                mailReceiptRepository
+                mailReceiptRepository,
+                workflowEvidenceSummaryParser
         );
 
         WorkflowEvaluationSampleView sample = service.getSample(run.getRunId());
@@ -99,7 +101,13 @@ class WorkflowEvaluationServiceTest {
         assertThat(sample.subject()).isEqualTo("Where is my order");
         assertThat(sample.routingSummary()).contains("AFTER_SALES");
         assertThat(sample.businessFactsTriggered()).isTrue();
+        assertThat(sample.businessFactRole()).contains("authority check");
+        assertThat(sample.businessFactSourceSystems()).containsExactly("local-order-catalog", "local-logistics-catalog");
         assertThat(sample.knowledgeTriggered()).isTrue();
+        assertThat(sample.knowledgeRole()).contains("expectation setting");
+        assertThat(sample.knowledgeRetrievalSource()).isEqualTo("elasticsearch-hybrid");
+        assertThat(sample.knowledgeRecallCount()).isEqualTo(3);
+        assertThat(sample.knowledgeSnippetIds()).containsExactly("seed-1", "seed-2", "seed-3");
         assertThat(sample.draftStatus()).isEqualTo("HUMAN_REVIEW_REQUIRED");
         assertThat(sample.replySource()).isEqualTo("HUMAN-REVIEW-TEMPLATE");
         assertThat(sample.replyFallbackReason()).isEqualTo("human_review_template_required");
@@ -160,7 +168,8 @@ class WorkflowEvaluationServiceTest {
                 replyDraftRepository,
                 replyDispatchRepository,
                 reviewRecordRepository,
-                mailReceiptRepository
+                mailReceiptRepository,
+                workflowEvidenceSummaryParser
         );
 
         List<WorkflowEvaluationSampleView> afterSalesSamples = service.listSamples(10, "AFTER_SALES", null, null, null, null);
@@ -221,7 +230,8 @@ class WorkflowEvaluationServiceTest {
                 replyDraftRepository,
                 replyDispatchRepository,
                 reviewRecordRepository,
-                mailReceiptRepository
+                mailReceiptRepository,
+                workflowEvidenceSummaryParser
         );
 
         WorkflowEvaluationSummaryView summary = service.summarizeRecentSamples(10, null, null, null, null, null);

@@ -23,6 +23,7 @@ public class WorkflowRunService {
     private final ReviewRecordRepository reviewRecordRepository;
     private final WorkflowEventRecorder workflowEventRecorder;
     private final WorkflowStageExecutor workflowStageExecutor;
+    private final WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser;
 
     public WorkflowRunService(WorkflowRunRepository workflowRunRepository,
                               WorkflowEventRepository workflowEventRepository,
@@ -30,7 +31,8 @@ public class WorkflowRunService {
                               ReplyDispatchRepository replyDispatchRepository,
                               ReviewRecordRepository reviewRecordRepository,
                               WorkflowEventRecorder workflowEventRecorder,
-                              WorkflowStageExecutor workflowStageExecutor) {
+                              WorkflowStageExecutor workflowStageExecutor,
+                              WorkflowEvidenceSummaryParser workflowEvidenceSummaryParser) {
         this.workflowRunRepository = workflowRunRepository;
         this.workflowEventRepository = workflowEventRepository;
         this.replyDraftRepository = replyDraftRepository;
@@ -38,6 +40,7 @@ public class WorkflowRunService {
         this.reviewRecordRepository = reviewRecordRepository;
         this.workflowEventRecorder = workflowEventRecorder;
         this.workflowStageExecutor = workflowStageExecutor;
+        this.workflowEvidenceSummaryParser = workflowEvidenceSummaryParser;
     }
 
     public WorkflowRun start(InboundMail inboundMail) {
@@ -74,12 +77,52 @@ public class WorkflowRunService {
     }
 
     private WorkflowReplayView buildReplayView(WorkflowRun run) {
+        List<WorkflowEvent> events = workflowEventRepository.findByRunId(run.getRunId());
         return new WorkflowReplayView(
                 run,
-                workflowEventRepository.findByRunId(run.getRunId()),
+                events,
                 replyDraftRepository.findByRunId(run.getRunId()).orElse(null),
+                buildReplayEvidence(events),
                 replyDispatchRepository.findByRunId(run.getRunId()),
                 reviewRecordRepository.findByRunId(run.getRunId())
         );
+    }
+
+    private WorkflowReplayEvidenceView buildReplayEvidence(List<WorkflowEvent> events) {
+        String routingSummary = findEventSummary(events, com.leak.intelligentcustomerchat.domain.workflow.WorkflowStage.INTENT_ROUTED)
+                .orElse("intent route summary unavailable");
+        String businessFactsSummary = findEventSummary(events, com.leak.intelligentcustomerchat.domain.workflow.WorkflowStage.BUSINESS_FACTS_READY)
+                .orElse("business facts summary unavailable");
+        String knowledgeSummary = findEventSummary(events, com.leak.intelligentcustomerchat.domain.workflow.WorkflowStage.KNOWLEDGE_READY)
+                .orElse("knowledge summary unavailable");
+        String replyDraftSummary = findEventSummary(events, com.leak.intelligentcustomerchat.domain.workflow.WorkflowStage.REPLY_DRAFTED)
+                .orElse("reply draft summary unavailable");
+
+        var routingTokens = workflowEvidenceSummaryParser.parseTokens(routingSummary);
+        var businessTokens = workflowEvidenceSummaryParser.parseTokens(businessFactsSummary);
+        var knowledgeTokens = workflowEvidenceSummaryParser.parseTokens(knowledgeSummary);
+        var replyTokens = workflowEvidenceSummaryParser.parseTokens(replyDraftSummary);
+        String subIntent = workflowEvidenceSummaryParser.tokenOrDefault(routingTokens, "subIntent", "general_inquiry");
+        return new WorkflowReplayEvidenceView(
+                workflowEvidenceSummaryParser.tokenOrDefault(businessTokens, "factStatus", "UNKNOWN"),
+                workflowEvidenceSummaryParser.summarizeBusinessFacts(subIntent, businessFactsSummary),
+                workflowEvidenceSummaryParser.splitPipeList(businessTokens.get("sourceSystems")),
+                workflowEvidenceSummaryParser.parseInt(businessTokens.get("factCount"), 0),
+                workflowEvidenceSummaryParser.parseInt(businessTokens.get("missingEntityCount"), 0),
+                workflowEvidenceSummaryParser.parseInt(businessTokens.get("conflictFlagCount"), 0),
+                workflowEvidenceSummaryParser.summarizeKnowledgeRole(subIntent),
+                workflowEvidenceSummaryParser.tokenOrDefault(knowledgeTokens, "retrievalSource", "unknown"),
+                workflowEvidenceSummaryParser.parseInt(knowledgeTokens.get("knowledgeRecallCount"), 0),
+                workflowEvidenceSummaryParser.splitPipeList(knowledgeTokens.get("snippetIds")),
+                workflowEvidenceSummaryParser.tokenOrDefault(replyTokens, "replySource", "UNKNOWN").toUpperCase(java.util.Locale.ROOT),
+                replyTokens.get("fallbackReason")
+        );
+    }
+
+    private Optional<String> findEventSummary(List<WorkflowEvent> events, com.leak.intelligentcustomerchat.domain.workflow.WorkflowStage stage) {
+        return events.stream()
+                .filter(event -> event.stage() == stage)
+                .reduce((first, second) -> second)
+                .map(WorkflowEvent::summary);
     }
 }
