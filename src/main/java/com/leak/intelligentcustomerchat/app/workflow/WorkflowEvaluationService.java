@@ -98,8 +98,12 @@ public class WorkflowEvaluationService {
                 .orElse("business facts summary unavailable");
         String knowledgeSummary = findEventSummary(events, WorkflowStage.KNOWLEDGE_READY)
                 .orElse("knowledge summary unavailable");
+        String replyDraftSummary = findEventSummary(events, WorkflowStage.REPLY_DRAFTED)
+                .orElse("reply draft summary unavailable");
         String scene = extractToken(routingSummary, "scene");
         String subIntent = extractToken(routingSummary, "subIntent");
+        String replySource = extractToken(replyDraftSummary, "replySource");
+        String replyFallbackReason = extractOptionalToken(replyDraftSummary, "fallbackReason");
 
         return new WorkflowEvaluationSampleView(
                 run.getRunId(),
@@ -119,6 +123,8 @@ public class WorkflowEvaluationService {
                 run.getStage().name(),
                 run.getStatusReason(),
                 draft == null ? null : draft.getStatus().name(),
+                replySource,
+                replyFallbackReason,
                 draft == null ? null : draft.getSendReadiness().name(),
                 draft == null ? null : draft.getNextAction(),
                 draft == null ? null : draft.getDraftVersion(),
@@ -130,7 +136,7 @@ public class WorkflowEvaluationService {
                 revisionCount,
                 resubmittedForReview,
                 buildReviewTimeline(reviews),
-                buildRiskFlags(run, draft, latestDispatch, latestReview, reviews, businessFactsSummary),
+                buildRiskFlags(run, draft, latestDispatch, latestReview, reviews, businessFactsSummary, replySource, replyFallbackReason),
                 OffsetDateTime.now()
         );
     }
@@ -168,7 +174,9 @@ public class WorkflowEvaluationService {
                                         ReplyDispatch latestDispatch,
                                         ReviewRecord latestReview,
                                         List<ReviewRecord> reviews,
-                                        String businessFactsSummary) {
+                                        String businessFactsSummary,
+                                        String replySource,
+                                        String replyFallbackReason) {
         List<String> riskFlags = new ArrayList<>();
         if ("BLOCKED".equals(run.getStatus().name())) {
             riskFlags.add("workflow_blocked");
@@ -194,6 +202,18 @@ public class WorkflowEvaluationService {
         if (containsAction(reviews, ReviewAction.RESUBMIT_REVIEW)) {
             riskFlags.add("review_resubmitted");
         }
+        if ("TEMPLATE".equals(replySource)) {
+            riskFlags.add("reply_template_fallback");
+        }
+        if ("FOLLOW-UP-TEMPLATE".equals(replySource)) {
+            riskFlags.add("reply_follow_up_template");
+        }
+        if ("HUMAN-REVIEW-TEMPLATE".equals(replySource)) {
+            riskFlags.add("reply_human_review_template");
+        }
+        if (replyFallbackReason != null && !replyFallbackReason.isBlank()) {
+            riskFlags.add("reply_fallback_recorded");
+        }
         if (businessFactsSummary.contains("CONFLICT")) {
             riskFlags.add("business_fact_conflict");
         }
@@ -217,6 +237,19 @@ public class WorkflowEvaluationService {
             return "UNKNOWN";
         }
         return value.toUpperCase(Locale.ROOT);
+    }
+
+    private String extractOptionalToken(String summary, String key) {
+        String marker = key + "=";
+        int start = summary.indexOf(marker);
+        if (start < 0) {
+            return null;
+        }
+        int valueStart = start + marker.length();
+        int end = summary.indexOf(",", valueStart);
+        String value = end < 0 ? summary.substring(valueStart) : summary.substring(valueStart, end);
+        value = value.trim();
+        return value.isBlank() ? null : value;
     }
 
     private MailReceipt fallbackReceipt(WorkflowRun run) {

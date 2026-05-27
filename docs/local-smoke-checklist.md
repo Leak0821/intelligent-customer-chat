@@ -111,6 +111,8 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/analysis \
 - `replyDiagnostics.fallbackReason`
 - `replyDiagnostics.factPreview`
 - `replyDiagnostics.knowledgeSnippetIds`
+- `evaluation.replySource`
+- `evaluation.replyFallbackReason`
 
 3. 如果需要完整回放，继续查看
 

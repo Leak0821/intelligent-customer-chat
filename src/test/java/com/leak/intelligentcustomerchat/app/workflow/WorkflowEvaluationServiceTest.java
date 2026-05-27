@@ -52,6 +52,7 @@ class WorkflowEvaluationServiceTest {
         workflowEventRepository.save(new WorkflowEvent("evt-2", run.getRunId(), run.getMessageId(), WorkflowStage.INTENT_ROUTED, run.getStatus(), "scene=AFTER_SALES, subIntent=logistics_tracking", OffsetDateTime.now()));
         workflowEventRepository.save(new WorkflowEvent("evt-3", run.getRunId(), run.getMessageId(), WorkflowStage.BUSINESS_FACTS_READY, run.getStatus(), "factStatus=CONFLICT, facts=1", OffsetDateTime.now()));
         workflowEventRepository.save(new WorkflowEvent("evt-4", run.getRunId(), run.getMessageId(), WorkflowStage.KNOWLEDGE_READY, run.getStatus(), "knowledgeRecallCount=3", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-5", run.getRunId(), run.getMessageId(), WorkflowStage.REPLY_DRAFTED, run.getStatus(), "draftStatus=HUMAN_REVIEW_REQUIRED, replySource=human-review-template, fallbackReason=human_review_template_required", OffsetDateTime.now()));
 
         ReplyDraft draft = ReplyDraft.create(run.getRunId(), "Re: Where is my order", "Please allow us to check.", ReplyDraftStatus.HUMAN_REVIEW_REQUIRED, "manual review required");
         draft.updateSendReadiness(SendReadiness.PENDING_REVIEW, "manual_review_required", "manual review required");
@@ -100,6 +101,8 @@ class WorkflowEvaluationServiceTest {
         assertThat(sample.businessFactsTriggered()).isTrue();
         assertThat(sample.knowledgeTriggered()).isTrue();
         assertThat(sample.draftStatus()).isEqualTo("HUMAN_REVIEW_REQUIRED");
+        assertThat(sample.replySource()).isEqualTo("HUMAN-REVIEW-TEMPLATE");
+        assertThat(sample.replyFallbackReason()).isEqualTo("human_review_template_required");
         assertThat(sample.latestDispatchStatus()).isEqualTo("RETRY_PENDING");
         assertThat(sample.latestReviewAction()).isEqualTo("REJECT_SEND");
         assertThat(sample.reviewCount()).isEqualTo(3);
@@ -115,6 +118,8 @@ class WorkflowEvaluationServiceTest {
                 "dispatch_retry_pending",
                 "review_rejected",
                 "business_fact_conflict",
+                "reply_human_review_template",
+                "reply_fallback_recorded",
                 "draft_revised",
                 "review_resubmitted"
         );
@@ -136,6 +141,7 @@ class WorkflowEvaluationServiceTest {
         afterSalesRun.complete("workflow completed with draft status=FOLLOW_UP_NEEDED");
         workflowRunRepository.save(afterSalesRun);
         workflowEventRepository.save(new WorkflowEvent("evt-a", afterSalesRun.getRunId(), afterSalesRun.getMessageId(), WorkflowStage.INTENT_ROUTED, afterSalesRun.getStatus(), "scene=AFTER_SALES, subIntent=logistics_tracking", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-a2", afterSalesRun.getRunId(), afterSalesRun.getMessageId(), WorkflowStage.REPLY_DRAFTED, afterSalesRun.getStatus(), "draftStatus=FOLLOW_UP_NEEDED, replySource=follow-up-template, fallbackReason=follow_up_template_required", OffsetDateTime.now()));
         replyDraftRepository.save(ReplyDraft.create(afterSalesRun.getRunId(), "subject-a", "body-a", ReplyDraftStatus.FOLLOW_UP_NEEDED, "missing order id"));
         mailReceiptRepository.save(MailReceipt.manual("receipt-a", new InboundMail(afterSalesRun.getMessageId(), afterSalesRun.getThreadId(), "a@example.com", "subject-a", "body-a", OffsetDateTime.now())));
 
@@ -144,6 +150,7 @@ class WorkflowEvaluationServiceTest {
         preSalesRun.complete("workflow completed with draft status=DRAFT_READY");
         workflowRunRepository.save(preSalesRun);
         workflowEventRepository.save(new WorkflowEvent("evt-b", preSalesRun.getRunId(), preSalesRun.getMessageId(), WorkflowStage.INTENT_ROUTED, preSalesRun.getStatus(), "scene=PRE_SALES, subIntent=product_recommendation", OffsetDateTime.now()));
+        workflowEventRepository.save(new WorkflowEvent("evt-b2", preSalesRun.getRunId(), preSalesRun.getMessageId(), WorkflowStage.REPLY_DRAFTED, preSalesRun.getStatus(), "draftStatus=DRAFT_READY, replySource=template, fallbackReason=llm_unavailable_or_empty", OffsetDateTime.now()));
         replyDraftRepository.save(ReplyDraft.create(preSalesRun.getRunId(), "subject-b", "body-b", ReplyDraftStatus.DRAFT_READY, "ready"));
         mailReceiptRepository.save(MailReceipt.manual("receipt-b", new InboundMail(preSalesRun.getMessageId(), preSalesRun.getThreadId(), "b@example.com", "subject-b", "body-b", OffsetDateTime.now())));
 
@@ -158,11 +165,16 @@ class WorkflowEvaluationServiceTest {
 
         List<WorkflowEvaluationSampleView> afterSalesSamples = service.listSamples(10, "AFTER_SALES", null, null, null, null);
         List<WorkflowEvaluationSampleView> followUpSamples = service.listSamples(10, null, null, null, "FOLLOW_UP_NEEDED", "follow_up_needed");
+        List<WorkflowEvaluationSampleView> templateFallbackSamples = service.listSamples(10, null, null, null, null, "reply_template_fallback");
 
         assertThat(afterSalesSamples).hasSize(1);
         assertThat(afterSalesSamples.get(0).messageId()).isEqualTo("msg-eval-2");
+        assertThat(afterSalesSamples.get(0).replySource()).isEqualTo("FOLLOW-UP-TEMPLATE");
         assertThat(followUpSamples).hasSize(1);
         assertThat(followUpSamples.get(0).scene()).isEqualTo("AFTER_SALES");
+        assertThat(templateFallbackSamples).hasSize(1);
+        assertThat(templateFallbackSamples.get(0).messageId()).isEqualTo("msg-eval-3");
+        assertThat(templateFallbackSamples.get(0).replyFallbackReason()).isEqualTo("llm_unavailable_or_empty");
     }
 
     private static final class InMemoryWorkflowRunRepository implements WorkflowRunRepository {

@@ -22,6 +22,8 @@ public record WorkflowEvaluationSampleView(
         String workflowStage,
         String workflowReason,
         String draftStatus,
+        String replySource,
+        String replyFallbackReason,
         String sendReadiness,
         String nextAction,
         Integer draftVersion,
@@ -51,6 +53,7 @@ public record WorkflowEvaluationSampleView(
         Objects.requireNonNull(workflowStatus, "workflowStatus must not be null");
         Objects.requireNonNull(workflowStage, "workflowStage must not be null");
         Objects.requireNonNull(workflowReason, "workflowReason must not be null");
+        Objects.requireNonNull(replySource, "replySource must not be null");
         Objects.requireNonNull(reviewTimeline, "reviewTimeline must not be null");
         Objects.requireNonNull(riskFlags, "riskFlags must not be null");
         Objects.requireNonNull(sampledAt, "sampledAt must not be null");
