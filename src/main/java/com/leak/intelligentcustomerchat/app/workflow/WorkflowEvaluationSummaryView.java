@@ -17,6 +17,8 @@ public record WorkflowEvaluationSummaryView(
         List<WorkflowEvaluationCountView> knowledgeRoles,
         List<WorkflowEvaluationCountView> knowledgeRetrievalSources,
         List<WorkflowEvaluationCountView> replyFallbackReasons,
+        List<WorkflowEvaluationCountView> latestReviewActions,
+        List<WorkflowEvaluationCountView> manualReviewOutcomes,
         List<WorkflowEvaluationCountView> riskFlags,
         OffsetDateTime sampledAt
 ) {
@@ -31,6 +33,8 @@ public record WorkflowEvaluationSummaryView(
         Objects.requireNonNull(knowledgeRoles, "knowledgeRoles must not be null");
         Objects.requireNonNull(knowledgeRetrievalSources, "knowledgeRetrievalSources must not be null");
         Objects.requireNonNull(replyFallbackReasons, "replyFallbackReasons must not be null");
+        Objects.requireNonNull(latestReviewActions, "latestReviewActions must not be null");
+        Objects.requireNonNull(manualReviewOutcomes, "manualReviewOutcomes must not be null");
         Objects.requireNonNull(riskFlags, "riskFlags must not be null");
         Objects.requireNonNull(sampledAt, "sampledAt must not be null");
         scenes = List.copyOf(scenes);
@@ -43,6 +47,8 @@ public record WorkflowEvaluationSummaryView(
         knowledgeRoles = List.copyOf(knowledgeRoles);
         knowledgeRetrievalSources = List.copyOf(knowledgeRetrievalSources);
         replyFallbackReasons = List.copyOf(replyFallbackReasons);
+        latestReviewActions = List.copyOf(latestReviewActions);
+        manualReviewOutcomes = List.copyOf(manualReviewOutcomes);
         riskFlags = List.copyOf(riskFlags);
     }
 }

@@ -114,9 +114,15 @@ class WorkflowEvaluationServiceTest {
         assertThat(sample.replyFallbackReason()).isEqualTo("human_review_template_required");
         assertThat(sample.latestDispatchStatus()).isEqualTo("RETRY_PENDING");
         assertThat(sample.latestReviewAction()).isEqualTo("REJECT_SEND");
+        assertThat(sample.manualReviewOutcome()).isEqualTo("REJECTED_FOR_REVISION");
         assertThat(sample.reviewCount()).isEqualTo(3);
         assertThat(sample.revisionCount()).isEqualTo(1);
         assertThat(sample.resubmittedForReview()).isTrue();
+        assertThat(sample.reviewActionCounts()).containsExactlyInAnyOrder(
+                new WorkflowEvaluationCountView("REJECT_SEND", 1),
+                new WorkflowEvaluationCountView("RESUBMIT_REVIEW", 1),
+                new WorkflowEvaluationCountView("REVISE_DRAFT", 1)
+        );
         assertThat(sample.reviewTimeline()).contains(
                 "REVISE_DRAFT by editor-a: soften the compensation promise",
                 "RESUBMIT_REVIEW by editor-a: resubmitted after manual revision",
@@ -248,6 +254,7 @@ class WorkflowEvaluationServiceTest {
         ReplyDraft reviewDraft = ReplyDraft.create(reviewRun.getRunId(), "subject-s3", "body-s3", ReplyDraftStatus.HUMAN_REVIEW_REQUIRED, "manual review required");
         reviewDraft.updateSendReadiness(SendReadiness.PENDING_REVIEW, "manual_review_required", "manual review required");
         replyDraftRepository.save(reviewDraft);
+        reviewRecordRepository.save(ReviewRecord.rejectSend(reviewRun.getRunId(), reviewDraft.getDraftId(), "auditor-summary", "needs stricter wording"));
         mailReceiptRepository.save(MailReceipt.manual("receipt-s3", new InboundMail(reviewRun.getMessageId(), reviewRun.getThreadId(), "s3@example.com", "subject-s3", "body-s3", OffsetDateTime.now())));
 
         WorkflowEvaluationService service = new WorkflowEvaluationService(
@@ -307,6 +314,14 @@ class WorkflowEvaluationServiceTest {
                 new WorkflowEvaluationCountView("follow_up_template_required", 1),
                 new WorkflowEvaluationCountView("human_review_template_required", 1),
                 new WorkflowEvaluationCountView("llm_unavailable_or_empty", 1)
+        );
+        assertThat(summary.latestReviewActions()).containsExactly(
+                new WorkflowEvaluationCountView("UNKNOWN", 2),
+                new WorkflowEvaluationCountView("REJECT_SEND", 1)
+        );
+        assertThat(summary.manualReviewOutcomes()).containsExactly(
+                new WorkflowEvaluationCountView("NOT_REVIEWED", 2),
+                new WorkflowEvaluationCountView("REJECTED_FOR_REVISION", 1)
         );
         assertThat(summary.riskFlags()).contains(
                 new WorkflowEvaluationCountView("follow_up_needed", 1),

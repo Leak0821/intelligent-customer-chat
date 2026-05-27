@@ -77,6 +77,14 @@ class DemoScenarioCatalogServiceTest {
         assertThat(reviewLoopView.evaluation().reviewCount()).isEqualTo(4);
         assertThat(reviewLoopView.evaluation().revisionCount()).isEqualTo(1);
         assertThat(reviewLoopView.evaluation().resubmittedForReview()).isTrue();
+        assertThat(reviewLoopView.evaluation().latestReviewAction()).isEqualTo("APPROVE_SEND");
+        assertThat(reviewLoopView.evaluation().manualReviewOutcome()).isEqualTo("APPROVED_FOR_SEND");
+        assertThat(reviewLoopView.evaluation().reviewActionCounts()).contains(
+                new WorkflowEvaluationCountView("APPROVE_SEND", 1),
+                new WorkflowEvaluationCountView("REJECT_SEND", 1),
+                new WorkflowEvaluationCountView("REVISE_DRAFT", 1),
+                new WorkflowEvaluationCountView("RESUBMIT_REVIEW", 1)
+        );
         assertThat(reviewLoopView.evaluation().businessFactRole()).contains("order truth before policy guidance");
         assertThat(reviewLoopView.evaluation().knowledgeRole()).contains("policy wording");
         assertThat(reviewLoopView.evaluation().reviewTimeline()).anyMatch(item -> item.startsWith("APPROVE_SEND by demo-auditor-2"));

@@ -6,6 +6,7 @@ import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatch;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDispatchRepository;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraft;
 import com.leak.intelligentcustomerchat.domain.reply.ReplyDraftRepository;
+import com.leak.intelligentcustomerchat.domain.reply.SendReadiness;
 import com.leak.intelligentcustomerchat.domain.review.ReviewRecord;
 import com.leak.intelligentcustomerchat.domain.review.ReviewAction;
 import com.leak.intelligentcustomerchat.domain.review.ReviewRecordRepository;
@@ -132,6 +133,8 @@ public class WorkflowEvaluationService {
                 summarize(samples, WorkflowEvaluationSampleView::knowledgeRole),
                 summarize(samples, WorkflowEvaluationSampleView::knowledgeRetrievalSource),
                 summarize(samples, WorkflowEvaluationSampleView::replyFallbackReason),
+                summarize(samples, WorkflowEvaluationSampleView::latestReviewAction),
+                summarize(samples, WorkflowEvaluationSampleView::manualReviewOutcome),
                 summarizeRiskFlags(samples),
                 OffsetDateTime.now()
         );
@@ -213,6 +216,7 @@ public class WorkflowEvaluationService {
         int reviewCount = reviews.size();
         int revisionCount = countAction(reviews, ReviewAction.REVISE_DRAFT);
         boolean resubmittedForReview = containsAction(reviews, ReviewAction.RESUBMIT_REVIEW);
+        String manualReviewOutcome = determineManualReviewOutcome(draft, reviews);
 
         String normalizationSummary = findEventSummary(events, WorkflowStage.INTENT_NORMALIZED)
                 .orElse("intent normalization summary unavailable");
@@ -264,11 +268,13 @@ public class WorkflowEvaluationService {
                 draft == null ? null : draft.getDraftVersion(),
                 latestDispatch == null ? null : latestDispatch.getStatus().name(),
                 latestReview == null ? null : latestReview.getAction().name(),
+                manualReviewOutcome,
                 latestReview == null ? null : latestReview.getReviewer(),
                 latestReview == null ? null : latestReview.getReviewNote(),
                 reviewCount,
                 revisionCount,
                 resubmittedForReview,
+                summarizeReviewActions(reviews),
                 buildReviewTimeline(reviews),
                 buildRiskFlags(run, draft, latestDispatch, latestReview, reviews, businessFactsSummary, replySource, replyFallbackReason),
                 OffsetDateTime.now()
@@ -436,6 +442,36 @@ public class WorkflowEvaluationService {
 
     private boolean containsAction(List<ReviewRecord> reviews, ReviewAction action) {
         return reviews.stream().anyMatch(review -> review.getAction() == action);
+    }
+
+    private String determineManualReviewOutcome(ReplyDraft draft, List<ReviewRecord> reviews) {
+        if (reviews.isEmpty()) {
+            return "NOT_REVIEWED";
+        }
+        ReviewAction latestAction = reviews.get(reviews.size() - 1).getAction();
+        return switch (latestAction) {
+            case APPROVE_SEND -> "APPROVED_FOR_SEND";
+            case REJECT_SEND -> "REJECTED_FOR_REVISION";
+            case RESUBMIT_REVIEW -> "RESUBMITTED_PENDING_REVIEW";
+            case REVISE_DRAFT -> {
+                if (draft != null && draft.getSendReadiness() == SendReadiness.PENDING_REVIEW) {
+                    yield "REVISED_PENDING_REVIEW";
+                }
+                yield "REVISED_DRAFT";
+            }
+        };
+    }
+
+    private List<WorkflowEvaluationCountView> summarizeReviewActions(List<ReviewRecord> reviews) {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (ReviewRecord review : reviews) {
+            counts.merge(review.getAction().name(), 1L, Long::sum);
+        }
+        return counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder())
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .map(entry -> new WorkflowEvaluationCountView(entry.getKey(), entry.getValue()))
+                .toList();
     }
 
     private List<String> buildReviewTimeline(List<ReviewRecord> reviews) {

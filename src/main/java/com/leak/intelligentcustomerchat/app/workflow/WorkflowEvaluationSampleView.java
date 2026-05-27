@@ -36,11 +36,13 @@ public record WorkflowEvaluationSampleView(
         Integer draftVersion,
         String latestDispatchStatus,
         String latestReviewAction,
+        String manualReviewOutcome,
         String latestReviewer,
         String latestReviewNote,
         Integer reviewCount,
         Integer revisionCount,
         boolean resubmittedForReview,
+        List<WorkflowEvaluationCountView> reviewActionCounts,
         List<String> reviewTimeline,
         List<String> riskFlags,
         OffsetDateTime sampledAt
@@ -67,11 +69,14 @@ public record WorkflowEvaluationSampleView(
         Objects.requireNonNull(workflowStage, "workflowStage must not be null");
         Objects.requireNonNull(workflowReason, "workflowReason must not be null");
         Objects.requireNonNull(replySource, "replySource must not be null");
+        Objects.requireNonNull(manualReviewOutcome, "manualReviewOutcome must not be null");
+        Objects.requireNonNull(reviewActionCounts, "reviewActionCounts must not be null");
         Objects.requireNonNull(reviewTimeline, "reviewTimeline must not be null");
         Objects.requireNonNull(riskFlags, "riskFlags must not be null");
         Objects.requireNonNull(sampledAt, "sampledAt must not be null");
         businessFactSourceSystems = List.copyOf(businessFactSourceSystems);
         knowledgeSnippetIds = List.copyOf(knowledgeSnippetIds);
+        reviewActionCounts = List.copyOf(reviewActionCounts);
         reviewTimeline = List.copyOf(reviewTimeline);
         riskFlags = List.copyOf(riskFlags);
     }
