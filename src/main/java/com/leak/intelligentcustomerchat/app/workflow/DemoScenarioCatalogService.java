@@ -22,15 +22,18 @@ public class DemoScenarioCatalogService {
     private final MailIngestionService mailIngestionService;
     private final WorkflowRunService workflowRunService;
     private final WorkflowAnalysisService workflowAnalysisService;
+    private final DemoReviewLoopService demoReviewLoopService;
     private final Map<String, DemoScenarioDefinition> scenarioMap;
 
     public DemoScenarioCatalogService(ObjectMapper objectMapper,
                                       MailIngestionService mailIngestionService,
                                       WorkflowRunService workflowRunService,
-                                      WorkflowAnalysisService workflowAnalysisService) {
+                                      WorkflowAnalysisService workflowAnalysisService,
+                                      DemoReviewLoopService demoReviewLoopService) {
         this.mailIngestionService = mailIngestionService;
         this.workflowRunService = workflowRunService;
         this.workflowAnalysisService = workflowAnalysisService;
+        this.demoReviewLoopService = demoReviewLoopService;
         this.scenarioMap = loadScenarios(objectMapper);
     }
 
@@ -47,6 +50,7 @@ public class DemoScenarioCatalogService {
             case RUN -> runScenario(scenario);
             case ANALYSIS -> workflowAnalysisService.analyze(scenario.toInboundMail());
             case REPLAY -> replayScenario(scenario);
+            case REVIEW_LOOP -> demoReviewLoopService.execute(scenario.toInboundMail());
         };
         return new DemoScenarioExecutionView(scenario.summary(), executeMode.modeName(), result);
     }
@@ -97,7 +101,8 @@ public class DemoScenarioCatalogService {
     private enum DemoScenarioMode {
         RUN,
         ANALYSIS,
-        REPLAY;
+        REPLAY,
+        REVIEW_LOOP;
 
         static DemoScenarioMode from(String mode) {
             if (mode == null || mode.isBlank()) {

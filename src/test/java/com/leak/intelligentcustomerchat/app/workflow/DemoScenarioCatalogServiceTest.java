@@ -49,4 +49,26 @@ class DemoScenarioCatalogServiceTest {
         assertThat(replayView.latestDraft()).isNotNull();
         assertThat(replayView.events()).isNotEmpty();
     }
+
+    @Test
+    void shouldExecuteReviewLoopModeForManualReviewScenario() {
+        DemoScenarioExecutionView executionView = demoScenarioCatalogService.execute("after-sales-manual-review", "review_loop");
+
+        assertThat(executionView.mode()).isEqualTo("review_loop");
+        assertThat(executionView.scenario().scenarioId()).isEqualTo("after-sales-manual-review");
+        assertThat(executionView.result()).isInstanceOf(DemoReviewLoopExecutionView.class);
+
+        DemoReviewLoopExecutionView reviewLoopView = (DemoReviewLoopExecutionView) executionView.result();
+        assertThat(reviewLoopView.initialDraft().draftStatus()).isEqualTo("HUMAN_REVIEW_REQUIRED");
+        assertThat(reviewLoopView.rejectedDraft().sendReadiness()).isEqualTo("HOLD");
+        assertThat(reviewLoopView.resubmittedDraft().draftVersion()).isEqualTo(2);
+        assertThat(reviewLoopView.resubmittedDraft().nextAction()).isEqualTo("await_review_decision");
+        assertThat(reviewLoopView.approvedDraft().sendReadiness()).isEqualTo("READY_FOR_SEND");
+        assertThat(reviewLoopView.reviews()).hasSize(4);
+        assertThat(reviewLoopView.evaluation().reviewCount()).isEqualTo(4);
+        assertThat(reviewLoopView.evaluation().revisionCount()).isEqualTo(1);
+        assertThat(reviewLoopView.evaluation().resubmittedForReview()).isTrue();
+        assertThat(reviewLoopView.evaluation().reviewTimeline()).anyMatch(item -> item.startsWith("APPROVE_SEND by demo-auditor-2"));
+        assertThat(reviewLoopView.replay().latestDraft()).isNotNull();
+    }
 }

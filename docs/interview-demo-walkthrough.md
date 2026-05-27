@@ -67,6 +67,7 @@
 curl http://127.0.0.1:8080/api/workflows/demo/scenarios
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/pre-sales-recommendation?mode=analysis"
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-logistics?mode=replay"
+curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-manual-review?mode=review_loop"
 ```
 
 ## 5. 演示时怎么跑
@@ -108,6 +109,19 @@ curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-log
 这里重点讲：
 
 - 草稿生成不等于直接发送
+
+### 5.4 单独演示审核反馈回流
+
+```bash
+./scripts/review-feedback-loop-smoke.sh
+```
+
+这里重点讲：
+
+- 高风险售后不会直接放行，而是先进入人工审核
+- 审核意见会留下 `REJECT_SEND`
+- 人工改稿后会留下 `REVISE_DRAFT -> RESUBMIT_REVIEW`
+- `evaluation` 里能直接看到 `reviewTimeline / reviewCount / revisionCount`
 - 需要先经过审核节点
 - 审核后再进入派发记录
 - 派发失败还可以补偿重试

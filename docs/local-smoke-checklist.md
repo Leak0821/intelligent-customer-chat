@@ -206,3 +206,9 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 ```bash
 ./scripts/fallback-paths-smoke.sh
 ```
+
+如果要演示“人工审核拒绝 -> 修改草稿 -> 重提审核 -> 放行”的反馈闭环，可执行：
+
+```bash
+./scripts/review-feedback-loop-smoke.sh
+```
