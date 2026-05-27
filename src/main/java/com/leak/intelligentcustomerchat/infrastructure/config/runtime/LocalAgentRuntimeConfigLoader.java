@@ -58,7 +58,7 @@ public class LocalAgentRuntimeConfigLoader implements AgentRuntimeConfigLoader {
                 ),
                 new IntentCatalogConfig(
                         List.of("product_recommendation", "product_comparison", "inventory_or_shipping", "general_inquiry"),
-                        List.of("order_status", "logistics_tracking", "after_sales_policy", "general_inquiry")
+                        List.of("order_status", "logistics_tracking", "after_sales_policy", "return_refund", "general_inquiry")
                 ),
                 new RetrievalSettingsConfig(10, true, 50),
                 "local-default",

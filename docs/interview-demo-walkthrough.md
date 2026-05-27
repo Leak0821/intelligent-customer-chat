@@ -68,6 +68,7 @@ curl http://127.0.0.1:8080/api/workflows/demo/scenarios
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/pre-sales-recommendation?mode=analysis"
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-logistics?mode=replay"
 curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-manual-review?mode=review_loop"
+curl -X POST "http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-policy?mode=validate"
 curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 ```
 
@@ -139,7 +140,19 @@ curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"
 - 审核后再进入派发记录
 - 派发失败还可以补偿重试
 
-### 5.5 用汇总视图讲“最近一批跑得怎么样”
+### 5.5 批量校验内置样例是否跑偏
+
+```bash
+./scripts/demo-scenario-validate.sh
+```
+
+这里重点讲：
+
+- 这不是再跑一遍普通 demo，而是让内置样例按各自 `recommendedMode` 自检
+- 如果后续改了意图识别、facts 查询或回复策略，这个脚本可以快速发现哪些样例预期被打破
+- 对面试演示来说，这能证明项目不仅有样例，还在主动约束样例质量
+
+### 5.6 用汇总视图讲“最近一批跑得怎么样”
 
 ```bash
 curl "http://127.0.0.1:8080/api/workflows/evaluations/summary?limit=20"

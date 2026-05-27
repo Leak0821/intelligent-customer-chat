@@ -104,7 +104,7 @@ public class LocalBusinessDataCatalog {
         upsertPolicy(new AfterSalesPolicyCatalogRecord(
                 "AFTER_SALES_STANDARD_POLICY",
                 "Standard after-sales policy",
-                List.of("after_sales_policy", "order_status", "logistics_tracking"),
+                List.of("after_sales_policy", "return_refund", "order_status", "logistics_tracking"),
                 List.of(
                         "standard policy note=Please verify order facts before promising compensation",
                         "standard policy note=Return or refund requests should move to manual review if customer asks for exception"

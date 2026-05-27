@@ -87,6 +87,18 @@ curl http://127.0.0.1:8080/api/workflows/demo/scenarios/after-sales-policy
 
 如果主要跑售后链路，可先对照 [after-sales-demo-matrix.md](/Users/leak/Documents/code/personal/learning/ai/intelligent-customer-chat/docs/after-sales-demo-matrix.md) 选样例。
 
+如果想先确认“内置样例当前有没有整体跑偏”，可以先执行：
+
+```bash
+./scripts/demo-scenario-validate.sh
+```
+
+重点看：
+
+- 每个样例返回的 `validatedMode` 是否符合目录里的 `recommendedMode`
+- `passed` 是否为 `true`
+- `checks` 里失败的是 `scene`、`workflowSubIntent`、`draftStatus` 还是 `businessFactStatus`
+
 ### 3.1 售后样例
 
 1. 提交 demo 邮件
@@ -250,6 +262,12 @@ curl -sS -X POST http://127.0.0.1:8080/api/workflows/demo/replay \
 
 ```bash
 ./scripts/evaluation-insights-smoke.sh
+```
+
+如果要快速验证“内置 demo 样例是否仍符合当前预期”，可执行：
+
+```bash
+./scripts/demo-scenario-validate.sh
 ```
 
 如果要演示“人工审核拒绝 -> 修改草稿 -> 重提审核 -> 放行”的反馈闭环，可执行：

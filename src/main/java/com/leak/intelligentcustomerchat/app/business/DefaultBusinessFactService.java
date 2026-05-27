@@ -26,11 +26,11 @@ import java.util.regex.Pattern;
 @Service
 public class DefaultBusinessFactService implements BusinessFactService {
     private static final Pattern ORDER_ID_PATTERN = Pattern.compile(
-            "\\border\\s*(?:number|no\\.?|#)?\\s*[:#-]?\\s*([A-Z0-9]{6,20})\\b",
+            "\\b(?:order\\s*(?:number|no\\.?|#|id)\\s*(?:is\\s+)?[:#-]?\\s*|my\\s+order\\s+)((?=[A-Z0-9]{6,20}\\b)(?=[A-Z0-9]*\\d)[A-Z0-9]{6,20})\\b",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern TRACKING_ID_PATTERN = Pattern.compile(
-            "\\btracking\\s*(?:number|no\\.?|#)?\\s*[:#-]?\\s*([A-Z0-9]{6,24})\\b",
+            "\\b(?:tracking\\s*(?:number|no\\.?|#|id)\\s*(?:is\\s+)?[:#-]?\\s*|my\\s+tracking\\s+)((?=[A-Z0-9]{6,24}\\b)(?=[A-Z0-9]*\\d)[A-Z0-9]{6,24})\\b",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -88,7 +88,8 @@ public class DefaultBusinessFactService implements BusinessFactService {
     private boolean requiresOrderFacts(String subIntent) {
         return "order_status".equals(subIntent)
                 || "logistics_tracking".equals(subIntent)
-                || "after_sales_policy".equals(subIntent);
+                || "after_sales_policy".equals(subIntent)
+                || "return_refund".equals(subIntent);
     }
 
     private boolean requiresLogisticsFacts(String subIntent) {
@@ -96,7 +97,8 @@ public class DefaultBusinessFactService implements BusinessFactService {
     }
 
     private boolean requiresPolicyFacts(String subIntent) {
-        return "after_sales_policy".equals(subIntent);
+        return "after_sales_policy".equals(subIntent)
+                || "return_refund".equals(subIntent);
     }
 
     private BusinessFactResult merge(List<GatewayFactSlice> results) {

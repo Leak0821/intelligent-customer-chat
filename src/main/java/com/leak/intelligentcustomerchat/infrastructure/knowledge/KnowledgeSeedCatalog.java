@@ -87,7 +87,7 @@ public class KnowledgeSeedCatalog {
                         """,
                         Map.of(
                                 "scene", "AFTER_SALES",
-                                "subIntents", "after_sales_policy,general_inquiry",
+                                "subIntents", "after_sales_policy,return_refund,general_inquiry",
                                 "source", "builtin-seed"
                         )
                 ),
@@ -103,7 +103,7 @@ public class KnowledgeSeedCatalog {
                         """,
                         Map.of(
                                 "scene", "AFTER_SALES",
-                                "subIntents", "logistics_tracking,after_sales_policy,general_inquiry",
+                                "subIntents", "logistics_tracking,after_sales_policy,return_refund,general_inquiry",
                                 "source", "builtin-seed"
                         )
                 )

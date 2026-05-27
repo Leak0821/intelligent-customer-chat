@@ -56,4 +56,23 @@ class BusinessFactPreviewServiceTest {
         assertThat(view.policyResult().status()).isEqualTo(GatewayQueryStatus.SUCCESS);
         assertThat(view.policyResult().policyCode()).isEqualTo("AFTER_SALES_STANDARD_POLICY");
     }
+
+    @Test
+    void shouldPreviewOrderAndPolicyForReturnRefundIntent() {
+        BusinessFactPreviewView view = service.preview(new BusinessQueryContext(
+                "buyer@example.com",
+                "thread-3",
+                "AFTER_SALES",
+                "return_refund",
+                "ABCD1234",
+                null,
+                "manual refund preview"
+        ));
+
+        assertThat(view.queriedGateways()).containsExactly("order", "policy");
+        assertThat(view.orderResult()).isNotNull();
+        assertThat(view.policyResult()).isNotNull();
+        assertThat(view.orderResult().status()).isEqualTo(GatewayQueryStatus.SUCCESS);
+        assertThat(view.policyResult().status()).isEqualTo(GatewayQueryStatus.SUCCESS);
+    }
 }

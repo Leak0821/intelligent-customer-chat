@@ -492,3 +492,26 @@
 
 - 关键词本身不够，必须看问题处在“买前”还是“买后”语境
 - 对容易跨阶段歧义的词，最好保留专门的规则护栏和诊断信号
+
+## 23. demo 样例进入 validate 后，如果预期和真实输出对不上，不要先怀疑测试
+
+### 现象
+
+- 新增内置样例 `validate` 模式后，订单状态、政策说明、人工审核样例同时失败
+- 失败点集中在 `businessFactStatus`、`draftStatus` 和 `workflowSubIntent`
+
+### 根因
+
+- 业务 facts 的订单号正则没有覆盖 `order number is XXXX` 这类真实表达
+- 高风险退款诉求还没有被独立建模，导致样例被折叠到 `after_sales_policy`
+
+### 修复
+
+- 给订单号和物流号抽取规则补上 `is` 这种自然语言连接词
+- 为高风险退款请求补独立的 `return_refund` 子意图
+- 同步更新意图库、facts 查询、知识检索和 validate 预期，避免只改一层
+
+### 经验
+
+- validate 失败很多时候不是“测试太严格”，而是样例已经把真实链路问题照出来了
+- 只要一个子意图进入 catalog，就要同步检查路由、facts、knowledge、reply 和 demo 资产是否都认这个名字

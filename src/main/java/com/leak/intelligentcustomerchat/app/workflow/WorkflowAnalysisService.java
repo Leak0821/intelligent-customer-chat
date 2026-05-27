@@ -328,7 +328,7 @@ public class WorkflowAnalysisService {
         return switch (subIntent) {
             case "logistics_tracking" -> List.of("order", "logistics");
             case "order_status" -> List.of("order");
-            case "after_sales_policy" -> List.of("order", "policy");
+            case "after_sales_policy", "return_refund" -> List.of("order", "policy");
             default -> List.of();
         };
     }
@@ -352,7 +352,7 @@ public class WorkflowAnalysisService {
         return switch (subIntent) {
             case "logistics_tracking" -> "business facts provide the latest order and logistics truth";
             case "order_status" -> "business facts provide the current order truth";
-            case "after_sales_policy" -> "business facts provide order truth before policy guidance is applied";
+            case "after_sales_policy", "return_refund" -> "business facts provide order truth before policy guidance is applied";
             default -> "business facts provide authoritative context for this route";
         };
     }
@@ -361,7 +361,7 @@ public class WorkflowAnalysisService {
         return switch (subIntent) {
             case "product_recommendation", "product_comparison", "inventory_or_shipping" ->
                     "knowledge fills product and catalog guidance that business facts do not provide";
-            case "after_sales_policy" ->
+            case "after_sales_policy", "return_refund" ->
                     "knowledge supplements policy wording and handling guidance after business facts are checked";
             case "logistics_tracking", "order_status" ->
                     "knowledge supplements explanation and expectation setting around the current business facts";

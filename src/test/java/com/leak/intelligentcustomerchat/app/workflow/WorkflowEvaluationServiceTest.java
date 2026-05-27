@@ -296,7 +296,7 @@ class WorkflowEvaluationServiceTest {
         );
         assertThat(summary.knowledgeRoles()).containsExactlyInAnyOrder(
                 new WorkflowEvaluationCountView("knowledge fills product and catalog guidance that business facts do not provide", 1),
-                new WorkflowEvaluationCountView("knowledge supplements general response guidance for the current route", 1),
+                new WorkflowEvaluationCountView("knowledge supplements policy wording and handling guidance after business facts are checked", 1),
                 new WorkflowEvaluationCountView("knowledge supplements explanation and expectation setting around the current business facts", 1)
         );
         assertThat(summary.knowledgeRetrievalSources()).containsExactly(

@@ -168,6 +168,27 @@ class DefaultIntentNormalizationServiceTest {
     }
 
     @Test
+    void shouldRecognizeReturnRefundIntentForRefundAndCompensationRequest() {
+        DefaultIntentNormalizationService service = new DefaultIntentNormalizationService(
+                promptConfigService(),
+                new StubLlmClient(Optional.empty()),
+                new ObjectMapper()
+        );
+
+        IntentNormalizationResult result = service.normalize(mail(
+                "Request refund and compensation for delayed order",
+                "Hello, my order number is ABCD1234 and the shipment has been delayed. I want a refund and compensation for this issue."
+        ));
+
+        assertThat(result.sceneCandidates()).containsExactly(CustomerScene.AFTER_SALES);
+        assertThat(result.subIntentCandidates()).contains("return_refund", "after_sales_policy");
+        assertThat(result.subIntentCandidates().get(0)).isEqualTo("return_refund");
+        assertThat(result.requiredEntities()).contains("order_id_or_tracking_no");
+        assertThat(result.missingEntities()).isEmpty();
+        assertThat(result.disposition()).isEqualTo(ProcessingDisposition.HUMAN_REVIEW);
+    }
+
+    @Test
     void shouldTreatReturnPolicyQuestionBeforePurchaseAsPreSalesGeneralInquiry() {
         DefaultIntentNormalizationService service = new DefaultIntentNormalizationService(
                 promptConfigService(),

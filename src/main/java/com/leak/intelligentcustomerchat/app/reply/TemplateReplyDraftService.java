@@ -236,7 +236,7 @@ public class TemplateReplyDraftService implements ReplyDraftService {
         return switch (routeResult.subIntent()) {
             case "logistics_tracking" -> buildLogisticsTrackingTemplate(normalizationResult, businessFactResult, knowledgeRetrieveResult);
             case "order_status" -> buildOrderStatusTemplate(normalizationResult, businessFactResult);
-            case "after_sales_policy" -> buildAfterSalesPolicyTemplate(normalizationResult, businessFactResult, knowledgeRetrieveResult);
+            case "after_sales_policy", "return_refund" -> buildAfterSalesPolicyTemplate(normalizationResult, businessFactResult, knowledgeRetrieveResult);
             case "product_recommendation" -> buildProductRecommendationTemplate(normalizationResult, knowledgeRetrieveResult);
             case "product_comparison" -> buildProductComparisonTemplate(normalizationResult, knowledgeRetrieveResult);
             case "inventory_or_shipping" -> buildInventoryOrShippingTemplate(normalizationResult, knowledgeRetrieveResult);

@@ -99,6 +99,29 @@ class DefaultBusinessFactServiceTest {
     }
 
     @Test
+    void shouldExtractOrderNumberWhenMailSaysOrderNumberIs() {
+        BusinessFactResult result = service.loadFacts(
+                new InboundMail("msg-3b", "thread-3b", "buyer@example.com", "Order status", "My order number is EFGH5678 and I want to know when it will ship.", java.time.OffsetDateTime.now()),
+                new IntentNormalizationResult(
+                        "My order number is EFGH5678 and I want to know when it will ship.",
+                        "My order number is EFGH5678 and I want to know when it will ship.",
+                        List.of(),
+                        List.of(CustomerScene.AFTER_SALES),
+                        List.of("order_status"),
+                        List.of("order_id_or_tracking_no"),
+                        List.of(),
+                        ProcessingDisposition.CONTINUE
+                ),
+                new IntentRouteResult(CustomerScene.AFTER_SALES, "order_status", ProcessingDisposition.CONTINUE, "test"),
+                new ContextSnapshot("thread=t-3b", List.of(), List.of())
+        );
+
+        assertThat(result.status()).isEqualTo(BusinessFactStatus.SUCCESS);
+        assertThat(result.resolvedEntities()).contains("order_id=EFGH5678");
+        assertThat(result.facts()).anyMatch(item -> item.contains("order status=processing"));
+    }
+
+    @Test
     void shouldReturnConflictWhenOrderDoesNotBelongToCurrentCustomer() {
         BusinessFactResult result = service.loadFacts(
                 new InboundMail("msg-4", "thread-4", "intruder@example.com", "Track order", "Please check order #ABCD1234", java.time.OffsetDateTime.now()),

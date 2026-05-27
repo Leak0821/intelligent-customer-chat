@@ -33,6 +33,7 @@ final class IntentNormalizationHeuristics {
         boolean clearAfterSalesIssue = isClearAfterSalesIssue(lowerCaseRequest);
         boolean ownedOrderReference = hasOwnedOrderReference(lowerCaseRequest);
         boolean afterSalesPolicyQuestion = isAfterSalesPolicyQuestion(lowerCaseRequest);
+        boolean highRiskAfterSalesRequest = isHighRiskAfterSalesRequest(lowerCaseRequest);
 
         List<CustomerScene> sceneCandidates = new ArrayList<>();
         if (prePurchasePolicyQuestion) {
@@ -109,6 +110,10 @@ final class IntentNormalizationHeuristics {
             subIntentCandidates.add("order_status");
             matchedSignals.add("sub_intent_order_status");
         }
+        if (!prePurchasePolicyQuestion && isReturnRefundRequest(lowerCaseRequest)) {
+            subIntentCandidates.add("return_refund");
+            matchedSignals.add("sub_intent_return_refund");
+        }
         if (!prePurchasePolicyQuestion && containsAny(lowerCaseRequest, "refund", "return", "warranty", "replacement", "replace")) {
             subIntentCandidates.add("after_sales_policy");
             matchedSignals.add("sub_intent_after_sales_policy");
@@ -131,9 +136,9 @@ final class IntentNormalizationHeuristics {
                 matchedSignals.add("disposition_follow_up_missing_order_id");
             }
         }
-        if (containsAny(lowerCaseRequest, "refund", "compensation", "claim", "angry")) {
+        if (highRiskAfterSalesRequest) {
             disposition = ProcessingDisposition.HUMAN_REVIEW;
-            matchedSignals.add("disposition_human_review_refund_or_compensation");
+            matchedSignals.add("disposition_human_review_high_risk_after_sales");
         }
 
         return new HeuristicAnalysis(
@@ -220,6 +225,34 @@ final class IntentNormalizationHeuristics {
 
     private boolean isAfterSalesPolicyQuestion(String text) {
         return containsAny(text, "refund", "return", "warranty", "replacement", "replace");
+    }
+
+    private boolean isReturnRefundRequest(String text) {
+        return containsAny(text,
+                "want a refund",
+                "need a refund",
+                "request a refund",
+                "refund and compensation",
+                "want compensation",
+                "need compensation",
+                "file a claim",
+                "open a claim",
+                "cancel my order",
+                "return this order",
+                "return this product",
+                "replace this item");
+    }
+
+    private boolean isHighRiskAfterSalesRequest(String text) {
+        return containsAny(text,
+                "refund and compensation",
+                "want compensation",
+                "need compensation",
+                "file a claim",
+                "open a claim",
+                "chargeback",
+                "legal action",
+                "angry");
     }
 
     private boolean hasOwnedOrderReference(String text) {

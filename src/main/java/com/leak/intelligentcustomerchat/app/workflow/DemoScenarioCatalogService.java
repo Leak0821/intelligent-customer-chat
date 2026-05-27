@@ -22,6 +22,7 @@ public class DemoScenarioCatalogService {
     private final MailIngestionService mailIngestionService;
     private final WorkflowRunService workflowRunService;
     private final WorkflowAnalysisService workflowAnalysisService;
+    private final WorkflowEvaluationService workflowEvaluationService;
     private final DemoReviewLoopService demoReviewLoopService;
     private final Map<String, DemoScenarioDefinition> scenarioMap;
 
@@ -29,10 +30,12 @@ public class DemoScenarioCatalogService {
                                       MailIngestionService mailIngestionService,
                                       WorkflowRunService workflowRunService,
                                       WorkflowAnalysisService workflowAnalysisService,
+                                      WorkflowEvaluationService workflowEvaluationService,
                                       DemoReviewLoopService demoReviewLoopService) {
         this.mailIngestionService = mailIngestionService;
         this.workflowRunService = workflowRunService;
         this.workflowAnalysisService = workflowAnalysisService;
+        this.workflowEvaluationService = workflowEvaluationService;
         this.demoReviewLoopService = demoReviewLoopService;
         this.scenarioMap = loadScenarios(objectMapper);
     }
@@ -51,6 +54,7 @@ public class DemoScenarioCatalogService {
             case ANALYSIS -> workflowAnalysisService.analyze(scenario.toInboundMail());
             case REPLAY -> replayScenario(scenario);
             case REVIEW_LOOP -> demoReviewLoopService.execute(scenario.toInboundMail());
+            case VALIDATE -> validateScenario(scenario);
         };
         return new DemoScenarioExecutionView(scenario.summary(), executeMode.modeName(), result);
     }
@@ -67,6 +71,116 @@ public class DemoScenarioCatalogService {
         WorkflowRun run = runScenario(scenario);
         return workflowRunService.findReplay(run.getRunId())
                 .orElseThrow(() -> new NoSuchElementException("workflow replay not found for runId=" + run.getRunId()));
+    }
+
+    private DemoScenarioValidationView validateScenario(DemoScenarioDefinition scenario) {
+        DemoScenarioMode validationMode = DemoScenarioMode.from(scenario.metadata().recommendedMode());
+        return switch (validationMode) {
+            case ANALYSIS -> validateAnalysisScenario(scenario);
+            case REPLAY -> validateReplayScenario(scenario);
+            case REVIEW_LOOP -> validateReviewLoopScenario(scenario);
+            case RUN -> validateRunScenario(scenario);
+            case VALIDATE -> throw new IllegalStateException("validate mode cannot recursively validate itself");
+        };
+    }
+
+    private DemoScenarioValidationView validateAnalysisScenario(DemoScenarioDefinition scenario) {
+        WorkflowAnalysisView analysisView = workflowAnalysisService.analyze(scenario.toInboundMail());
+        return buildValidationView(
+                scenario,
+                DemoScenarioMode.ANALYSIS,
+                analysisView.routeResult().scene().name(),
+                analysisView.routeResult().subIntent().toUpperCase(Locale.ROOT),
+                null,
+                analysisView.draft().getStatus().name(),
+                analysisView.businessFactResult().status().name(),
+                mapResultType(analysisView.draft().getStatus().name(), null)
+        );
+    }
+
+    private DemoScenarioValidationView validateReplayScenario(DemoScenarioDefinition scenario) {
+        WorkflowReplayView replayView = replayScenario(scenario);
+        WorkflowEvaluationSampleView evaluation = workflowEvaluationService.getSample(replayView.run().getRunId());
+        return buildValidationView(
+                scenario,
+                DemoScenarioMode.REPLAY,
+                evaluation.scene(),
+                evaluation.subIntent(),
+                evaluation.workflowStatus(),
+                evaluation.draftStatus(),
+                evaluation.businessFactStatus(),
+                mapResultType(evaluation.draftStatus(), replayView.run().getStatus().name())
+        );
+    }
+
+    private DemoScenarioValidationView validateReviewLoopScenario(DemoScenarioDefinition scenario) {
+        DemoReviewLoopExecutionView reviewLoop = demoReviewLoopService.execute(scenario.toInboundMail());
+        WorkflowEvaluationSampleView evaluation = reviewLoop.evaluation();
+        return buildValidationView(
+                scenario,
+                DemoScenarioMode.REVIEW_LOOP,
+                evaluation.scene(),
+                evaluation.subIntent(),
+                evaluation.workflowStatus(),
+                reviewLoop.initialDraft().draftStatus(),
+                evaluation.businessFactStatus(),
+                mapResultType(reviewLoop.initialDraft().draftStatus(), reviewLoop.run().getStatus().name())
+        );
+    }
+
+    private DemoScenarioValidationView validateRunScenario(DemoScenarioDefinition scenario) {
+        WorkflowRun run = runScenario(scenario);
+        WorkflowEvaluationSampleView evaluation = workflowEvaluationService.getSample(run.getRunId());
+        return buildValidationView(
+                scenario,
+                DemoScenarioMode.RUN,
+                evaluation.scene(),
+                evaluation.subIntent(),
+                evaluation.workflowStatus(),
+                evaluation.draftStatus(),
+                evaluation.businessFactStatus(),
+                mapResultType(evaluation.draftStatus(), run.getStatus().name())
+        );
+    }
+
+    private DemoScenarioValidationView buildValidationView(DemoScenarioDefinition scenario,
+                                                           DemoScenarioMode mode,
+                                                           String actualScene,
+                                                           String actualWorkflowSubIntent,
+                                                           String actualWorkflowStatus,
+                                                           String actualDraftStatus,
+                                                           String actualBusinessFactStatus,
+                                                           String actualResultType) {
+        List<DemoScenarioValidationCheckView> checks = new java.util.ArrayList<>();
+        addCheck(checks, "scene", scenario.metadata().expectedWorkflowScene(), actualScene);
+        addCheck(checks, "workflowSubIntent", scenario.metadata().expectedWorkflowSubIntent(), actualWorkflowSubIntent);
+        addCheck(checks, "workflowStatus", scenario.metadata().expectedWorkflowStatus(), actualWorkflowStatus);
+        addCheck(checks, "draftStatus", scenario.metadata().expectedDraftStatus(), actualDraftStatus);
+        addCheck(checks, "businessFactStatus", scenario.metadata().expectedBusinessFactStatus(), actualBusinessFactStatus);
+        addCheck(checks, "resultType", scenario.metadata().expectedResultType(), actualResultType);
+        boolean passed = checks.stream().allMatch(DemoScenarioValidationCheckView::passed);
+        return new DemoScenarioValidationView(scenario.metadata().scenarioId(), mode.modeName(), passed, checks);
+    }
+
+    private void addCheck(List<DemoScenarioValidationCheckView> checks, String key, String expected, String actual) {
+        if (expected == null || expected.isBlank()) {
+            return;
+        }
+        String actualValue = actual == null || actual.isBlank() ? "UNKNOWN" : actual;
+        checks.add(new DemoScenarioValidationCheckView(key, expected, actualValue, expected.equalsIgnoreCase(actualValue)));
+    }
+
+    private String mapResultType(String draftStatus, String workflowStatus) {
+        if ("BLOCKED".equalsIgnoreCase(workflowStatus)) {
+            return "阻断";
+        }
+        if ("FOLLOW_UP_NEEDED".equalsIgnoreCase(draftStatus)) {
+            return "先追问";
+        }
+        if ("HUMAN_REVIEW_REQUIRED".equalsIgnoreCase(draftStatus)) {
+            return "人工审核";
+        }
+        return "直接草稿";
     }
 
     private DemoScenarioDefinition requireScenario(String scenarioId) {
@@ -102,7 +216,8 @@ public class DemoScenarioCatalogService {
         RUN,
         ANALYSIS,
         REPLAY,
-        REVIEW_LOOP;
+        REVIEW_LOOP,
+        VALIDATE;
 
         static DemoScenarioMode from(String mode) {
             if (mode == null || mode.isBlank()) {
@@ -172,7 +287,12 @@ public class DemoScenarioCatalogService {
             String demoFocus,
             String expectedResultType,
             String businessEvidenceHint,
-            String knowledgeEvidenceHint
+            String knowledgeEvidenceHint,
+            String expectedWorkflowScene,
+            String expectedWorkflowSubIntent,
+            String expectedWorkflowStatus,
+            String expectedDraftStatus,
+            String expectedBusinessFactStatus
     ) {
         static List<DemoScenarioMetadata> defaults() {
             return List.of(
@@ -186,7 +306,12 @@ public class DemoScenarioCatalogService {
                             "售前推荐方向识别与知识补充",
                             "直接草稿",
                             "这类样例通常不依赖订单类事实，重点确认 facts 是否明确标记为 NOT_REQUIRED。",
-                            "重点看知识召回是否补上推荐方向、适用空间和基础说明。"
+                            "重点看知识召回是否补上推荐方向、适用空间和基础说明。",
+                            "PRE_SALES",
+                            "PRODUCT_RECOMMENDATION",
+                            null,
+                            "DRAFT_READY",
+                            "NOT_REQUIRED"
                     ),
                     new DemoScenarioMetadata(
                             "pre-sales-comparison",
@@ -198,7 +323,12 @@ public class DemoScenarioCatalogService {
                             "售前对比说明与知识片段支撑",
                             "直接草稿",
                             "一般不依赖业务 facts，重点确认 facts 不会误触发售后查询。",
-                            "重点看知识是否给出差异点、适用建议和对比依据。"
+                            "重点看知识是否给出差异点、适用建议和对比依据。",
+                            "PRE_SALES",
+                            "PRODUCT_COMPARISON",
+                            null,
+                            "DRAFT_READY",
+                            "NOT_REQUIRED"
                     ),
                     new DemoScenarioMetadata(
                             "pre-sales-general-inquiry",
@@ -210,7 +340,12 @@ public class DemoScenarioCatalogService {
                             "售前泛咨询路由与基础说明",
                             "直接草稿",
                             "通常不依赖订单或物流 facts，重点确认不会被误判为售后。",
-                            "重点看知识是否补足功能说明、使用前提和常见限制。"
+                            "重点看知识是否补足功能说明、使用前提和常见限制。",
+                            "PRE_SALES",
+                            "GENERAL_INQUIRY",
+                            null,
+                            "DRAFT_READY",
+                            "NOT_REQUIRED"
                     ),
                     new DemoScenarioMetadata(
                             "pre-sales-shipping-stock",
@@ -222,7 +357,12 @@ public class DemoScenarioCatalogService {
                             "售前库存与发货咨询",
                             "直接草稿",
                             "一般不查售后订单事实，重点确认不会误走 order_status 或 logistics_tracking。",
-                            "重点看知识是否补足库存说明、发货时效和跨境预期。"
+                            "重点看知识是否补足库存说明、发货时效和跨境预期。",
+                            "PRE_SALES",
+                            "INVENTORY_OR_SHIPPING",
+                            null,
+                            "DRAFT_READY",
+                            "NOT_REQUIRED"
                     ),
                     new DemoScenarioMetadata(
                             "after-sales-order-status",
@@ -234,7 +374,12 @@ public class DemoScenarioCatalogService {
                             "售后订单状态 facts-first 演示",
                             "直接草稿",
                             "优先确认订单 facts 是否命中当前订单状态、发货阶段和关键实体解析。",
-                            "重点看知识是否只做状态解释、时效预期和非承诺性补充。"
+                            "重点看知识是否只做状态解释、时效预期和非承诺性补充。",
+                            "AFTER_SALES",
+                            "ORDER_STATUS",
+                            "COMPLETED",
+                            "DRAFT_READY",
+                            "SUCCESS"
                     ),
                     new DemoScenarioMetadata(
                             "after-sales-manual-review",
@@ -246,7 +391,12 @@ public class DemoScenarioCatalogService {
                             "高风险售后进入人工审核并回流修改",
                             "人工审核",
                             "先确认 facts 是否核验了订单上下文，再看高风险诉求如何抬升审核要求。",
-                            "重点看知识如何补政策措辞与保守说明，而不是直接做赔付承诺。"
+                            "重点看知识如何补政策措辞与保守说明，而不是直接做赔付承诺。",
+                            "AFTER_SALES",
+                            "RETURN_REFUND",
+                            "COMPLETED",
+                            "HUMAN_REVIEW_REQUIRED",
+                            "SUCCESS"
                     ),
                     new DemoScenarioMetadata(
                             "after-sales-logistics",
@@ -258,7 +408,12 @@ public class DemoScenarioCatalogService {
                             "售后物流查询的 facts 与 knowledge 协同",
                             "直接草稿",
                             "优先看订单和物流 facts；如果出现冲突或无结果，也要能在 replay / evaluation 里直接看出来。",
-                            "重点看知识是否补物流节点解释、时效预期和保守措辞。"
+                            "重点看知识是否补物流节点解释、时效预期和保守措辞。",
+                            "AFTER_SALES",
+                            "LOGISTICS_TRACKING",
+                            "COMPLETED",
+                            "DRAFT_READY",
+                            "CONFLICT"
                     ),
                     new DemoScenarioMetadata(
                             "after-sales-policy",
@@ -270,7 +425,12 @@ public class DemoScenarioCatalogService {
                             "售后政策说明与 facts-before-knowledge",
                             "直接草稿",
                             "如果缺少明确订单实体，facts 可能命中不足，但仍要说明是否已尝试核验订单上下文。",
-                            "重点看知识是否补政策边界、处理步骤和风险保守表达。"
+                            "重点看知识是否补政策边界、处理步骤和风险保守表达。",
+                            "AFTER_SALES",
+                            "AFTER_SALES_POLICY",
+                            null,
+                            "DRAFT_READY",
+                            "SUCCESS"
                     ),
                     new DemoScenarioMetadata(
                             "after-sales-missing-id",
@@ -282,7 +442,12 @@ public class DemoScenarioCatalogService {
                             "售后缺关键编号时的追问兜底",
                             "先追问",
                             "重点确认 facts 是否明确给出 INSUFFICIENT_INPUT，而不是假装查到了结果。",
-                            "知识只能补通用说明，不能替代缺失的订单号或物流号。"
+                            "知识只能补通用说明，不能替代缺失的订单号或物流号。",
+                            "AFTER_SALES",
+                            null,
+                            null,
+                            "FOLLOW_UP_NEEDED",
+                            "INSUFFICIENT_INPUT"
                     ),
                     new DemoScenarioMetadata(
                             "system-blocked-demo",
@@ -294,7 +459,12 @@ public class DemoScenarioCatalogService {
                             "系统级阻断路径演示",
                             "阻断",
                             "这类样例不是业务 facts 查询失败，而是系统层面主动阻断主链路。",
-                            "这类样例不以 knowledge 补充为重点，重点是说明为什么必须阻断。"
+                            "这类样例不以 knowledge 补充为重点，重点是说明为什么必须阻断。",
+                            null,
+                            null,
+                            "BLOCKED",
+                            null,
+                            null
                     )
             );
         }

@@ -8,9 +8,9 @@
 | --- | --- | --- | --- | --- | --- |
 | `after-sales-order-status` | `replay` | 直接草稿 | 订单状态查询是典型的 facts-first 场景 | 是否命中订单状态、发货阶段、实体解析 | 是否只补状态解释和时效预期，而不是替代事实 |
 | `after-sales-logistics` | `replay` | 直接草稿 | 物流查询里 facts 与 knowledge 如何协同 | 订单 / 物流 facts 是否成功、冲突或无结果 | 是否补物流节点解释、运输预期和保守说明 |
-| `after-sales-policy` | `analysis` | 直接草稿 | 政策说明不是纯知识问答，而是要先看是否需要事实约束 | 是否尝试核验订单上下文，facts 是否不足 | 是否补政策边界、处理步骤和风险保守表达 |
+| `after-sales-policy` | `analysis` | 直接草稿 | 政策说明不是纯知识问答，而是要先看订单上下文是否已确认 | 是否先命中订单 facts，再决定如何解释政策边界 | 是否补政策边界、处理步骤和风险保守表达 |
 | `after-sales-missing-id` | `analysis` | 先追问 | 缺编号时系统要敢于停下来追问 | 是否明确给出 `INSUFFICIENT_INPUT` | 是否只补通用说明，而不冒充查到了订单结果 |
-| `after-sales-manual-review` | `review_loop` | 人工审核 | 高风险赔付 / 退款诉求要进入审核闭环 | 是否先核验订单上下文并识别高风险请求 | 是否只补政策措辞，不直接做赔付承诺 |
+| `after-sales-manual-review` | `review_loop` | 人工审核 | 高风险赔付 / 退款诉求要进入审核闭环 | 是否先核验订单上下文，再因为高风险诉求进入人工审核 | 是否只补政策措辞，不直接做赔付承诺 |
 
 ## 2. 面试或演示时建议怎么讲
 

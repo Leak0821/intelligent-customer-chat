@@ -77,9 +77,69 @@ class DemoScenarioCatalogServiceTest {
         assertThat(reviewLoopView.evaluation().reviewCount()).isEqualTo(4);
         assertThat(reviewLoopView.evaluation().revisionCount()).isEqualTo(1);
         assertThat(reviewLoopView.evaluation().resubmittedForReview()).isTrue();
-        assertThat(reviewLoopView.evaluation().businessFactRole()).contains("did not return a usable record");
+        assertThat(reviewLoopView.evaluation().businessFactRole()).contains("order truth before policy guidance");
         assertThat(reviewLoopView.evaluation().knowledgeRole()).contains("policy wording");
         assertThat(reviewLoopView.evaluation().reviewTimeline()).anyMatch(item -> item.startsWith("APPROVE_SEND by demo-auditor-2"));
         assertThat(reviewLoopView.replay().latestDraft()).isNotNull();
+    }
+
+    @Test
+    void shouldValidateAnalysisScenarioUsingRecommendedMode() {
+        DemoScenarioExecutionView executionView = demoScenarioCatalogService.execute("after-sales-policy", "validate");
+
+        assertThat(executionView.mode()).isEqualTo("validate");
+        assertThat(executionView.result()).isInstanceOf(DemoScenarioValidationView.class);
+
+        DemoScenarioValidationView validationView = (DemoScenarioValidationView) executionView.result();
+        assertThat(validationView.scenarioId()).isEqualTo("after-sales-policy");
+        assertThat(validationView.validatedMode()).isEqualTo("analysis");
+        assertThat(validationView.passed())
+                .withFailMessage("validation checks=%s", validationView.checks())
+                .isTrue();
+        assertThat(validationView.checks())
+                .extracting(DemoScenarioValidationCheckView::key)
+                .containsExactly("scene", "workflowSubIntent", "draftStatus", "businessFactStatus", "resultType");
+        assertThat(validationView.checks())
+                .allMatch(DemoScenarioValidationCheckView::passed);
+    }
+
+    @Test
+    void shouldValidateReplayScenarioUsingRecommendedMode() {
+        DemoScenarioExecutionView executionView = demoScenarioCatalogService.execute("after-sales-order-status", "validate");
+
+        assertThat(executionView.mode()).isEqualTo("validate");
+        assertThat(executionView.result()).isInstanceOf(DemoScenarioValidationView.class);
+
+        DemoScenarioValidationView validationView = (DemoScenarioValidationView) executionView.result();
+        assertThat(validationView.scenarioId()).isEqualTo("after-sales-order-status");
+        assertThat(validationView.validatedMode()).isEqualTo("replay");
+        assertThat(validationView.passed())
+                .withFailMessage("validation checks=%s", validationView.checks())
+                .isTrue();
+        assertThat(validationView.checks())
+                .extracting(DemoScenarioValidationCheckView::key)
+                .containsExactly("scene", "workflowSubIntent", "workflowStatus", "draftStatus", "businessFactStatus", "resultType");
+        assertThat(validationView.checks())
+                .allMatch(DemoScenarioValidationCheckView::passed);
+    }
+
+    @Test
+    void shouldValidateReviewLoopScenarioUsingRecommendedMode() {
+        DemoScenarioExecutionView executionView = demoScenarioCatalogService.execute("after-sales-manual-review", "validate");
+
+        assertThat(executionView.mode()).isEqualTo("validate");
+        assertThat(executionView.result()).isInstanceOf(DemoScenarioValidationView.class);
+
+        DemoScenarioValidationView validationView = (DemoScenarioValidationView) executionView.result();
+        assertThat(validationView.scenarioId()).isEqualTo("after-sales-manual-review");
+        assertThat(validationView.validatedMode()).isEqualTo("review_loop");
+        assertThat(validationView.passed())
+                .withFailMessage("validation checks=%s", validationView.checks())
+                .isTrue();
+        assertThat(validationView.checks())
+                .extracting(DemoScenarioValidationCheckView::key)
+                .containsExactly("scene", "workflowSubIntent", "workflowStatus", "draftStatus", "businessFactStatus", "resultType");
+        assertThat(validationView.checks())
+                .allMatch(DemoScenarioValidationCheckView::passed);
     }
 }

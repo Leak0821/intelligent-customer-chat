@@ -63,7 +63,8 @@ public class BusinessFactPreviewService {
     private boolean requiresOrderFacts(String subIntent) {
         return "order_status".equals(subIntent)
                 || "logistics_tracking".equals(subIntent)
-                || "after_sales_policy".equals(subIntent);
+                || "after_sales_policy".equals(subIntent)
+                || "return_refund".equals(subIntent);
     }
 
     private boolean requiresLogisticsFacts(String subIntent) {
@@ -71,6 +72,7 @@ public class BusinessFactPreviewService {
     }
 
     private boolean requiresPolicyFacts(String subIntent) {
-        return "after_sales_policy".equals(subIntent);
+        return "after_sales_policy".equals(subIntent)
+                || "return_refund".equals(subIntent);
     }
 }
